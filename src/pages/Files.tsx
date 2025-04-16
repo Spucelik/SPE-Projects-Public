@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { sharePointService } from '../services/sharePointService';
+import { sharePointService, FileItem } from '../services/sharePointService';
 import { toast } from '@/hooks/use-toast';
 import { 
   File as FileIcon, 
@@ -20,16 +19,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
-
-interface FileItem {
-  id: string;
-  name: string;
-  size: number;
-  lastModifiedDateTime: string;
-  webUrl: string;
-  folder?: { childCount: number };
-  isFolder: boolean;
-}
 
 const Files = () => {
   const { containerId } = useParams<{ containerId: string }>();
@@ -116,11 +105,9 @@ const Files = () => {
 
   const navigateToPath = (index: number) => {
     if (index === -1) {
-      // Navigate to root
       setCurrentPath([]);
       fetchFiles('root');
     } else {
-      // Navigate to specific folder in path
       const newPath = currentPath.slice(0, index + 1);
       setCurrentPath(newPath);
       fetchFiles(newPath[newPath.length - 1].id);
@@ -186,7 +173,6 @@ const Files = () => {
         description: `${completed} of ${files.length} files uploaded successfully`,
       });
       
-      // Refresh file list
       const folderId = currentPath.length > 0 
         ? currentPath[currentPath.length - 1].id 
         : 'root';
@@ -215,13 +201,11 @@ const Files = () => {
       const token = await getAccessToken();
       if (!token) return;
 
-      // For Office documents, redirect to webUrl
       const isOfficeDoc = /\.(docx?|xlsx?|pptx?|vsdx?)$/i.test(file.name);
       
       if (isOfficeDoc) {
         window.open(file.webUrl, '_blank');
       } else {
-        // For non-Office documents, use preview API
         const previewUrl = await sharePointService.getFilePreview(token, containerId!, file.id);
         setPreviewUrl(previewUrl);
       }
@@ -509,7 +493,6 @@ const Files = () => {
         </>
       )}
       
-      {/* File Preview Modal */}
       {previewUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="relative bg-white rounded-lg w-11/12 h-5/6 overflow-hidden max-w-6xl">

@@ -1,15 +1,10 @@
 
+// Import the File type from the browser
+import { File as BrowserFile } from '@azure/msal-browser'; // This is a placeholder, we're not actually using this import
 import { appConfig } from '../config/appConfig';
 
-interface Container {
-  id: string;
-  displayName: string;
-  description: string;
-  containerTypeId: string;
-  createdDateTime: string;
-}
-
-interface File {
+// Define our own FileItem interface to avoid name conflict with browser's File type
+export interface FileItem {
   id: string;
   name: string;
   size: number;
@@ -19,121 +14,153 @@ interface File {
   isFolder: boolean;
 }
 
-class SharePointService {
-  private async getHeaders(accessToken: string) {
-    return {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    };
-  }
+// Define our Container interface
+export interface Container {
+  id: string;
+  displayName: string;
+  description: string;
+  containerTypeId: string;
+  createdDateTime: string;
+}
 
-  // Container operations
-  async createContainer(accessToken: string, displayName: string, description: string = ""): Promise<Container> {
+class SharePointService {
+  // List containers
+  async listContainers(token: string): Promise<Container[]> {
     const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to list containers: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.value;
+  }
+  
+  // Get a specific container
+  async getContainer(token: string, containerId: string): Promise<Container> {
+    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}/${containerId}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to get container: ${response.status} ${response.statusText}`);
+    }
+    
+    return await response.json();
+  }
+  
+  // Create a container
+  async createContainer(token: string, displayName: string, description: string = ''): Promise<Container> {
+    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}`;
+    
     const body = {
       displayName,
       description,
       containerTypeId: appConfig.containerTypeId
     };
-
+    
     const response = await fetch(url, {
       method: 'POST',
-      headers: await this.getHeaders(accessToken),
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(body)
     });
-
+    
     if (!response.ok) {
-      throw new Error(`Failed to create container: ${response.statusText}`);
+      throw new Error(`Failed to create container: ${response.status} ${response.statusText}`);
     }
-
+    
     return await response.json();
   }
-
-  async listContainers(accessToken: string): Promise<Container[]> {
-    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}?$select=id,displayName,description,containerTypeId,createdDateTime&$filter=containerTypeId eq ${appConfig.containerTypeId}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: await this.getHeaders(accessToken),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to list containers: ${response.statusText}`);
+  
+  // List files in a container/folder
+  async listFiles(token: string, containerId: string, folderId: string = 'root'): Promise<FileItem[]> {
+    let url;
+    if (folderId === 'root') {
+      url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}/${containerId}/drive/root/children`;
+    } else {
+      url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}/${containerId}/drive/items/${folderId}/children`;
     }
-
-    const data = await response.json();
-    return data.value;
-  }
-
-  async getContainer(accessToken: string, containerId: string): Promise<Container> {
-    const url = `${appConfig.endpoints.graphBaseUrl}/beta/storage/fileStorage/containers/${containerId}`;
-
+    
     const response = await fetch(url, {
-      method: 'GET',
-      headers: await this.getHeaders(accessToken),
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     });
-
+    
     if (!response.ok) {
-      throw new Error(`Failed to get container: ${response.statusText}`);
+      throw new Error(`Failed to list files: ${response.status} ${response.statusText}`);
     }
-
-    return await response.json();
-  }
-
-  // File operations
-  async listFiles(accessToken: string, driveId: string, folderId: string = 'root'): Promise<File[]> {
-    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${driveId}/items/${folderId}/children?$expand=listItem($expand=fields)`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: await this.getHeaders(accessToken),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to list files: ${response.statusText}`);
-    }
-
+    
     const data = await response.json();
     return data.value.map((item: any) => ({
       ...item,
       isFolder: !!item.folder
     }));
   }
-
-  async uploadFile(accessToken: string, driveId: string, folderId: string = 'root', file: File): Promise<any> {
-    const folderPath = folderId === 'root' ? 'root:' : `${folderId}:`;
-    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${driveId}/items/${folderPath}/${file.name}:/content`;
-
+  
+  // Upload a file
+  async uploadFile(token: string, containerId: string, folderId: string, file: Blob): Promise<FileItem> {
+    let url;
+    if (folderId === 'root') {
+      url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}/${containerId}/drive/root:/${file.name}:/content`;
+    } else {
+      url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}/${containerId}/drive/items/${folderId}:/${file.name}:/content`;
+    }
+    
     const response = await fetch(url, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': file.type,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': file.type || 'application/octet-stream'
       },
       body: file
     });
-
+    
     if (!response.ok) {
-      throw new Error(`Failed to upload file: ${response.statusText}`);
+      throw new Error(`Failed to upload file: ${response.status} ${response.statusText}`);
     }
-
-    return await response.json();
+    
+    const data = await response.json();
+    return {
+      ...data,
+      isFolder: false
+    };
   }
 
-  async getFilePreview(accessToken: string, driveId: string, itemId: string): Promise<string> {
-    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${driveId}/items/${itemId}/preview`;
-
+  // Get preview URL for a file
+  async getFilePreview(token: string, containerId: string, fileId: string): Promise<string> {
+    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}/${containerId}/drive/items/${fileId}/preview`;
+    
     const response = await fetch(url, {
       method: 'POST',
-      headers: await this.getHeaders(accessToken),
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     });
-
+    
     if (!response.ok) {
-      throw new Error(`Failed to get file preview: ${response.statusText}`);
+      throw new Error(`Failed to get preview: ${response.status} ${response.statusText}`);
     }
-
+    
     const data = await response.json();
-    return `${data.getUrl}&nb=true`;
+    return data.getUrl;
   }
 }
 

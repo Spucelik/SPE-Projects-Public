@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '../context/AuthContext';
 
 const NotFound = () => {
-  const { isAuthenticated } = useAuth();
+  // Using optional chaining to handle the case where AuthContext isn't available
+  const { isAuthenticated = false } = useAuth();
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
