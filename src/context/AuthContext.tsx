@@ -26,7 +26,13 @@ const msalConfig = {
   }
 };
 
+// Initialize MSAL instance
 const msalInstance = new PublicClientApplication(msalConfig);
+
+// Make sure the instance is properly initialized
+(async () => {
+  await msalInstance.initialize();
+})();
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -43,6 +49,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (): Promise<void> => {
     try {
+      // Ensure MSAL is initialized
+      if (!msalInstance.getActiveAccount()) {
+        await msalInstance.initialize();
+      }
+      
       // Login with popup, using empty array for scopes
       const response: AuthenticationResult = await msalInstance.loginPopup({
         scopes: []
