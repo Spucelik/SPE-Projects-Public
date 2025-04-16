@@ -1,9 +1,4 @@
-
-// Import the File type from the browser
-import { File as BrowserFile } from '@azure/msal-browser'; // This is a placeholder, we're not actually using this import
-import { appConfig } from '../config/appConfig';
-
-// Define our own FileItem interface to avoid name conflict with browser's File type
+// Define our own FileItem interface
 export interface FileItem {
   id: string;
   name: string;
@@ -22,6 +17,8 @@ export interface Container {
   containerTypeId: string;
   createdDateTime: string;
 }
+
+import { appConfig } from '../config/appConfig';
 
 class SharePointService {
   // List containers
@@ -115,7 +112,7 @@ class SharePointService {
   }
   
   // Upload a file
-  async uploadFile(token: string, containerId: string, folderId: string, file: Blob): Promise<FileItem> {
+  async uploadFile(token: string, containerId: string, folderId: string, file: File): Promise<FileItem> {
     let url;
     if (folderId === 'root') {
       url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}/${containerId}/drive/root:/${file.name}:/content`;
