@@ -22,7 +22,7 @@ const msalConfig = {
   ...appConfig.msalConfig,
   auth: {
     ...appConfig.msalConfig.auth,
-    authority: appConfig.msalConfig.auth.authority.replace('YOUR_TENANT_ID', appConfig.tenantId)
+    authority: `https://login.microsoftonline.com/${appConfig.tenantId}`
   }
 };
 
@@ -54,6 +54,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (error) {
       console.error('Login failed:', error);
+      throw error;
     }
   };
 

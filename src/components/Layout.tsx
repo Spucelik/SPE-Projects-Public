@@ -15,7 +15,6 @@ import {
   SidebarTrigger
 } from "@/components/ui/sidebar";
 import { Home, FolderOpen, FileText, LogOut, User } from 'lucide-react';
-import { appConfig } from '../config/appConfig';
 
 interface LayoutProps {
   children: React.ReactNode;
