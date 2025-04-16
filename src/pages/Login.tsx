@@ -1,14 +1,18 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 
 const Login = () => {
   const { isAuthenticated, login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
     try {
+      setLoading(true);
+      setError(null);
       await login();
       toast({
         title: "Login successful",
@@ -16,11 +20,14 @@ const Login = () => {
       });
     } catch (error) {
       console.error('Login failed:', error);
+      setError(error instanceof Error ? error.message : 'Authentication failed');
       toast({
         title: "Login failed",
         description: "An error occurred during authentication.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,11 +44,20 @@ const Login = () => {
           <p className="mt-2 text-gray-600">Sign in with your Microsoft account</p>
         </div>
         
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+        
         <button
           onClick={handleLogin}
-          className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          disabled={loading}
+          className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
+          ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} 
+          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
         >
-          Sign in
+          {loading ? 'Signing in...' : 'Sign in'}
         </button>
         
         <div className="mt-6 text-center">

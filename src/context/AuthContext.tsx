@@ -54,14 +54,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await msalInstance.initialize();
       }
       
-      // Login with popup, using empty array for scopes
-      const response: AuthenticationResult = await msalInstance.loginPopup({
-        scopes: []
-      });
+      // Define proper scopes for SharePoint Embedded access
+      const loginRequest = {
+        scopes: ["https://graph.microsoft.com/.default"]
+      };
+      
+      // Login with popup
+      const response: AuthenticationResult = await msalInstance.loginPopup(loginRequest);
       
       if (response) {
         setIsAuthenticated(true);
         setUser(response.account);
+        // Set the active account for future token requests
+        msalInstance.setActiveAccount(response.account);
       }
     } catch (error) {
       console.error('Login failed:', error);
@@ -86,14 +91,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Use silent token acquisition if possible
       const accounts = msalInstance.getAllAccounts();
       if (accounts.length === 0) {
+        console.error('No accounts found when trying to get access token');
         return null;
       }
 
-      const tokenResponse = await msalInstance.acquireTokenSilent({
-        scopes: ['https://graph.microsoft.com/.default'],
+      console.log('Acquiring token silently for account:', accounts[0].username);
+      
+      const tokenRequest = {
+        scopes: ["https://graph.microsoft.com/.default"],
         account: accounts[0]
-      });
+      };
 
+      const tokenResponse = await msalInstance.acquireTokenSilent(tokenRequest);
+      console.log('Token acquired successfully');
+      
       return tokenResponse.accessToken;
     } catch (error) {
       console.error('Failed to get access token silently, trying popup', error);
@@ -101,8 +112,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         // If silent acquisition fails, try popup
         const tokenResponse = await msalInstance.acquireTokenPopup({
-          scopes: ['https://graph.microsoft.com/.default']
+          scopes: ["https://graph.microsoft.com/.default"]
         });
+        console.log('Token acquired with popup');
         return tokenResponse.accessToken;
       } catch (fallbackError) {
         console.error('Failed to get access token with popup', fallbackError);
