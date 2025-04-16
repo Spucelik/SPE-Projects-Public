@@ -22,7 +22,9 @@ const msalConfig = {
   ...appConfig.msalConfig,
   auth: {
     ...appConfig.msalConfig.auth,
-    authority: `https://login.microsoftonline.com/${appConfig.tenantId}`
+    authority: `https://login.microsoftonline.com/${appConfig.tenantId}`,
+    redirectUri: window.location.origin, // Ensure this matches what's in Azure AD
+    postLogoutRedirectUri: window.location.origin
   }
 };
 
@@ -58,6 +60,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const loginRequest = {
         scopes: ["https://graph.microsoft.com/.default"]
       };
+      
+      // Log relevant information for debugging
+      console.log('Login attempt with config:', {
+        clientId: msalConfig.auth.clientId,
+        authority: msalConfig.auth.authority,
+        redirectUri: msalConfig.auth.redirectUri
+      });
       
       // Login with popup
       const response: AuthenticationResult = await msalInstance.loginPopup(loginRequest);

@@ -11,7 +11,7 @@ export const appConfig = {
     auth: {
       clientId: "fb7cf520-cb33-45bf-a238-ae51d316665f", // Same as above
       authority: "https://login.microsoftonline.com/153a6ebe-ff62-4bce-b1bc-a1eda3bc6645", // Will be updated with actual tenant ID
-      redirectUri: window.location.origin,
+      redirectUri: window.location.origin, // Dynamic redirect URI based on current origin
     },
     cache: {
       cacheLocation: "sessionStorage",
