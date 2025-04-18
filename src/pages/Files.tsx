@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -121,6 +120,32 @@ const Files = () => {
     }
   };
 
+  const getSortedItems = () => {
+    return [
+      ...folders.map(folder => ({
+        id: folder.id,
+        name: folder.name,
+        webUrl: folder.webUrl,
+        lastModifiedDateTime: '',
+        size: 0,
+        isFolder: true
+      })),
+      ...files.map(file => ({
+        id: file.id,
+        name: file.name,
+        webUrl: file.webUrl,
+        size: file.size,
+        lastModifiedDateTime: file.lastModifiedDateTime,
+        isFolder: false
+      }))
+    ].sort((a, b) => {
+      if (a.isFolder === b.isFolder) {
+        return a.name.localeCompare(b.name);
+      }
+      return a.isFolder ? -1 : 1;
+    });
+  };
+
   return (
     <div className="space-y-6">
       <ConfigAlert />
@@ -141,24 +166,7 @@ const Files = () => {
       )}
 
       <FileList 
-        files={[
-          ...files.map(file => ({
-            id: file.id,
-            name: file.name,
-            webUrl: file.webUrl,
-            size: file.size,
-            lastModifiedDateTime: file.lastModifiedDateTime,
-            isFolder: false
-          })),
-          ...folders.map(folder => ({
-            id: folder.id,
-            name: folder.name,
-            webUrl: folder.webUrl,
-            lastModifiedDateTime: '',
-            size: 0,
-            isFolder: true
-          }))
-        ]}
+        files={getSortedItems()}
         loading={loading}
         onFolderClick={(item) => handleFolderClick(item.id, item.name)}
         onFileClick={() => {}}
