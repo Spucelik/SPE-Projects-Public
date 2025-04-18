@@ -23,6 +23,7 @@ import { FileItem } from '@/services/sharePointService';
 
 interface FileListProps {
   files: FileItem[];
+  loading?: boolean;
   onFolderClick: (folder: FileItem) => void;
   onFileClick: (file: FileItem) => void;
   onViewFile: (file: FileItem) => void;
@@ -32,6 +33,7 @@ interface FileListProps {
 
 const FileList: React.FC<FileListProps> = ({
   files,
+  loading = false,
   onFolderClick,
   onFileClick,
   onViewFile,
@@ -95,80 +97,97 @@ const FileList: React.FC<FileListProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {files.map((file) => (
-              <TableRow key={file.id}>
-                <TableCell>
-                  {file.isFolder ? (
-                    <button
-                      onClick={() => onFolderClick(file)}
-                      className="flex items-center text-left hover:text-blue-600"
-                    >
-                      <Folder className="h-5 w-5 text-yellow-500 mr-2" />
-                      <span className="font-medium">{file.name}</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => onFileClick(file)}
-                      className="flex items-center text-left hover:text-blue-600"
-                    >
-                      {getFileIcon(file.name)}
-                      <span className="ml-2">{file.name}</span>
-                    </button>
-                  )}
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-8">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
+                    <span className="text-gray-500">Loading files...</span>
+                  </div>
                 </TableCell>
-                <TableCell>
-                  {file.isFolder ? (
-                    <span className="text-sm text-gray-500">
-                      {file.folder?.childCount} {file.folder?.childCount === 1 ? 'item' : 'items'}
-                    </span>
-                  ) : (
-                    <span className="text-sm text-gray-500">{getFileSize(file.size)}</span>
-                  )}
+              </TableRow>
+            ) : files.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-8">
+                  <div className="text-gray-500">No files or folders found</div>
                 </TableCell>
-                <TableCell>
-                  <span className="text-sm text-gray-500">
-                    {formatDate(file.lastModifiedDateTime)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {!file.isFolder && (
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onViewFile(file)}
-                        className="text-xs"
+              </TableRow>
+            ) : (
+              files.map((file) => (
+                <TableRow key={file.id}>
+                  <TableCell>
+                    {file.isFolder ? (
+                      <button
+                        onClick={() => onFolderClick(file)}
+                        className="flex items-center text-left hover:text-blue-600"
                       >
-                        <Eye className="h-3 w-3 mr-1" />
-                        View
-                      </Button>
-                      
-                      {file.name.match(/\.(docx|xlsx|pptx|doc|xls|ppt)$/i) && (
+                        <Folder className="h-5 w-5 text-yellow-500 mr-2" />
+                        <span className="font-medium">{file.name}</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onFileClick(file)}
+                        className="flex items-center text-left hover:text-blue-600"
+                      >
+                        {getFileIcon(file.name)}
+                        <span className="ml-2">{file.name}</span>
+                      </button>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {file.isFolder ? (
+                      <span className="text-sm text-gray-500">
+                        {file.folder?.childCount} {file.folder?.childCount === 1 ? 'item' : 'items'}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-gray-500">{getFileSize(file.size)}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-gray-500">
+                      {formatDate(file.lastModifiedDateTime)}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {!file.isFolder && (
+                      <div className="flex items-center space-x-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(file.webUrl, '_blank')}
+                          onClick={() => onViewFile(file)}
                           className="text-xs"
                         >
-                          <Edit className="h-3 w-3 mr-1" />
-                          Edit
+                          <Eye className="h-3 w-3 mr-1" />
+                          View
                         </Button>
-                      )}
+                        
+                        {file.name.match(/\.(docx|xlsx|pptx|doc|xls|ppt)$/i) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(file.webUrl, '_blank')}
+                            className="text-xs"
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                        )}
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setFileToDelete(file)}
-                        className="text-xs text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        Delete
-                      </Button>
-                    </div>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setFileToDelete(file)}
+                          className="text-xs text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
