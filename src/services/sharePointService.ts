@@ -145,6 +145,36 @@ class SharePointService {
     };
   }
 
+  // Create a new folder
+  async createFolder(token: string, driveId: string, parentFolderId: string, folderName: string): Promise<FileItem> {
+    const folderPath = parentFolderId === 'root' ? 'root' : parentFolderId;
+    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${driveId}/items/${folderPath}/children`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: folderName,
+        folder: {}
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error creating folder:', errorText);
+      throw new Error(`Failed to create folder: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    return {
+      ...data,
+      isFolder: true
+    };
+  }
+
   // Get preview URL for a file
   async getFilePreview(token: string, driveId: string, fileId: string): Promise<string> {
     const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${driveId}/items/${fileId}/preview`;

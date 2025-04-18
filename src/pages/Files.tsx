@@ -3,7 +3,7 @@ import { useParams, Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService, FileItem, Container } from '../services/sharePointService';
 import { toast } from '@/hooks/use-toast';
-import { AlertCircle, Home, Upload } from 'lucide-react';
+import { AlertCircle, Home, Upload, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import {
@@ -14,6 +14,15 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import FileList from '@/components/files/FileList';
 import EmptyState from '@/components/files/EmptyState';
 import FilePreviewDialog from '@/components/files/FilePreviewDialog';
@@ -40,6 +49,9 @@ const Files = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newFolderOpen, setNewFolderOpen] = useState<boolean>(false);
+  const [newFolderName, setNewFolderName] = useState<string>('');
+  const [creatingFolder, setCreatingFolder] = useState<boolean>(false);
 
   useEffect(() => {
     if (!isAuthenticated || !containerId) return;
@@ -201,6 +213,51 @@ const Files = () => {
     }
   };
 
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Folder name cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setCreatingFolder(true);
+      const token = await getAccessToken();
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Failed to get access token",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await sharePointService.createFolder(token, containerId!, currentFolder, newFolderName);
+      const updatedFiles = await sharePointService.listFiles(token, containerId!, currentFolder);
+      setFiles(updatedFiles);
+
+      toast({
+        title: "Success",
+        description: `Folder "${newFolderName}" created successfully`,
+      });
+      
+      setNewFolderName('');
+      setNewFolderOpen(false);
+    } catch (error: any) {
+      console.error('Error creating folder:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create folder",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingFolder(false);
+    }
+  };
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -250,7 +307,14 @@ const Files = () => {
         
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">{container?.displayName || 'Files'}</h1>
-          <div>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setNewFolderOpen(true)}
+              variant="outline"
+            >
+              <FolderPlus className="mr-2 h-4 w-4" />
+              New Folder
+            </Button>
             <input
               type="file"
               ref={fileInputRef}
@@ -304,6 +368,45 @@ const Files = () => {
         previewUrl={previewUrl}
         previewLoading={previewLoading}
       />
+
+      <Dialog open={newFolderOpen} onOpenChange={setNewFolderOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Folder</DialogTitle>
+            <DialogDescription>
+              Enter a name for the new folder
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder="Folder name"
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setNewFolderOpen(false)}
+              disabled={creatingFolder}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateFolder}
+              disabled={creatingFolder || !newFolderName.trim()}
+            >
+              {creatingFolder ? (
+                <>
+                  <div className="animate-spin h-4 w-4 mr-2 border-2 border-current border-t-transparent rounded-full"></div>
+                  Creating...
+                </>
+              ) : (
+                'Create Folder'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
