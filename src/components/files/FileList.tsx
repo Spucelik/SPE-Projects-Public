@@ -1,7 +1,16 @@
-
-import React from 'react';
-import { Eye, Edit, File, Folder, FileText, ImageIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import { Eye, Edit, File, Folder, FileText, ImageIcon, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -17,6 +26,8 @@ interface FileListProps {
   onFolderClick: (folder: FileItem) => void;
   onFileClick: (file: FileItem) => void;
   onViewFile: (file: FileItem) => void;
+  onDeleteFile: (file: FileItem) => Promise<void>;
+  containerId: string;
 }
 
 const FileList: React.FC<FileListProps> = ({
@@ -24,7 +35,12 @@ const FileList: React.FC<FileListProps> = ({
   onFolderClick,
   onFileClick,
   onViewFile,
+  onDeleteFile,
+  containerId,
 }) => {
+  const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const getFileIcon = (fileName: string) => {
     if (fileName.match(/\.(jpg|jpeg|png|gif|bmp|svg)$/i)) {
       return <ImageIcon className="h-5 w-5 text-blue-500" />;
@@ -52,85 +68,132 @@ const FileList: React.FC<FileListProps> = ({
     return new Date(dateString).toLocaleString();
   };
 
+  const handleDelete = async () => {
+    if (!fileToDelete) return;
+    
+    try {
+      setIsDeleting(true);
+      await onDeleteFile(fileToDelete);
+      setFileToDelete(null);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <div className="border rounded-lg overflow-hidden h-full bg-white">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Size</TableHead>
-            <TableHead>Last Modified</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {files.map((file) => (
-            <TableRow key={file.id}>
-              <TableCell>
-                {file.isFolder ? (
-                  <button
-                    onClick={() => onFolderClick(file)}
-                    className="flex items-center text-left hover:text-blue-600"
-                  >
-                    <Folder className="h-5 w-5 text-yellow-500 mr-2" />
-                    <span className="font-medium">{file.name}</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => onFileClick(file)}
-                    className="flex items-center text-left hover:text-blue-600"
-                  >
-                    {getFileIcon(file.name)}
-                    <span className="ml-2">{file.name}</span>
-                  </button>
-                )}
-              </TableCell>
-              <TableCell>
-                {file.isFolder ? (
-                  <span className="text-sm text-gray-500">
-                    {file.folder?.childCount} {file.folder?.childCount === 1 ? 'item' : 'items'}
-                  </span>
-                ) : (
-                  <span className="text-sm text-gray-500">{getFileSize(file.size)}</span>
-                )}
-              </TableCell>
-              <TableCell>
-                <span className="text-sm text-gray-500">
-                  {formatDate(file.lastModifiedDateTime)}
-                </span>
-              </TableCell>
-              <TableCell>
-                {!file.isFolder && (
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onViewFile(file)}
-                      className="text-xs"
+    <>
+      <div className="border rounded-lg overflow-hidden h-full bg-white">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Size</TableHead>
+              <TableHead>Last Modified</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {files.map((file) => (
+              <TableRow key={file.id}>
+                <TableCell>
+                  {file.isFolder ? (
+                    <button
+                      onClick={() => onFolderClick(file)}
+                      className="flex items-center text-left hover:text-blue-600"
                     >
-                      <Eye className="h-3 w-3 mr-1" />
-                      View
-                    </Button>
-                    
-                    {file.name.match(/\.(docx|xlsx|pptx|doc|xls|ppt)$/i) && (
+                      <Folder className="h-5 w-5 text-yellow-500 mr-2" />
+                      <span className="font-medium">{file.name}</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onFileClick(file)}
+                      className="flex items-center text-left hover:text-blue-600"
+                    >
+                      {getFileIcon(file.name)}
+                      <span className="ml-2">{file.name}</span>
+                    </button>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {file.isFolder ? (
+                    <span className="text-sm text-gray-500">
+                      {file.folder?.childCount} {file.folder?.childCount === 1 ? 'item' : 'items'}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-500">{getFileSize(file.size)}</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <span className="text-sm text-gray-500">
+                    {formatDate(file.lastModifiedDateTime)}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {!file.isFolder && (
+                    <div className="flex items-center space-x-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => window.open(file.webUrl, '_blank')}
+                        onClick={() => onViewFile(file)}
                         className="text-xs"
                       >
-                        <Edit className="h-3 w-3 mr-1" />
-                        Edit
+                        <Eye className="h-3 w-3 mr-1" />
+                        View
                       </Button>
-                    )}
-                  </div>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+                      
+                      {file.name.match(/\.(docx|xlsx|pptx|doc|xls|ppt)$/i) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(file.webUrl, '_blank')}
+                          className="text-xs"
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      )}
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFileToDelete(file)}
+                        className="text-xs text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <AlertDialog open={!!fileToDelete} onOpenChange={(open) => !open && setFileToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete file?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Once you delete this file, it will be available in the recycle bin for 93 days.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

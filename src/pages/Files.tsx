@@ -258,6 +258,37 @@ const Files = () => {
     }
   };
 
+  const handleDeleteFile = async (file: FileItem) => {
+    try {
+      const token = await getAccessToken();
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Failed to get access token",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await sharePointService.deleteFile(token, containerId!, file.id);
+      
+      const updatedFiles = await sharePointService.listFiles(token, containerId!, currentFolder);
+      setFiles(updatedFiles);
+
+      toast({
+        title: "Success",
+        description: "File deleted successfully",
+      });
+    } catch (error: any) {
+      console.error('Error deleting file:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete file",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -356,6 +387,8 @@ const Files = () => {
             onFolderClick={handleFolderClick}
             onFileClick={handleFileClick}
             onViewFile={handleViewFile}
+            onDeleteFile={handleDeleteFile}
+            containerId={containerId!}
           />
         ) : (
           <EmptyState onUploadClick={() => fileInputRef.current?.click()} />

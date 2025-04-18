@@ -1,4 +1,3 @@
-
 // Define our own FileItem interface
 export interface FileItem {
   id: string;
@@ -193,6 +192,25 @@ class SharePointService {
     
     const data = await response.json();
     return data.getUrl + "&nb=true"; // Add nb=true parameter as specified
+  }
+
+  // Delete a file
+  async deleteFile(token: string, driveId: string, fileId: string): Promise<void> {
+    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${driveId}/items/${fileId}`;
+    
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error deleting file:', errorText);
+      throw new Error(`Failed to delete file: ${response.status} ${response.statusText} - ${errorText}`);
+    }
   }
 }
 
