@@ -61,7 +61,7 @@ const Files = () => {
   const buildBreadcrumbPath = (folderId: string) => {
     const currentPath = breadcrumbs.findIndex(item => item.id === folderId);
     if (currentPath !== -1) {
-      setBreadcrumbs(breadcrumbs.slice(0, currentPath + 1));
+      setBreadcrumbs(prev => prev.slice(0, currentPath + 1));
       setCurrentFolder(folderId);
     }
   };
@@ -82,7 +82,9 @@ const Files = () => {
         const containerData = await sharePointService.getContainer(token, containerId);
         setContainer(containerData);
 
-        setBreadcrumbs([{ id: 'root', name: containerData.displayName }]);
+        if (currentFolder === 'root') {
+          setBreadcrumbs([{ id: 'root', name: containerData.displayName }]);
+        }
 
         const filesData = await sharePointService.listFiles(token, containerId, currentFolder);
         setFiles(filesData);
@@ -104,7 +106,7 @@ const Files = () => {
 
   const handleFolderClick = (folder: FileItem) => {
     setCurrentFolder(folder.id);
-    setBreadcrumbs([...breadcrumbs, { id: folder.id, name: folder.name }]);
+    setBreadcrumbs(prev => [...prev, { id: folder.id, name: folder.name }]);
   };
 
   const handleBreadcrumbClick = (item: BreadcrumbItem, index: number) => {
