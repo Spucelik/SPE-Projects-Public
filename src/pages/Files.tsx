@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -265,20 +264,22 @@ const Files = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full flex flex-col">
       {/* Enhanced Breadcrumb Navigation */}
-      <div className="space-y-1">
+      <div className="space-y-1 mb-4">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink as={Link} to="/">
-                <Home className="h-4 w-4" />
+              <BreadcrumbLink>
+                <Link to="/">
+                  <Home className="h-4 w-4" />
+                </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink as={Link} to="/containers">
-                Containers
+              <BreadcrumbLink>
+                <Link to="/containers">Containers</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             
@@ -341,102 +342,104 @@ const Files = () => {
         </Alert>
       )}
 
-      {loading ? (
-        <div className="animate-pulse space-y-4">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-12 bg-gray-200 rounded"></div>
-          ))}
-        </div>
-      ) : files.length > 0 ? (
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Size</TableHead>
-                <TableHead>Last Modified</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {files.map((file) => (
-                <TableRow key={file.id}>
-                  <TableCell>
-                    {file.isFolder ? (
-                      <button
-                        onClick={() => handleFolderClick(file)}
-                        className="flex items-center text-left hover:text-blue-600"
-                      >
-                        <Folder className="h-5 w-5 text-yellow-500 mr-2" />
-                        <span className="font-medium">{file.name}</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleFileClick(file)}
-                        className="flex items-center text-left hover:text-blue-600"
-                      >
-                        {getFileIcon(file.name)}
-                        <span className="ml-2">{file.name}</span>
-                      </button>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {file.isFolder ? (
-                      <span className="text-sm text-gray-500">
-                        {file.folder?.childCount} {file.folder?.childCount === 1 ? 'item' : 'items'}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-gray-500">{getFileSize(file.size)}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-gray-500">
-                      {formatDate(file.lastModifiedDateTime)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {!file.isFolder && (
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewFile(file)}
-                          className="text-xs"
+      <div className="flex-1 min-h-0 overflow-auto">
+        {loading ? (
+          <div className="animate-pulse space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-12 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        ) : files.length > 0 ? (
+          <div className="border rounded-lg overflow-hidden h-full bg-white">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Size</TableHead>
+                  <TableHead>Last Modified</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {files.map((file) => (
+                  <TableRow key={file.id}>
+                    <TableCell>
+                      {file.isFolder ? (
+                        <button
+                          onClick={() => handleFolderClick(file)}
+                          className="flex items-center text-left hover:text-blue-600"
                         >
-                          <Eye className="h-3 w-3 mr-1" />
-                          View
-                        </Button>
-                        
-                        {file.name.match(/\.(docx|xlsx|pptx|doc|xls|ppt)$/i) && (
+                          <Folder className="h-5 w-5 text-yellow-500 mr-2" />
+                          <span className="font-medium">{file.name}</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleFileClick(file)}
+                          className="flex items-center text-left hover:text-blue-600"
+                        >
+                          {getFileIcon(file.name)}
+                          <span className="ml-2">{file.name}</span>
+                        </button>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {file.isFolder ? (
+                        <span className="text-sm text-gray-500">
+                          {file.folder?.childCount} {file.folder?.childCount === 1 ? 'item' : 'items'}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-500">{getFileSize(file.size)}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-gray-500">
+                        {formatDate(file.lastModifiedDateTime)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {!file.isFolder && (
+                        <div className="flex items-center space-x-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => window.open(file.webUrl, '_blank')}
+                            onClick={() => handleViewFile(file)}
                             className="text-xs"
                           >
-                            <Edit className="h-3 w-3 mr-1" />
-                            Edit
+                            <Eye className="h-3 w-3 mr-1" />
+                            View
                           </Button>
-                        )}
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <div className="border rounded-lg p-12 text-center bg-white">
-          <File className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-1">No files found</h3>
-          <p className="text-gray-500 mb-4">Upload files to get started</p>
-          <Button onClick={() => fileInputRef.current?.click()}>
-            <Upload className="mr-2 h-4 w-4" />
-            Upload Files
-          </Button>
-        </div>
-      )}
+                          
+                          {file.name.match(/\.(docx|xlsx|pptx|doc|xls|ppt)$/i) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(file.webUrl, '_blank')}
+                              className="text-xs"
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="border rounded-lg p-12 text-center bg-white h-full flex flex-col items-center justify-center">
+            <File className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-1">No files found</h3>
+            <p className="text-gray-500 mb-4">Upload files to get started</p>
+            <Button onClick={() => fileInputRef.current?.click()}>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Files
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* File Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
