@@ -1,96 +1,63 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams, Link, Navigate, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { sharePointService, FileItem, Container } from '../services/sharePointService';
+import { sharePointService } from '../services/sharePointService';
 import { toast } from '@/hooks/use-toast';
-import { AlertCircle, Home, Upload, FolderPlus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { appConfig } from '../config/appConfig';
 import FileList from '@/components/files/FileList';
-import EmptyState from '@/components/files/EmptyState';
-import FilePreviewDialog from '@/components/files/FilePreviewDialog';
-import FileUploadProgress from '@/components/files/FileUploadProgress';
 import FolderNavigation from '@/components/files/FolderNavigation';
 
-interface BreadcrumbItem {
+interface File {
   id: string;
   name: string;
+  webUrl: string;
+  size: number;
+  fileType: string;
+  lastModifiedDateTime: string;
+}
+
+interface Folder {
+  id: string;
+  name: string;
+  webUrl: string;
 }
 
 const Files = () => {
   const { containerId } = useParams<{ containerId: string }>();
   const { isAuthenticated, getAccessToken } = useAuth();
-  const navigate = useNavigate();
-  const [files, setFiles] = useState<FileItem[]>([]);
-  const [container, setContainer] = useState<Container | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [currentFolder, setCurrentFolder] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState<boolean>(false);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [currentFolder, setCurrentFolder] = useState<string>('root');
-  const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
-  const [previewOpen, setPreviewOpen] = useState<boolean>(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState<boolean>(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [newFolderOpen, setNewFolderOpen] = useState<boolean>(false);
-  const [newFolderName, setNewFolderName] = useState<string>('');
-  const [creatingFolder, setCreatingFolder] = useState<boolean>(false);
-
-  const handleFolderNavigation = (folderId: string) => {
-    buildBreadcrumbPath(folderId);
-  };
-
-  const buildBreadcrumbPath = (folderId: string) => {
-    const currentPath = breadcrumbs.findIndex(item => item.id === folderId);
-    if (currentPath !== -1) {
-      setBreadcrumbs(prev => prev.slice(0, currentPath + 1));
-      setCurrentFolder(folderId);
-    }
-  };
+  const [showConfigInfo, setShowConfigInfo] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated || !containerId) return;
 
-    const fetchContainerAndFiles = async () => {
+    const fetchFilesAndFolders = async () => {
       try {
         setLoading(true);
         setError(null);
         const token = await getAccessToken();
         if (!token) {
-          setError("Failed to get access token");
+          setError("Failed to get access token. Please try logging in again.");
+          toast({
+            title: "Authentication Error",
+            description: "Failed to get access token",
+            variant: "destructive",
+          });
           return;
         }
 
-        const containerData = await sharePointService.getContainer(token, containerId);
-        setContainer(containerData);
-
-        if (currentFolder === 'root') {
-          setBreadcrumbs([{ id: 'root', name: containerData.displayName }]);
-        }
-
-        const filesData = await sharePointService.listFiles(token, containerId, currentFolder);
-        setFiles(filesData);
+        const { files: fetchedFiles, folders: fetchedFolders } = await sharePointService.getFilesAndFolders(token, containerId, currentFolder);
+        setFiles(fetchedFiles);
+        setFolders(fetchedFolders);
       } catch (error: any) {
         console.error('Error fetching files:', error);
-        setError(error.message || "Failed to fetch files");
+        setError(error.message || "Failed to fetch files. This may be due to insufficient permissions or API limitations.");
         toast({
           title: "Error",
           description: "Failed to fetch files. Please check console for details.",
@@ -101,365 +68,65 @@ const Files = () => {
       }
     };
 
-    fetchContainerAndFiles();
+    fetchFilesAndFolders();
   }, [isAuthenticated, getAccessToken, containerId, currentFolder]);
 
-  const handleFolderClick = (folder: FileItem) => {
-    setCurrentFolder(folder.id);
-    setBreadcrumbs(prev => [...prev, { id: folder.id, name: folder.name }]);
+  const handleFolderClick = (folderId: string) => {
+    setCurrentFolder(folderId);
   };
 
-  const handleBreadcrumbClick = (item: BreadcrumbItem, index: number) => {
-    setCurrentFolder(item.id);
-    setBreadcrumbs(breadcrumbs.slice(0, index + 1));
+  const handleNavigateUp = () => {
+    setCurrentFolder('');
   };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0 || !containerId) return;
-
-    setUploading(true);
-    setUploadProgress(0);
-
-    const token = await getAccessToken();
-    if (!token) {
-      toast({
-        title: "Authentication Error",
-        description: "Failed to get access token",
-        variant: "destructive",
-      });
-      setUploading(false);
-      return;
-    }
-
-    try {
-      let totalFiles = files.length;
-      let completedFiles = 0;
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        await sharePointService.uploadFile(token, containerId, currentFolder, file);
-        completedFiles++;
-        setUploadProgress(Math.round((completedFiles / totalFiles) * 100));
-      }
-
-      const updatedFiles = await sharePointService.listFiles(token, containerId, currentFolder);
-      setFiles(updatedFiles);
-
-      toast({
-        title: "Upload Complete",
-        description: `Successfully uploaded ${files.length} file(s)`,
-      });
-    } catch (error: any) {
-      console.error('File upload error:', error);
-      toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload files",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
-
-  const handleFileClick = async (file: FileItem) => {
-    if (file.name.match(/\.(docx|xlsx|pptx|doc|xls|ppt)$/i)) {
-      window.open(file.webUrl, '_blank');
-      return;
-    }
-
-    try {
-      setPreviewLoading(true);
-      const token = await getAccessToken();
-      if (!token) {
-        toast({
-          title: "Authentication Error",
-          description: "Failed to get access token",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const url = await sharePointService.getFilePreview(token, containerId!, file.id);
-      setPreviewUrl(url);
-      setPreviewOpen(true);
-    } catch (error: any) {
-      console.error('Error getting preview:', error);
-      toast({
-        title: "Preview Error",
-        description: error.message || "Failed to get file preview",
-        variant: "destructive",
-      });
-    } finally {
-      setPreviewLoading(false);
-    }
-  };
-
-  const handleViewFile = async (file: FileItem) => {
-    if (file.isFolder) return;
-    
-    try {
-      setPreviewLoading(true);
-      const token = await getAccessToken();
-      if (!token) {
-        toast({
-          title: "Authentication Error",
-          description: "Failed to get access token",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const url = await sharePointService.getFilePreview(token, containerId!, file.id);
-      setPreviewUrl(url);
-      setPreviewOpen(true);
-    } catch (error: any) {
-      console.error('Error getting preview:', error);
-      toast({
-        title: "Preview Error",
-        description: error.message || "Failed to get file preview",
-        variant: "destructive",
-      });
-    } finally {
-      setPreviewLoading(false);
-    }
-  };
-
-  const handleCreateFolder = async () => {
-    if (!newFolderName.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Folder name cannot be empty",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setCreatingFolder(true);
-      const token = await getAccessToken();
-      if (!token) {
-        toast({
-          title: "Authentication Error",
-          description: "Failed to get access token",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      await sharePointService.createFolder(token, containerId!, currentFolder, newFolderName);
-      const updatedFiles = await sharePointService.listFiles(token, containerId!, currentFolder);
-      setFiles(updatedFiles);
-
-      toast({
-        title: "Success",
-        description: `Folder "${newFolderName}" created successfully`,
-      });
-      
-      setNewFolderName('');
-      setNewFolderOpen(false);
-    } catch (error: any) {
-      console.error('Error creating folder:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create folder",
-        variant: "destructive",
-      });
-    } finally {
-      setCreatingFolder(false);
-    }
-  };
-
-  const handleDeleteFile = async (file: FileItem) => {
-    try {
-      const token = await getAccessToken();
-      if (!token) {
-        toast({
-          title: "Authentication Error",
-          description: "Failed to get access token",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      await sharePointService.deleteFile(token, containerId!, file.id);
-      
-      const updatedFiles = await sharePointService.listFiles(token, containerId!, currentFolder);
-      setFiles(updatedFiles);
-
-      toast({
-        title: "Success",
-        description: "File deleted successfully",
-      });
-    } catch (error: any) {
-      console.error('Error deleting file:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete file",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (!containerId) {
-    return <Navigate to="/containers" replace />;
-  }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="space-y-4 mb-4">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink>
-                <Link to="/" className="flex items-center">
-                  <Home className="h-4 w-4" />
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink>
-                <Link to="/containers">Containers</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            
-            {breadcrumbs.map((item, index) => (
-              <React.Fragment key={item.id}>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  {index === breadcrumbs.length - 1 ? (
-                    <BreadcrumbPage>{item.name}</BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink 
-                      onClick={() => buildBreadcrumbPath(item.id)}
-                      className="cursor-pointer hover:text-blue-600"
-                    >
-                      {item.name}
-                    </BreadcrumbLink>
-                  )}
-                </BreadcrumbItem>
-              </React.Fragment>
-            ))}
-          </BreadcrumbList>
-        </Breadcrumb>
-        
-        <FolderNavigation 
-          currentPath={breadcrumbs} 
-          onNavigate={handleFolderNavigation} 
-        />
-
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">{container?.displayName || 'Files'}</h1>
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => setNewFolderOpen(true)}
-              variant="outline"
-            >
-              <FolderPlus className="mr-2 h-4 w-4" />
-              New Folder
-            </Button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              className="hidden"
-              multiple
-            />
-            <Button 
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              Upload Files
-            </Button>
+    <div className="space-y-6">
+      {showConfigInfo && (
+        <Alert className="bg-blue-50 border-blue-200 text-blue-700 flex justify-between items-center">
+          <div className="flex items-center">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            <div>
+              <AlertTitle>Configuration Information</AlertTitle>
+              <AlertDescription>
+                <p>You must configure these values in the app configuration:</p>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li><strong>CLIENT_ID:</strong> {appConfig.clientId}</li>
+                  <li><strong>TENANT_ID:</strong> {appConfig.tenantId}</li>
+                  <li><strong>CONTAINER_TYPE_ID:</strong> {appConfig.containerTypeId}</li>
+                </ul>
+              </AlertDescription>
+            </div>
           </div>
-        </div>
-      </div>
+          <button 
+            onClick={() => setShowConfigInfo(false)}
+            className="text-sm text-blue-700 hover:underline ml-4"
+          >
+            Hide
+          </button>
+        </Alert>
+      )}
 
-      <FileUploadProgress uploading={uploading} progress={uploadProgress} />
-      
+      <FolderNavigation 
+        currentFolder={currentFolder}
+        onNavigateUp={handleNavigateUp}
+      />
+
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>
+            {error}
+          </AlertDescription>
         </Alert>
       )}
 
-      <div className="flex-1 min-h-0 overflow-auto">
-        {loading ? (
-          <div className="animate-pulse space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-12 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-        ) : files.length > 0 ? (
-          <FileList
-            files={files}
-            onFolderClick={handleFolderClick}
-            onFileClick={handleFileClick}
-            onViewFile={handleViewFile}
-            onDeleteFile={handleDeleteFile}
-            containerId={containerId!}
-          />
-        ) : (
-          <EmptyState onUploadClick={() => fileInputRef.current?.click()} />
-        )}
-      </div>
-
-      <FilePreviewDialog
-        isOpen={previewOpen}
-        onOpenChange={setPreviewOpen}
-        previewUrl={previewUrl}
-        previewLoading={previewLoading}
+      <FileList 
+        files={files}
+        folders={folders}
+        loading={loading}
+        onFolderClick={handleFolderClick}
       />
-
-      <Dialog open={newFolderOpen} onOpenChange={setNewFolderOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Folder</DialogTitle>
-            <DialogDescription>
-              Enter a name for the new folder
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            placeholder="Folder name"
-            value={newFolderName}
-            onChange={(e) => setNewFolderName(e.target.value)}
-            autoFocus
-          />
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setNewFolderOpen(false)}
-              disabled={creatingFolder}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreateFolder}
-              disabled={creatingFolder || !newFolderName.trim()}
-            >
-              {creatingFolder ? (
-                <>
-                  <div className="animate-spin h-4 w-4 mr-2 border-2 border-current border-t-transparent rounded-full"></div>
-                  Creating...
-                </>
-              ) : (
-                'Create Folder'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
