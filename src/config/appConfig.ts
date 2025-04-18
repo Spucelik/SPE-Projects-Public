@@ -24,7 +24,6 @@ export const appConfig = {
     graphBaseUrl: "https://graph.microsoft.com/v1.0",
     fileStorage: "/storage/fileStorage",
     containers: "/containers",
-    containerTypes: "/containerTypes",
     drives: "/drives",
   }
 };

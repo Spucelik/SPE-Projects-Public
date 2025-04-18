@@ -25,9 +25,9 @@ class SharePointService {
   // List containers
   async listContainers(token: string): Promise<Container[]> {
     try {
-      // Use the correct API endpoint for SharePoint Embedded
-      // The API path should include the containerTypeId
-      const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containerTypes/${appConfig.containerTypeId}/containers`;
+      // API endpoint for SharePoint Embedded containers
+      // Based on the error, we need to use a different endpoint structure
+      const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers`;
       
       console.log('Listing containers with URL:', url);
       
@@ -72,11 +72,12 @@ class SharePointService {
   
   // Create a container
   async createContainer(token: string, displayName: string, description: string = ''): Promise<Container> {
-    const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containerTypes/${appConfig.containerTypeId}/containers`;
+    const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers`;
     
     const body = {
       displayName,
-      description
+      description,
+      containerTypeId: appConfig.containerTypeId
     };
     
     const response = await fetch(url, {
