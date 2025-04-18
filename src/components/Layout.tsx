@@ -111,9 +111,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </header>
 
           <main className="flex-1 overflow-auto p-6">
-            <div className="mb-4 p-3 border rounded-md bg-yellow-50 text-amber-800">
-              <strong>Configuration Required:</strong> You must configure <code>CLIENT_ID</code>, <code>TENANT_ID</code>, and <code>CONTAINER_TYPE_ID</code> in the appConfig.ts file before this application will work.
-            </div>
             {children}
           </main>
 
