@@ -40,7 +40,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="flex h-screen w-full">
         <Sidebar>
           <SidebarHeader className="px-4 py-3 border-b">
-            <div className="text-xl font-semibold">SharePoint File Upload</div>
+            <div className="text-xl font-semibold">SharePoint Embedded File Upload</div>
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
@@ -90,7 +90,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <header className="flex justify-between items-center px-6 py-3 bg-white border-b">
             <div className="flex items-center gap-2">
               <SidebarTrigger />
-              <h1 className="text-xl font-semibold">SharePoint File Upload</h1>
+              <h1 className="text-xl font-semibold">SharePoint Embedded File Upload</h1>
             </div>
             
             <div className="flex items-center gap-4">

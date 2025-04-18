@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { appConfig } from '../config/appConfig';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const Login = () => {
   const { isAuthenticated, login } = useAuth();
@@ -40,14 +43,24 @@ const Login = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow">
         <div className="text-center">
-          <h1 className="text-3xl font-bold">SharePoint File Upload</h1>
+          <h1 className="text-3xl font-bold">SharePoint Embedded File Upload</h1>
           <p className="mt-2 text-gray-600">Sign in with your Microsoft account</p>
         </div>
         
+        <Alert className="bg-blue-50 border-blue-200 text-blue-700">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Configuration Required</AlertTitle>
+          <AlertDescription>
+            You must configure CLIENT_ID, TENANT_ID, and CONTAINER_TYPE_ID before this will work.
+          </AlertDescription>
+        </Alert>
+        
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded">
-            {error}
-          </div>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
         
         <button

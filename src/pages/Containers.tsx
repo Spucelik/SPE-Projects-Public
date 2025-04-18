@@ -25,6 +25,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { appConfig } from '../config/appConfig';
 
 interface Container {
   id: string;
@@ -86,7 +95,7 @@ const Containers = () => {
     if (!containerName.trim()) {
       toast({
         title: "Validation Error",
-        description: "Folder name is required",
+        description: "Container name is required",
         variant: "destructive",
       });
       return;
@@ -117,13 +126,13 @@ const Containers = () => {
       
       toast({
         title: "Success",
-        description: `Folder "${containerName}" created successfully`,
+        description: `Container "${containerName}" created successfully`,
       });
     } catch (error: any) {
-      console.error('Error creating folder:', error);
+      console.error('Error creating container:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create folder",
+        description: error.message || "Failed to create container",
         variant: "destructive",
       });
     } finally {
@@ -148,12 +157,20 @@ const Containers = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Shared Folders</h1>
+        <h1 className="text-2xl font-bold">Containers</h1>
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Create Folder
+          Create Container
         </Button>
       </div>
+      
+      <Alert className="bg-blue-50 border-blue-200 text-blue-700">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Configuration Information</AlertTitle>
+        <AlertDescription>
+          <p>Current container type ID: <span className="font-mono">{appConfig.containerTypeId}</span></p>
+        </AlertDescription>
+      </Alert>
       
       {error && (
         <Alert variant="destructive">
@@ -173,55 +190,41 @@ const Containers = () => {
         </div>
       ) : containers.length > 0 ? (
         <div className="border rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Description
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {containers.map((container) => (
-                <tr key={container.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                <TableRow key={container.id}>
+                  <TableCell>
                     <div className="flex items-center">
-                      <Folder className="flex-shrink-0 h-5 w-5 text-gray-400" />
-                      <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">
-                          <Link
-                            to={`/files/${container.id}`}
-                            className="hover:text-blue-600"
-                          >
-                            {container.displayName}
-                          </Link>
-                        </div>
-                      </div>
+                      <Folder className="flex-shrink-0 h-5 w-5 text-gray-400 mr-2" />
+                      <Link
+                        to={`/files/${container.id}`}
+                        className="hover:text-blue-600 font-medium"
+                      >
+                        {container.displayName}
+                      </Link>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500 truncate max-w-xs">
-                      {container.description || "-"}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  </TableCell>
+                  <TableCell className="text-gray-500 truncate max-w-xs">
+                    {container.description || "-"}
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center">
                       <Calendar className="flex-shrink-0 h-4 w-4 text-gray-400 mr-1" />
-                      <div className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500">
                         {formatDate(container.createdDateTime)}
-                      </div>
+                      </span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  </TableCell>
+                  <TableCell>
                     <button 
                       onClick={() => viewContainerInfo(container)}
                       className="text-blue-600 hover:text-blue-800 flex items-center"
@@ -229,20 +232,20 @@ const Containers = () => {
                       <Info className="h-4 w-4 mr-1" />
                       Details
                     </button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       ) : (
         <div className="border rounded-lg p-12 text-center bg-white">
           <Folder className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-1">No shared folders found</h3>
-          <p className="text-gray-500 mb-4">Create your first folder or check your Microsoft 365 permissions</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">No containers found</h3>
+          <p className="text-gray-500 mb-4">Create your first container to get started</p>
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Create Folder
+            Create Container
           </Button>
         </div>
       )}
@@ -251,9 +254,9 @@ const Containers = () => {
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Create Folder</SheetTitle>
+            <SheetTitle>Create Container</SheetTitle>
             <SheetDescription>
-              Create a new folder to store and organize your files.
+              Create a new container to store and organize your files.
             </SheetDescription>
           </SheetHeader>
           <div className="space-y-4 py-4">
@@ -263,7 +266,7 @@ const Containers = () => {
                 id="name" 
                 value={containerName}
                 onChange={(e) => setContainerName(e.target.value)}
-                placeholder="Enter folder name"
+                placeholder="Enter container name"
               />
             </div>
             <div className="space-y-2">
@@ -272,7 +275,7 @@ const Containers = () => {
                 id="description" 
                 value={containerDescription}
                 onChange={(e) => setContainerDescription(e.target.value)}
-                placeholder="Enter folder description"
+                placeholder="Enter container description"
                 rows={3}
               />
             </div>
@@ -285,7 +288,7 @@ const Containers = () => {
               onClick={createContainer} 
               disabled={creating || !containerName.trim()}
             >
-              {creating ? "Creating..." : "Create Folder"}
+              {creating ? "Creating..." : "Create Container"}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -295,7 +298,7 @@ const Containers = () => {
       <Sheet open={infoOpen} onOpenChange={setInfoOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Folder Details</SheetTitle>
+            <SheetTitle>Container Details</SheetTitle>
           </SheetHeader>
           {selectedContainer && (
             <div className="py-4">
@@ -309,9 +312,15 @@ const Containers = () => {
                   <p className="mt-1">{selectedContainer.description || "-"}</p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Folder ID</h3>
+                  <h3 className="text-sm font-medium text-gray-500">Container ID</h3>
                   <p className="mt-1 text-sm font-mono bg-gray-100 p-2 rounded overflow-auto">
                     {selectedContainer.id}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Container Type ID</h3>
+                  <p className="mt-1 text-sm font-mono bg-gray-100 p-2 rounded overflow-auto">
+                    {selectedContainer.containerTypeId}
                   </p>
                 </div>
                 <div>

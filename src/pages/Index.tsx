@@ -6,6 +6,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { Folder, Settings, AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { appConfig } from '../config/appConfig';
 
 interface Container {
   id: string;
@@ -65,11 +66,24 @@ const Index = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold mb-2">Welcome to SharePoint File Upload</h1>
+        <h1 className="text-2xl font-bold mb-2">Welcome to SharePoint Embedded File Upload</h1>
         <p className="text-gray-600">
-          This application allows you to manage and upload files to your OneDrive and SharePoint sites.
+          This application allows you to manage and upload files to your SharePoint Embedded containers.
         </p>
       </div>
+
+      <Alert className="bg-blue-50 border-blue-200 text-blue-700">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Configuration Information</AlertTitle>
+        <AlertDescription>
+          <p>You must configure these values in the app configuration:</p>
+          <ul className="list-disc list-inside mt-2 space-y-1">
+            <li><strong>CLIENT_ID:</strong> {appConfig.clientId}</li>
+            <li><strong>TENANT_ID:</strong> {appConfig.tenantId}</li>
+            <li><strong>CONTAINER_TYPE_ID:</strong> {appConfig.containerTypeId}</li>
+          </ul>
+        </AlertDescription>
+      </Alert>
       
       {error && (
         <Alert variant="destructive">
@@ -85,7 +99,7 @@ const Index = () => {
         <div className="border rounded-lg p-6 bg-white shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Folder className="text-blue-500" />
-            <h2 className="text-xl font-semibold">Shared Folders</h2>
+            <h2 className="text-xl font-semibold">Your Containers</h2>
           </div>
           {loading ? (
             <div className="animate-pulse space-y-3">
@@ -95,7 +109,7 @@ const Index = () => {
             </div>
           ) : error ? (
             <div className="text-red-500">
-              <p>There was an error loading folders.</p>
+              <p>There was an error loading containers.</p>
             </div>
           ) : containers.length > 0 ? (
             <ul className="space-y-2">
@@ -114,14 +128,14 @@ const Index = () => {
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500">No shared folders found. You may need additional permissions or check if folders have been shared with you.</p>
+            <p className="text-gray-500">No containers found. Create your first container to get started.</p>
           )}
           <div className="mt-4">
             <Link 
               to="/containers" 
               className="text-blue-600 hover:underline text-sm"
             >
-              View all folders →
+              View all containers →
             </Link>
           </div>
         </div>
@@ -132,20 +146,20 @@ const Index = () => {
             <h2 className="text-xl font-semibold">Getting Started</h2>
           </div>
           <ol className="list-decimal list-inside space-y-3 text-gray-700">
-            <li>Make sure you have the correct permissions in your Microsoft 365 account</li>
-            <li>Create a new folder or browse existing ones</li>
-            <li>Upload files to your folders</li>
-            <li>Browse and preview files in folders</li>
+            <li>Make sure you have the correct permissions in your Microsoft tenant</li>
+            <li>Create a new container or browse existing ones</li>
+            <li>Upload files to your containers</li>
+            <li>Browse and preview files in containers</li>
           </ol>
           <div className="mt-6 p-4 bg-gray-100 rounded-md text-sm">
             <p className="font-semibold">Need help?</p>
             <a 
-              href="https://learn.microsoft.com/en-us/graph/api/resources/onedrive?view=graph-rest-1.0" 
+              href="https://aka.ms/start-spe" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
             >
-              Microsoft Graph OneDrive API Documentation →
+              Get Started with SharePoint Embedded →
             </a>
           </div>
         </div>
