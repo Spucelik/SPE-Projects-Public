@@ -53,6 +53,14 @@ const Files = () => {
   const [newFolderName, setNewFolderName] = useState<string>('');
   const [creatingFolder, setCreatingFolder] = useState<boolean>(false);
 
+  const buildBreadcrumbPath = (folderId: string) => {
+    const currentPath = breadcrumbs.findIndex(item => item.id === folderId);
+    if (currentPath !== -1) {
+      setBreadcrumbs(breadcrumbs.slice(0, currentPath + 1));
+      setCurrentFolder(folderId);
+    }
+  };
+
   useEffect(() => {
     if (!isAuthenticated || !containerId) return;
 
@@ -324,8 +332,8 @@ const Files = () => {
                     <BreadcrumbPage>{item.name}</BreadcrumbPage>
                   ) : (
                     <BreadcrumbLink 
-                      onClick={() => handleBreadcrumbClick(item, index)}
-                      className="cursor-pointer"
+                      onClick={() => buildBreadcrumbPath(item.id)}
+                      className="cursor-pointer hover:text-blue-600"
                     >
                       {item.name}
                     </BreadcrumbLink>
