@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -34,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { appConfig } from '../config/appConfig';
+import { ConfigAlert } from '../components/ConfigAlert';
 
 interface Container {
   id: string;
@@ -149,7 +149,6 @@ const Containers = () => {
     return new Date(dateString).toLocaleString();
   };
 
-  // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -164,13 +163,7 @@ const Containers = () => {
         </Button>
       </div>
       
-      <Alert className="bg-blue-50 border-blue-200 text-blue-700">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Configuration Information</AlertTitle>
-        <AlertDescription>
-          <p>Current container type ID: <span className="font-mono">{appConfig.containerTypeId}</span></p>
-        </AlertDescription>
-      </Alert>
+      <ConfigAlert />
       
       {error && (
         <Alert variant="destructive">
@@ -250,7 +243,6 @@ const Containers = () => {
         </div>
       )}
       
-      {/* Create Container Sheet */}
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>
         <SheetContent>
           <SheetHeader>
@@ -294,7 +286,6 @@ const Containers = () => {
         </SheetContent>
       </Sheet>
       
-      {/* Container Info Sheet */}
       <Sheet open={infoOpen} onOpenChange={setInfoOpen}>
         <SheetContent>
           <SheetHeader>

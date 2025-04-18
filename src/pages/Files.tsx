@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +8,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { appConfig } from '../config/appConfig';
 import FileList from '@/components/files/FileList';
 import FolderNavigation from '@/components/files/FolderNavigation';
+import { ConfigAlert } from '../components/ConfigAlert';
 
 interface File {
   id: string;
@@ -61,10 +61,8 @@ const Files = () => {
           return;
         }
 
-        // Use the existing listFiles method instead of listFilesAndFolders
         const fileItems = await sharePointService.listFiles(token, containerId, currentFolder);
         
-        // Separate files and folders from the returned items
         const fileList: File[] = [];
         const folderList: Folder[] = [];
         
@@ -106,20 +104,16 @@ const Files = () => {
   }, [isAuthenticated, getAccessToken, containerId, currentFolder]);
 
   const handleFolderClick = (folderId: string, folderName: string) => {
-    // Update current folder
     setCurrentFolder(folderId);
     
-    // Update breadcrumb path
     if (folderId) {
       setCurrentPath(prev => [...prev, { id: folderId, name: folderName }]);
     }
   };
 
   const handleNavigate = (folderId: string) => {
-    // Find the index of the folder in the current path
     const folderIndex = currentPath.findIndex(item => item.id === folderId);
     
-    // If found, truncate the path to that point and set the current folder
     if (folderIndex !== -1) {
       setCurrentPath(currentPath.slice(0, folderIndex + 1));
       setCurrentFolder(folderId);
@@ -128,31 +122,8 @@ const Files = () => {
 
   return (
     <div className="space-y-6">
-      {showConfigInfo && (
-        <Alert className="bg-blue-50 border-blue-200 text-blue-700 flex justify-between items-center">
-          <div className="flex items-center">
-            <AlertCircle className="h-4 w-4 mr-2" />
-            <div>
-              <AlertTitle>Configuration Information</AlertTitle>
-              <AlertDescription>
-                <p>You must configure these values in the app configuration:</p>
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li><strong>CLIENT_ID:</strong> {appConfig.clientId}</li>
-                  <li><strong>TENANT_ID:</strong> {appConfig.tenantId}</li>
-                  <li><strong>CONTAINER_TYPE_ID:</strong> {appConfig.containerTypeId}</li>
-                </ul>
-              </AlertDescription>
-            </div>
-          </div>
-          <button 
-            onClick={() => setShowConfigInfo(false)}
-            className="text-sm text-blue-700 hover:underline ml-4"
-          >
-            Hide
-          </button>
-        </Alert>
-      )}
-
+      <ConfigAlert />
+      
       <FolderNavigation 
         currentPath={currentPath}
         onNavigate={handleNavigate}
