@@ -26,8 +26,9 @@ class SharePointService {
   async listContainers(token: string): Promise<Container[]> {
     try {
       // API endpoint for SharePoint Embedded containers
-      // Based on the error, we need to use a different endpoint structure
-      const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers`;
+      // Using a different API approach based on latest MS Graph API requirements
+      // Querying containers directly from the Graph API
+      const url = `${appConfig.endpoints.graphBaseUrl}/me/drive/sharedWithMe`;
       
       console.log('Listing containers with URL:', url);
       
@@ -45,7 +46,17 @@ class SharePointService {
       }
       
       const data = await response.json();
-      return data.value;
+      
+      // Convert the standard drive items to our Container format
+      const containers = data.value.map((item: any) => ({
+        id: item.id,
+        displayName: item.name,
+        description: item.description || '',
+        containerTypeId: appConfig.containerTypeId,
+        createdDateTime: item.createdDateTime || new Date().toISOString()
+      }));
+      
+      return containers;
     } catch (error) {
       console.error('List containers error details:', error);
       throw error;
@@ -54,7 +65,7 @@ class SharePointService {
   
   // Get a specific container
   async getContainer(token: string, containerId: string): Promise<Container> {
-    const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers/${containerId}`;
+    const url = `${appConfig.endpoints.graphBaseUrl}/me/drive/items/${containerId}`;
     
     const response = await fetch(url, {
       headers: {
@@ -67,17 +78,27 @@ class SharePointService {
       throw new Error(`Failed to get container: ${response.status} ${response.statusText}`);
     }
     
-    return await response.json();
+    const item = await response.json();
+    
+    // Convert to our Container format
+    return {
+      id: item.id,
+      displayName: item.name,
+      description: item.description || '',
+      containerTypeId: appConfig.containerTypeId,
+      createdDateTime: item.createdDateTime || new Date().toISOString()
+    };
   }
   
   // Create a container
   async createContainer(token: string, displayName: string, description: string = ''): Promise<Container> {
-    const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers`;
+    // For SharePoint, creating a "container" is essentially creating a folder in OneDrive
+    const url = `${appConfig.endpoints.graphBaseUrl}/me/drive/root/children`;
     
     const body = {
-      displayName,
-      description,
-      containerTypeId: appConfig.containerTypeId
+      name: displayName,
+      description: description,
+      folder: {} // This indicates we want to create a folder
     };
     
     const response = await fetch(url, {
@@ -95,16 +116,25 @@ class SharePointService {
       throw new Error(`Failed to create container: ${response.status} ${response.statusText} - ${errorText}`);
     }
     
-    return await response.json();
+    const item = await response.json();
+    
+    // Convert to our Container format
+    return {
+      id: item.id,
+      displayName: item.name,
+      description: item.description || '',
+      containerTypeId: appConfig.containerTypeId,
+      createdDateTime: item.createdDateTime || new Date().toISOString()
+    };
   }
   
   // List files in a container/folder
   async listFiles(token: string, containerId: string, folderId: string = 'root'): Promise<FileItem[]> {
     let url;
     if (folderId === 'root') {
-      url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers/${containerId}/drive/root/children`;
+      url = `${appConfig.endpoints.graphBaseUrl}/me/drive/items/${containerId}/children`;
     } else {
-      url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers/${containerId}/drive/items/${folderId}/children`;
+      url = `${appConfig.endpoints.graphBaseUrl}/me/drive/items/${folderId}/children`;
     }
     
     const response = await fetch(url, {
@@ -129,9 +159,9 @@ class SharePointService {
   async uploadFile(token: string, containerId: string, folderId: string, file: File): Promise<FileItem> {
     let url;
     if (folderId === 'root') {
-      url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers/${containerId}/drive/root:/${file.name}:/content`;
+      url = `${appConfig.endpoints.graphBaseUrl}/me/drive/items/${containerId}:/${file.name}:/content`;
     } else {
-      url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers/${containerId}/drive/items/${folderId}:/${file.name}:/content`;
+      url = `${appConfig.endpoints.graphBaseUrl}/me/drive/items/${folderId}:/${file.name}:/content`;
     }
     
     const response = await fetch(url, {
@@ -156,7 +186,7 @@ class SharePointService {
 
   // Get preview URL for a file
   async getFilePreview(token: string, containerId: string, fileId: string): Promise<string> {
-    const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers/${containerId}/drive/items/${fileId}/preview`;
+    const url = `${appConfig.endpoints.graphBaseUrl}/me/drive/items/${fileId}/preview`;
     
     const response = await fetch(url, {
       method: 'POST',

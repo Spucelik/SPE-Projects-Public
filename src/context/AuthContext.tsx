@@ -56,9 +56,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await msalInstance.initialize();
       }
       
-      // Define proper scopes for SharePoint Embedded access
+      // Define proper scopes for OneDrive and SharePoint access
       const loginRequest = {
-        scopes: ["https://graph.microsoft.com/.default"]
+        scopes: ["https://graph.microsoft.com/.default", "Files.ReadWrite.All", "Sites.ReadWrite.All"]
       };
       
       // Log relevant information for debugging
@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('Acquiring token silently for account:', accounts[0].username);
       
       const tokenRequest = {
-        scopes: ["https://graph.microsoft.com/.default"],
+        scopes: ["https://graph.microsoft.com/.default", "Files.ReadWrite.All", "Sites.ReadWrite.All"],
         account: accounts[0]
       };
 
@@ -121,7 +121,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         // If silent acquisition fails, try popup
         const tokenResponse = await msalInstance.acquireTokenPopup({
-          scopes: ["https://graph.microsoft.com/.default"]
+          scopes: ["https://graph.microsoft.com/.default", "Files.ReadWrite.All", "Sites.ReadWrite.All"]
         });
         console.log('Token acquired with popup');
         return tokenResponse.accessToken;

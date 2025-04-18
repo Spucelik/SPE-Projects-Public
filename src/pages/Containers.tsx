@@ -8,7 +8,8 @@ import {
   Folder, 
   Plus,
   Calendar,
-  Info
+  Info,
+  AlertCircle
 } from 'lucide-react';
 import { 
   Sheet, 
@@ -23,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface Container {
   id: string;
@@ -42,6 +44,7 @@ const Containers = () => {
   const [creating, setCreating] = useState<boolean>(false);
   const [infoOpen, setInfoOpen] = useState<boolean>(false);
   const [selectedContainer, setSelectedContainer] = useState<Container | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -49,8 +52,10 @@ const Containers = () => {
     const fetchContainers = async () => {
       try {
         setLoading(true);
+        setError(null);
         const token = await getAccessToken();
         if (!token) {
+          setError("Failed to get access token. Please try logging in again.");
           toast({
             title: "Authentication Error",
             description: "Failed to get access token",
@@ -61,11 +66,12 @@ const Containers = () => {
 
         const containersData = await sharePointService.listContainers(token);
         setContainers(containersData);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching containers:', error);
+        setError(error.message || "Failed to fetch containers. This may be due to insufficient permissions or API limitations.");
         toast({
           title: "Error",
-          description: "Failed to fetch containers",
+          description: "Failed to fetch containers. Please check console for details.",
           variant: "destructive",
         });
       } finally {
@@ -80,7 +86,7 @@ const Containers = () => {
     if (!containerName.trim()) {
       toast({
         title: "Validation Error",
-        description: "Container name is required",
+        description: "Folder name is required",
         variant: "destructive",
       });
       return;
@@ -111,13 +117,13 @@ const Containers = () => {
       
       toast({
         title: "Success",
-        description: `Container "${containerName}" created successfully`,
+        description: `Folder "${containerName}" created successfully`,
       });
-    } catch (error) {
-      console.error('Error creating container:', error);
+    } catch (error: any) {
+      console.error('Error creating folder:', error);
       toast({
         title: "Error",
-        description: "Failed to create container",
+        description: error.message || "Failed to create folder",
         variant: "destructive",
       });
     } finally {
@@ -142,12 +148,22 @@ const Containers = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Containers</h1>
+        <h1 className="text-2xl font-bold">Shared Folders</h1>
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Create Container
+          Create Folder
         </Button>
       </div>
+      
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
       
       {loading ? (
         <div className="animate-pulse space-y-4">
@@ -222,11 +238,11 @@ const Containers = () => {
       ) : (
         <div className="border rounded-lg p-12 text-center bg-white">
           <Folder className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-1">No containers found</h3>
-          <p className="text-gray-500 mb-4">Create your first container to get started</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">No shared folders found</h3>
+          <p className="text-gray-500 mb-4">Create your first folder or check your Microsoft 365 permissions</p>
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Create Container
+            Create Folder
           </Button>
         </div>
       )}
@@ -235,9 +251,9 @@ const Containers = () => {
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Create Container</SheetTitle>
+            <SheetTitle>Create Folder</SheetTitle>
             <SheetDescription>
-              Create a new container to store and organize your files.
+              Create a new folder to store and organize your files.
             </SheetDescription>
           </SheetHeader>
           <div className="space-y-4 py-4">
@@ -247,7 +263,7 @@ const Containers = () => {
                 id="name" 
                 value={containerName}
                 onChange={(e) => setContainerName(e.target.value)}
-                placeholder="Enter container name"
+                placeholder="Enter folder name"
               />
             </div>
             <div className="space-y-2">
@@ -256,7 +272,7 @@ const Containers = () => {
                 id="description" 
                 value={containerDescription}
                 onChange={(e) => setContainerDescription(e.target.value)}
-                placeholder="Enter container description"
+                placeholder="Enter folder description"
                 rows={3}
               />
             </div>
@@ -269,7 +285,7 @@ const Containers = () => {
               onClick={createContainer} 
               disabled={creating || !containerName.trim()}
             >
-              {creating ? "Creating..." : "Create Container"}
+              {creating ? "Creating..." : "Create Folder"}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -279,7 +295,7 @@ const Containers = () => {
       <Sheet open={infoOpen} onOpenChange={setInfoOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Container Details</SheetTitle>
+            <SheetTitle>Folder Details</SheetTitle>
           </SheetHeader>
           {selectedContainer && (
             <div className="py-4">
@@ -293,15 +309,9 @@ const Containers = () => {
                   <p className="mt-1">{selectedContainer.description || "-"}</p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Container ID</h3>
+                  <h3 className="text-sm font-medium text-gray-500">Folder ID</h3>
                   <p className="mt-1 text-sm font-mono bg-gray-100 p-2 rounded overflow-auto">
                     {selectedContainer.id}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Container Type ID</h3>
-                  <p className="mt-1 text-sm font-mono bg-gray-100 p-2 rounded overflow-auto">
-                    {selectedContainer.containerTypeId}
                   </p>
                 </div>
                 <div>
