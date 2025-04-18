@@ -26,7 +26,8 @@ class SharePointService {
   async listContainers(token: string): Promise<Container[]> {
     try {
       // Use the correct API endpoint for SharePoint Embedded
-      const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers`;
+      // The API path should include the containerTypeId
+      const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containerTypes/${appConfig.containerTypeId}/containers`;
       
       console.log('Listing containers with URL:', url);
       
@@ -71,12 +72,11 @@ class SharePointService {
   
   // Create a container
   async createContainer(token: string, displayName: string, description: string = ''): Promise<Container> {
-    const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers`;
+    const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containerTypes/${appConfig.containerTypeId}/containers`;
     
     const body = {
       displayName,
-      description,
-      containerTypeId: appConfig.containerTypeId
+      description
     };
     
     const response = await fetch(url, {
@@ -89,7 +89,9 @@ class SharePointService {
     });
     
     if (!response.ok) {
-      throw new Error(`Failed to create container: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Error creating container:', errorText);
+      throw new Error(`Failed to create container: ${response.status} ${response.statusText} - ${errorText}`);
     }
     
     return await response.json();

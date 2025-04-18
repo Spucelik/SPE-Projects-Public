@@ -22,7 +22,9 @@ export const appConfig = {
   // API endpoints
   endpoints: {
     graphBaseUrl: "https://graph.microsoft.com/v1.0",
-    containers: "/storage/fileStorage/containers",
+    fileStorage: "/storage/fileStorage",
+    containers: "/containers",
+    containerTypes: "/containerTypes",
     drives: "/drives",
   }
 };
