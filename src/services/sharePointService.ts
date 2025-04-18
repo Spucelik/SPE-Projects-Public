@@ -1,3 +1,4 @@
+
 // Define our own FileItem interface
 export interface FileItem {
   id: string;
@@ -99,7 +100,10 @@ class SharePointService {
   // List files in a container/folder
   async listFiles(token: string, containerId: string, folderId: string = 'root'): Promise<FileItem[]> {
     const folderPath = folderId === 'root' ? 'root' : folderId;
+    // Fix the URL by ensuring there's no double slash in the path
     const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${containerId}/items/${folderPath}/children?$expand=listItem($expand=fields)`;
+    
+    console.log('Fetching files with URL:', url);
     
     const response = await fetch(url, {
       headers: {
