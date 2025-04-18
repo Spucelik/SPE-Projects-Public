@@ -98,10 +98,20 @@ class SharePointService {
   }
   
   // List files in a container/folder
-  async listFiles(token: string, containerId: string, folderId: string = 'root'): Promise<FileItem[]> {
-    const folderPath = folderId === 'root' ? 'root' : folderId;
-    // Fix the URL by ensuring there's no double slash in the path
-    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${containerId}/items/${folderPath}/children?$expand=listItem($expand=fields)`;
+  async listFiles(token: string, containerId: string, folderId: string = ''): Promise<FileItem[]> {
+    // Fix: Properly handle the path construction to avoid double slashes
+    let url;
+    
+    if (!folderId || folderId === '') {
+      // If no folder ID is provided, use the root endpoint
+      url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${containerId}/root/children?$expand=listItem($expand=fields)`;
+    } else if (folderId === 'root') {
+      // If 'root' is specified, use the root endpoint
+      url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${containerId}/root/children?$expand=listItem($expand=fields)`;
+    } else {
+      // Normal folder ID
+      url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${containerId}/items/${folderId}/children?$expand=listItem($expand=fields)`;
+    }
     
     console.log('Fetching files with URL:', url);
     
