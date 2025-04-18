@@ -54,4 +54,3 @@ const FolderNavigation: React.FC<FolderNavigationProps> = ({
 };
 
 export default FolderNavigation;
-

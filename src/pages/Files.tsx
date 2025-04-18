@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -24,6 +25,11 @@ interface Folder {
   webUrl: string;
 }
 
+interface BreadcrumbItem {
+  id: string;
+  name: string;
+}
+
 const Files = () => {
   const { containerId } = useParams<{ containerId: string }>();
   const { isAuthenticated, getAccessToken } = useAuth();
@@ -33,6 +39,9 @@ const Files = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showConfigInfo, setShowConfigInfo] = useState(false);
+  const [currentPath, setCurrentPath] = useState<BreadcrumbItem[]>([
+    { id: '', name: 'Root' }
+  ]);
 
   useEffect(() => {
     if (!isAuthenticated || !containerId) return;
@@ -52,9 +61,9 @@ const Files = () => {
           return;
         }
 
-        const { files: fetchedFiles, folders: fetchedFolders } = await sharePointService.getFilesAndFolders(token, containerId, currentFolder);
-        setFiles(fetchedFiles);
-        setFolders(fetchedFolders);
+        const result = await sharePointService.listFilesAndFolders(token, containerId, currentFolder);
+        setFiles(result.files || []);
+        setFolders(result.folders || []);
       } catch (error: any) {
         console.error('Error fetching files:', error);
         setError(error.message || "Failed to fetch files. This may be due to insufficient permissions or API limitations.");
@@ -71,12 +80,25 @@ const Files = () => {
     fetchFilesAndFolders();
   }, [isAuthenticated, getAccessToken, containerId, currentFolder]);
 
-  const handleFolderClick = (folderId: string) => {
+  const handleFolderClick = (folderId: string, folderName: string) => {
+    // Update current folder
     setCurrentFolder(folderId);
+    
+    // Update breadcrumb path
+    if (folderId) {
+      setCurrentPath(prev => [...prev, { id: folderId, name: folderName }]);
+    }
   };
 
-  const handleNavigateUp = () => {
-    setCurrentFolder('');
+  const handleNavigate = (folderId: string) => {
+    // Find the index of the folder in the current path
+    const folderIndex = currentPath.findIndex(item => item.id === folderId);
+    
+    // If found, truncate the path to that point and set the current folder
+    if (folderIndex !== -1) {
+      setCurrentPath(currentPath.slice(0, folderIndex + 1));
+      setCurrentFolder(folderId);
+    }
   };
 
   return (
@@ -107,8 +129,8 @@ const Files = () => {
       )}
 
       <FolderNavigation 
-        currentFolder={currentFolder}
-        onNavigateUp={handleNavigateUp}
+        currentPath={currentPath}
+        onNavigate={handleNavigate}
       />
 
       {error && (
@@ -122,10 +144,21 @@ const Files = () => {
       )}
 
       <FileList 
-        files={files}
-        folders={folders}
+        files={files.map(file => ({
+          ...file,
+          isFolder: false
+        }))}
+        folders={folders.map(folder => ({
+          id: folder.id,
+          name: folder.name,
+          webUrl: folder.webUrl,
+          isFolder: true,
+          lastModifiedDateTime: '',
+          size: 0,
+          fileType: 'folder'
+        }))}
         loading={loading}
-        onFolderClick={handleFolderClick}
+        onFolderClick={(item) => handleFolderClick(item.id, item.name)}
       />
     </div>
   );
