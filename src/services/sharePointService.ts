@@ -24,26 +24,36 @@ import { appConfig } from '../config/appConfig';
 class SharePointService {
   // List containers
   async listContainers(token: string): Promise<Container[]> {
-    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}`;
-    
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+    try {
+      // Use the correct API endpoint for SharePoint Embedded
+      const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers`;
+      
+      console.log('Listing containers with URL:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to list containers: ${response.status} ${response.statusText} - ${errorText}`);
       }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to list containers: ${response.status} ${response.statusText}`);
+      
+      const data = await response.json();
+      return data.value;
+    } catch (error) {
+      console.error('List containers error details:', error);
+      throw error;
     }
-    
-    const data = await response.json();
-    return data.value;
   }
   
   // Get a specific container
   async getContainer(token: string, containerId: string): Promise<Container> {
-    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}/${containerId}`;
+    const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers/${containerId}`;
     
     const response = await fetch(url, {
       headers: {
@@ -61,7 +71,7 @@ class SharePointService {
   
   // Create a container
   async createContainer(token: string, displayName: string, description: string = ''): Promise<Container> {
-    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}`;
+    const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers`;
     
     const body = {
       displayName,
@@ -89,9 +99,9 @@ class SharePointService {
   async listFiles(token: string, containerId: string, folderId: string = 'root'): Promise<FileItem[]> {
     let url;
     if (folderId === 'root') {
-      url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}/${containerId}/drive/root/children`;
+      url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers/${containerId}/drive/root/children`;
     } else {
-      url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}/${containerId}/drive/items/${folderId}/children`;
+      url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers/${containerId}/drive/items/${folderId}/children`;
     }
     
     const response = await fetch(url, {
@@ -116,9 +126,9 @@ class SharePointService {
   async uploadFile(token: string, containerId: string, folderId: string, file: File): Promise<FileItem> {
     let url;
     if (folderId === 'root') {
-      url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}/${containerId}/drive/root:/${file.name}:/content`;
+      url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers/${containerId}/drive/root:/${file.name}:/content`;
     } else {
-      url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}/${containerId}/drive/items/${folderId}:/${file.name}:/content`;
+      url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers/${containerId}/drive/items/${folderId}:/${file.name}:/content`;
     }
     
     const response = await fetch(url, {
@@ -143,7 +153,7 @@ class SharePointService {
 
   // Get preview URL for a file
   async getFilePreview(token: string, containerId: string, fileId: string): Promise<string> {
-    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.containers}/${containerId}/drive/items/${fileId}/preview`;
+    const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers/${containerId}/drive/items/${fileId}/preview`;
     
     const response = await fetch(url, {
       method: 'POST',
