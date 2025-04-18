@@ -304,7 +304,7 @@ const Files = () => {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink>
-                <Link to="/">
+                <Link to="/" className="flex items-center">
                   <Home className="h-4 w-4" />
                 </Link>
               </BreadcrumbLink>
