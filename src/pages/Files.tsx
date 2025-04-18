@@ -9,6 +9,8 @@ import { appConfig } from '../config/appConfig';
 import FileList from '@/components/files/FileList';
 import FolderNavigation from '@/components/files/FolderNavigation';
 import { ConfigAlert } from '../components/ConfigAlert';
+import FilePreviewDialog from '@/components/files/FilePreviewDialog';
+import { FileItem } from '@/services/sharePointService';
 
 interface File {
   id: string;
@@ -42,6 +44,10 @@ const Files = () => {
   const [currentPath, setCurrentPath] = useState<BreadcrumbItem[]>([
     { id: '', name: 'Root' }
   ]);
+  
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated || !containerId) return;
@@ -146,6 +152,75 @@ const Files = () => {
     });
   };
 
+  const handleViewFile = async (file: FileItem) => {
+    if (!containerId) return;
+    
+    try {
+      setPreviewLoading(true);
+      setIsPreviewOpen(true);
+      setPreviewUrl(null);
+      
+      const token = await getAccessToken();
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Failed to get access token",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const previewUrl = await sharePointService.getFilePreview(token, containerId, file.id);
+      setPreviewUrl(previewUrl);
+    } catch (error: any) {
+      console.error('Error getting file preview:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get file preview. Please try again.",
+        variant: "destructive",
+      });
+      setIsPreviewOpen(false);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleFileClick = (file: FileItem) => {
+    handleViewFile(file);
+  };
+
+  const handleDeleteFile = async (file: FileItem): Promise<void> => {
+    if (!containerId) return;
+    
+    try {
+      const token = await getAccessToken();
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Failed to get access token",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      await sharePointService.deleteFile(token, containerId, file.id);
+      
+      setFiles(prevFiles => prevFiles.filter(f => f.id !== file.id));
+      
+      toast({
+        title: "Success",
+        description: "File deleted successfully",
+      });
+    } catch (error: any) {
+      console.error('Error deleting file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete file. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <ConfigAlert />
@@ -169,10 +244,17 @@ const Files = () => {
         files={getSortedItems()}
         loading={loading}
         onFolderClick={(item) => handleFolderClick(item.id, item.name)}
-        onFileClick={() => {}}
-        onViewFile={() => {}}
-        onDeleteFile={async () => {}}
+        onFileClick={handleFileClick}
+        onViewFile={handleViewFile}
+        onDeleteFile={handleDeleteFile}
         containerId={containerId || ''}
+      />
+      
+      <FilePreviewDialog
+        isOpen={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        previewUrl={previewUrl}
+        previewLoading={previewLoading}
       />
     </div>
   );
