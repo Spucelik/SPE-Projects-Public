@@ -61,9 +61,34 @@ const Files = () => {
           return;
         }
 
-        const result = await sharePointService.listFilesAndFolders(token, containerId, currentFolder);
-        setFiles(result.files || []);
-        setFolders(result.folders || []);
+        // Use the existing listFiles method instead of listFilesAndFolders
+        const fileItems = await sharePointService.listFiles(token, containerId, currentFolder);
+        
+        // Separate files and folders from the returned items
+        const fileList: File[] = [];
+        const folderList: Folder[] = [];
+        
+        fileItems.forEach(item => {
+          if (item.isFolder) {
+            folderList.push({
+              id: item.id,
+              name: item.name,
+              webUrl: item.webUrl
+            });
+          } else {
+            fileList.push({
+              id: item.id,
+              name: item.name,
+              webUrl: item.webUrl,
+              size: item.size,
+              fileType: item.name.split('.').pop() || '',
+              lastModifiedDateTime: item.lastModifiedDateTime
+            });
+          }
+        });
+        
+        setFiles(fileList);
+        setFolders(folderList);
       } catch (error: any) {
         console.error('Error fetching files:', error);
         setError(error.message || "Failed to fetch files. This may be due to insufficient permissions or API limitations.");
@@ -144,21 +169,30 @@ const Files = () => {
       )}
 
       <FileList 
-        files={files.map(file => ({
-          ...file,
-          isFolder: false
-        }))}
-        folders={folders.map(folder => ({
-          id: folder.id,
-          name: folder.name,
-          webUrl: folder.webUrl,
-          isFolder: true,
-          lastModifiedDateTime: '',
-          size: 0,
-          fileType: 'folder'
-        }))}
+        files={[
+          ...files.map(file => ({
+            id: file.id,
+            name: file.name,
+            webUrl: file.webUrl,
+            size: file.size,
+            lastModifiedDateTime: file.lastModifiedDateTime,
+            isFolder: false
+          })),
+          ...folders.map(folder => ({
+            id: folder.id,
+            name: folder.name,
+            webUrl: folder.webUrl,
+            lastModifiedDateTime: '',
+            size: 0,
+            isFolder: true
+          }))
+        ]}
         loading={loading}
         onFolderClick={(item) => handleFolderClick(item.id, item.name)}
+        onFileClick={() => {}}
+        onViewFile={() => {}}
+        onDeleteFile={async () => {}}
+        containerId={containerId || ''}
       />
     </div>
   );
