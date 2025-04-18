@@ -4,7 +4,6 @@ import { useParams, Link, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService, FileItem, Container } from '../services/sharePointService';
 import { toast } from '@/hooks/use-toast';
-import { appConfig } from '../config/appConfig';
 import {
   Folder,
   File,
@@ -30,6 +29,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 interface BreadcrumbItem {
   id: string;
@@ -189,6 +196,36 @@ const Files = () => {
     }
   };
 
+  const handleViewFile = async (file: FileItem) => {
+    if (file.isFolder) return;
+    
+    try {
+      setPreviewLoading(true);
+      const token = await getAccessToken();
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Failed to get access token",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const url = await sharePointService.getFilePreview(token, containerId!, file.id);
+      setPreviewUrl(url);
+      setPreviewOpen(true);
+    } catch (error: any) {
+      console.error('Error getting preview:', error);
+      toast({
+        title: "Preview Error",
+        description: error.message || "Failed to get file preview",
+        variant: "destructive",
+      });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   const getFileIcon = (fileName: string) => {
     if (fileName.match(/\.(jpg|jpeg|png|gif|bmp|svg)$/i)) {
       return <ImageIcon className="h-5 w-5 text-blue-500" />;
@@ -229,45 +266,60 @@ const Files = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="space-y-1">
-          <div className="flex items-center text-sm text-gray-500">
-            <Link to="/" className="hover:text-blue-600">
-              <Home className="h-4 w-4" />
-            </Link>
-            <ChevronRight className="h-4 w-4 mx-1" />
-            <Link to="/containers" className="hover:text-blue-600">
-              Containers
-            </Link>
+      {/* Enhanced Breadcrumb Navigation */}
+      <div className="space-y-1">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink as={Link} to="/">
+                <Home className="h-4 w-4" />
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink as={Link} to="/containers">
+                Containers
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            
             {breadcrumbs.map((item, index) => (
               <React.Fragment key={item.id}>
-                <ChevronRight className="h-4 w-4 mx-1" />
-                <button
-                  onClick={() => handleBreadcrumbClick(item, index)}
-                  className={`hover:text-blue-600 ${index === breadcrumbs.length - 1 ? 'font-medium text-gray-700' : ''}`}
-                >
-                  {item.name}
-                </button>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  {index === breadcrumbs.length - 1 ? (
+                    <BreadcrumbPage>{item.name}</BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbLink 
+                      onClick={() => handleBreadcrumbClick(item, index)}
+                      className="cursor-pointer"
+                    >
+                      {item.name}
+                    </BreadcrumbLink>
+                  )}
+                </BreadcrumbItem>
               </React.Fragment>
             ))}
-          </div>
+          </BreadcrumbList>
+        </Breadcrumb>
+        
+        <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">{container?.displayName || 'Files'}</h1>
-        </div>
-        <div>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            className="hidden"
-            multiple
-          />
-          <Button 
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Upload Files
-          </Button>
+          <div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              className="hidden"
+              multiple
+            />
+            <Button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Files
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -345,7 +397,17 @@ const Files = () => {
                   <TableCell>
                     {!file.isFolder && (
                       <div className="flex items-center space-x-2">
-                        {file.name.match(/\.(docx|xlsx|pptx|doc|xls|ppt)$/i) ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewFile(file)}
+                          className="text-xs"
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          View
+                        </Button>
+                        
+                        {file.name.match(/\.(docx|xlsx|pptx|doc|xls|ppt)$/i) && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -354,16 +416,6 @@ const Files = () => {
                           >
                             <Edit className="h-3 w-3 mr-1" />
                             Edit
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleFileClick(file)}
-                            className="text-xs"
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            Preview
                           </Button>
                         )}
                       </div>
