@@ -32,7 +32,7 @@ const Files = () => {
   const [currentFolder, setCurrentFolder] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [showConfigInfo, setShowConfigInfo] = useState(true);
+  const [showConfigInfo, setShowConfigInfo] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated || !containerId) return;
