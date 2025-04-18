@@ -1,33 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, Link, useNavigate, Navigate } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService, FileItem, Container } from '../services/sharePointService';
 import { toast } from '@/hooks/use-toast';
-import {
-  Folder,
-  File,
-  Upload,
-  ChevronRight,
-  Home,
-  ExternalLink,
-  AlertCircle,
-  Eye,
-  Edit,
-  Image as ImageIcon,
-  FileText
-} from 'lucide-react';
+import { AlertCircle, Home, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -36,6 +14,10 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import FileList from '@/components/files/FileList';
+import EmptyState from '@/components/files/EmptyState';
+import FilePreviewDialog from '@/components/files/FilePreviewDialog';
+import FileUploadProgress from '@/components/files/FileUploadProgress';
 
 interface BreadcrumbItem {
   id: string;
@@ -72,14 +54,11 @@ const Files = () => {
           return;
         }
 
-        // Fetch container details
         const containerData = await sharePointService.getContainer(token, containerId);
         setContainer(containerData);
 
-        // Reset breadcrumbs when container changes
         setBreadcrumbs([{ id: 'root', name: containerData.displayName }]);
 
-        // Fetch files
         const filesData = await sharePointService.listFiles(token, containerId, currentFolder);
         setFiles(filesData);
       } catch (error: any) {
@@ -137,7 +116,6 @@ const Files = () => {
         setUploadProgress(Math.round((completedFiles / totalFiles) * 100));
       }
 
-      // Refresh file list
       const updatedFiles = await sharePointService.listFiles(token, containerId, currentFolder);
       setFiles(updatedFiles);
 
@@ -161,13 +139,11 @@ const Files = () => {
   };
 
   const handleFileClick = async (file: FileItem) => {
-    // For Office documents, open in Office Online
     if (file.name.match(/\.(docx|xlsx|pptx|doc|xls|ppt)$/i)) {
       window.open(file.webUrl, '_blank');
       return;
     }
 
-    // For other files, get preview URL
     try {
       setPreviewLoading(true);
       const token = await getAccessToken();
@@ -225,47 +201,16 @@ const Files = () => {
     }
   };
 
-  const getFileIcon = (fileName: string) => {
-    if (fileName.match(/\.(jpg|jpeg|png|gif|bmp|svg)$/i)) {
-      return <ImageIcon className="h-5 w-5 text-blue-500" />;
-    } else if (fileName.match(/\.(pdf)$/i)) {
-      return <FileText className="h-5 w-5 text-red-500" />;
-    } else if (fileName.match(/\.(docx|doc)$/i)) {
-      return <FileText className="h-5 w-5 text-blue-600" />;
-    } else if (fileName.match(/\.(xlsx|xls)$/i)) {
-      return <FileText className="h-5 w-5 text-green-600" />;
-    } else if (fileName.match(/\.(pptx|ppt)$/i)) {
-      return <FileText className="h-5 w-5 text-orange-500" />;
-    } else {
-      return <File className="h-5 w-5 text-gray-500" />;
-    }
-  };
-
-  const getFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
-
-  // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // Redirect to containers if no containerId
   if (!containerId) {
     return <Navigate to="/containers" replace />;
   }
 
   return (
     <div className="h-full flex flex-col">
-      {/* Enhanced Breadcrumb Navigation */}
       <div className="space-y-1 mb-4">
         <Breadcrumb>
           <BreadcrumbList>
@@ -324,15 +269,7 @@ const Files = () => {
         </div>
       </div>
 
-      {uploading && (
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Uploading...</span>
-            <span>{uploadProgress}%</span>
-          </div>
-          <Progress value={uploadProgress} />
-        </div>
-      )}
+      <FileUploadProgress uploading={uploading} progress={uploadProgress} />
       
       {error && (
         <Alert variant="destructive">
@@ -350,136 +287,23 @@ const Files = () => {
             ))}
           </div>
         ) : files.length > 0 ? (
-          <div className="border rounded-lg overflow-hidden h-full bg-white">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Size</TableHead>
-                  <TableHead>Last Modified</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {files.map((file) => (
-                  <TableRow key={file.id}>
-                    <TableCell>
-                      {file.isFolder ? (
-                        <button
-                          onClick={() => handleFolderClick(file)}
-                          className="flex items-center text-left hover:text-blue-600"
-                        >
-                          <Folder className="h-5 w-5 text-yellow-500 mr-2" />
-                          <span className="font-medium">{file.name}</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleFileClick(file)}
-                          className="flex items-center text-left hover:text-blue-600"
-                        >
-                          {getFileIcon(file.name)}
-                          <span className="ml-2">{file.name}</span>
-                        </button>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {file.isFolder ? (
-                        <span className="text-sm text-gray-500">
-                          {file.folder?.childCount} {file.folder?.childCount === 1 ? 'item' : 'items'}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-gray-500">{getFileSize(file.size)}</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-500">
-                        {formatDate(file.lastModifiedDateTime)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {!file.isFolder && (
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewFile(file)}
-                            className="text-xs"
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
-                          </Button>
-                          
-                          {file.name.match(/\.(docx|xlsx|pptx|doc|xls|ppt)$/i) && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => window.open(file.webUrl, '_blank')}
-                              className="text-xs"
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              Edit
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <FileList
+            files={files}
+            onFolderClick={handleFolderClick}
+            onFileClick={handleFileClick}
+            onViewFile={handleViewFile}
+          />
         ) : (
-          <div className="border rounded-lg p-12 text-center bg-white h-full flex flex-col items-center justify-center">
-            <File className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No files found</h3>
-            <p className="text-gray-500 mb-4">Upload files to get started</p>
-            <Button onClick={() => fileInputRef.current?.click()}>
-              <Upload className="mr-2 h-4 w-4" />
-              Upload Files
-            </Button>
-          </div>
+          <EmptyState onUploadClick={() => fileInputRef.current?.click()} />
         )}
       </div>
 
-      {/* File Preview Dialog */}
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-4xl h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>File Preview</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 flex flex-col min-h-0">
-            {previewLoading ? (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-              </div>
-            ) : previewUrl ? (
-              <div className="flex-1 flex flex-col min-h-0">
-                <div className="mb-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => window.open(previewUrl, '_blank')}
-                    className="w-full"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Open in New Tab
-                  </Button>
-                </div>
-                <div className="flex-1 min-h-0 border rounded">
-                  <iframe
-                    src={previewUrl}
-                    className="w-full h-full border-0"
-                    title="File Preview"
-                  ></iframe>
-                </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-500">
-                Preview not available
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <FilePreviewDialog
+        isOpen={previewOpen}
+        onOpenChange={setPreviewOpen}
+        previewUrl={previewUrl}
+        previewLoading={previewLoading}
+      />
     </div>
   );
 };
