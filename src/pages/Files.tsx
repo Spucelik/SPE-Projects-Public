@@ -27,6 +27,7 @@ import FileList from '@/components/files/FileList';
 import EmptyState from '@/components/files/EmptyState';
 import FilePreviewDialog from '@/components/files/FilePreviewDialog';
 import FileUploadProgress from '@/components/files/FileUploadProgress';
+import FolderNavigation from '@/components/files/FolderNavigation';
 
 interface BreadcrumbItem {
   id: string;
@@ -52,6 +53,10 @@ const Files = () => {
   const [newFolderOpen, setNewFolderOpen] = useState<boolean>(false);
   const [newFolderName, setNewFolderName] = useState<string>('');
   const [creatingFolder, setCreatingFolder] = useState<boolean>(false);
+
+  const handleFolderNavigation = (folderId: string) => {
+    buildBreadcrumbPath(folderId);
+  };
 
   const buildBreadcrumbPath = (folderId: string) => {
     const currentPath = breadcrumbs.findIndex(item => item.id === folderId);
@@ -307,7 +312,7 @@ const Files = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="space-y-1 mb-4">
+      <div className="space-y-4 mb-4">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -344,6 +349,11 @@ const Files = () => {
           </BreadcrumbList>
         </Breadcrumb>
         
+        <FolderNavigation 
+          currentPath={breadcrumbs} 
+          onNavigate={handleFolderNavigation} 
+        />
+
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">{container?.displayName || 'Files'}</h1>
           <div className="flex gap-2">
