@@ -29,6 +29,12 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   onApiReady,
   chatKey,
 }) => {
+  // The SharePoint Embedded Copilot Chat component expects a specific format for the containerId
+  // The format is typically a DriveId without the 'b!' prefix
+  const formattedContainerId = containerId.startsWith('b!') 
+    ? containerId.substring(2) 
+    : containerId;
+    
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -55,7 +61,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           ) : (
             <div className="h-full" key={chatKey}>
               <ChatEmbedded
-                containerId={containerId}
+                containerId={formattedContainerId}
                 authProvider={authProvider}
                 onApiReady={onApiReady}
                 style={{ height: '100%' }}

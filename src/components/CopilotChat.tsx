@@ -18,6 +18,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [isMobileView, setIsMobileView] = useState(false);
   const [chatKey, setChatKey] = useState(0);
   
+  // Use the same containerId format for the useCopilotSite hook
   const {
     isLoading,
     error,
