@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
 import CopilotDesktopView from './CopilotDesktopView';
 import CopilotMobileView from './CopilotMobileView';
 import { toast } from '@/hooks/use-toast';
 import { appConfig } from '@/config/appConfig';
+import { useAuth } from '@/context/AuthContext';
+import { IChatEmbeddedApiAuthProvider } from '@microsoft/sharepointembedded-copilotchat-react';
 
 interface CopilotChatContainerProps {
   containerId: string;
@@ -14,6 +16,8 @@ interface CopilotChatContainerProps {
 const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId }) => {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const { getAccessToken } = useAuth();
+  const [chatKey, setChatKey] = useState(0);
   
   // Parse containerId to ensure consistent format
   const normalizedContainerId = containerId.startsWith('b!') 
@@ -41,6 +45,33 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   
   const getContainerName = () => {
     return siteName || 'SharePoint Container';
+  };
+  
+  // Create auth provider for Copilot chat
+  const createAuthProvider = useCallback((): IChatEmbeddedApiAuthProvider | null => {
+    if (!sharePointHostname) return null;
+    
+    return {
+      hostname: sharePointHostname,
+      getToken: async () => {
+        try {
+          const token = await getAccessToken();
+          return token || '';
+        } catch (err) {
+          console.error('Error getting token for Copilot chat:', err);
+          handleError('Failed to authenticate with SharePoint. Please try again.');
+          return '';
+        }
+      }
+    };
+  }, [sharePointHostname, getAccessToken]);
+  
+  // Auth provider instance
+  const authProvider = createAuthProvider();
+  
+  // Handles API ready event from ChatEmbedded component
+  const handleApiReady = (api: any) => {
+    console.log('Copilot chat API is ready');
   };
   
   // Generate dynamic prompts based on container name
@@ -78,6 +109,11 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       locale: "en",
     };
   };
+  
+  // Reset chat when there's an issue
+  const handleResetChat = () => {
+    setChatKey(prev => prev + 1);
+  };
 
   return isMobile ? (
     <CopilotMobileView
@@ -98,9 +134,10 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       containerId={normalizedContainerId}
       onError={handleError}
       chatConfig={getChatConfig()}
-      authProvider={null}
-      onApiReady={() => {}}
-      chatKey={0}
+      authProvider={authProvider}
+      onApiReady={handleApiReady}
+      chatKey={chatKey}
+      onResetChat={handleResetChat}
     />
   );
 };

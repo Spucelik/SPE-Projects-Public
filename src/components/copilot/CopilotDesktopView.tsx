@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, RefreshCw } from 'lucide-react';
 import { ChatEmbedded } from '@microsoft/sharepointembedded-copilotchat-react';
 
 interface CopilotDesktopViewProps {
@@ -17,6 +17,7 @@ interface CopilotDesktopViewProps {
   authProvider: any;
   onApiReady: (api: any) => void;
   chatKey: number;
+  onResetChat?: () => void;
 }
 
 const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
@@ -26,9 +27,12 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   isLoading,
   error,
   containerId,
+  onError,
+  chatConfig,
   authProvider,
   onApiReady,
   chatKey,
+  onResetChat,
 }) => {
   const [chatLoadFailed, setChatLoadFailed] = useState(false);
   
@@ -71,10 +75,16 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         formatted: validContainerId,
         authProvider,
         chatKey,
-        chatLoadFailed
+        chatLoadFailed,
+        chatConfig
       });
     }
-  }, [isOpen, containerId, validContainerId, authProvider, chatKey, chatLoadFailed]);
+  }, [isOpen, containerId, validContainerId, authProvider, chatKey, chatLoadFailed, chatConfig]);
+
+  const handleChatApiError = () => {
+    setChatLoadFailed(true);
+    onError("The chat component failed to load. Please try resetting the chat.");
+  };
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -100,16 +110,29 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               <p className="text-destructive mb-4">
                 {error || "Unable to load the chat. Please try again."}
               </p>
+              {onResetChat && (
+                <Button onClick={onResetChat} variant="outline" className="gap-2">
+                  <RefreshCw size={16} />
+                  <span>Reset Chat</span>
+                </Button>
+              )}
             </div>
           ) : (
             <div className="h-full" key={chatKey}>
-              {authProvider && (
+              {authProvider ? (
                 <ChatEmbedded
                   containerId={validContainerId}
                   authProvider={authProvider}
                   onApiReady={onApiReady}
                   style={{ height: '100%' }}
+                  onError={handleChatApiError}
                 />
+              ) : (
+                <div className="flex items-center justify-center h-full p-6 text-center">
+                  <p className="text-muted-foreground">
+                    Authentication setup in progress. Please wait or reload the page.
+                  </p>
+                </div>
               )}
             </div>
           )}
