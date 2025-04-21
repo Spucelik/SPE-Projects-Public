@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
@@ -16,7 +15,7 @@ interface CopilotChatContainerProps {
 const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId }) => {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
-  const { getAccessToken, getSharePointToken } = useAuth();
+  const { getAccessToken } = useAuth();
   const [chatKey, setChatKey] = useState(0);
   const chatApiRef = useRef<ChatEmbeddedAPI | null>(null);
   
@@ -48,7 +47,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     return siteName || 'SharePoint Container';
   };
   
-  // Create auth provider for Copilot chat
+  // Create auth provider for Copilot chat using standard Graph token
   const createAuthProvider = useCallback((): IChatEmbeddedApiAuthProvider | null => {
     if (!sharePointHostname) return null;
     
@@ -56,18 +55,17 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       hostname: sharePointHostname,
       getToken: async () => {
         try {
-          // Get a SharePoint specific token instead of a Graph token
-          const token = await getSharePointToken(sharePointHostname);
+          const token = await getAccessToken();
           console.log('Auth token retrieved for Copilot chat', token ? 'successfully' : 'failed');
           return token || '';
         } catch (err) {
           console.error('Error getting token for Copilot chat:', err);
-          handleError('Failed to authenticate with SharePoint. Please try again.');
+          handleError('Failed to authenticate. Please try again.');
           return '';
         }
       }
     };
-  }, [sharePointHostname, getSharePointToken]);
+  }, [sharePointHostname, getAccessToken]);
   
   // Auth provider instance
   const authProvider = createAuthProvider();
