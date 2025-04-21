@@ -43,7 +43,8 @@ export const useCopilotSite = (containerId: string) => {
     (() => {
       try {
         const url = new URL(siteUrl);
-        return `${url.protocol}//${url.hostname}`;
+        // Remove trailing slash using .replace() method
+        return `${url.protocol}//${url.hostname.replace(/\/+$/, '')}`;
       } catch (e) {
         console.error('Error parsing site URL:', e);
         return "https://pucelikenterprise.sharepoint.com";
