@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, X } from 'lucide-react';
 
@@ -20,6 +20,7 @@ const FilePreviewDialog: React.FC<FilePreviewDialogProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-screen min-h-screen w-screen p-0 gap-0">
+        <DialogTitle className="sr-only">File Preview</DialogTitle>
         <div className="flex justify-between items-center p-4 border-b">
           <div className="flex-1">
             <Button 
