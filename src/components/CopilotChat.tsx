@@ -28,6 +28,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [isSiteUrlFetched, setIsSiteUrlFetched] = useState(false);
 
   // Auth provider for the SDK
   const authProvider: IChatEmbeddedApiAuthProvider = useMemo(
@@ -52,8 +53,10 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
           throw err;
         }
       },
+      // Add site URL - this is required to resolve the site URL issue
+      siteUrl: `${SPE_HOSTNAME}/contentstorage/CSP_${containerId.split('!')[1].split('_')[0]}`,
     }),
-    [getAccessToken]
+    [getAccessToken, containerId]
   );
   
   // Callback for API ready
@@ -67,6 +70,37 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     setError(null);
     setRetryCount(prev => prev + 1);
   }, []);
+
+  // Pre-fetch the site URL when container ID changes
+  useEffect(() => {
+    if (!containerId) return;
+    
+    const fetchSiteUrl = async () => {
+      try {
+        const token = await getAccessToken();
+        if (!token) return;
+        
+        // Attempt to fetch the driveId info to confirm we have connectivity
+        const response = await fetch(`${SPE_HOSTNAME}/_api/v2.1/drives/${containerId}?$select=id,name,webUrl`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          setIsSiteUrlFetched(true);
+          console.log('Successfully validated site URL connection');
+        } else {
+          console.warn('Could not validate site URL, may encounter issues with Copilot Chat');
+        }
+      } catch (err) {
+        console.warn('Site URL validation failed:', err);
+      }
+    };
+    
+    fetchSiteUrl();
+  }, [containerId, getAccessToken]);
 
   // Effect to open the chat when the API is ready
   useEffect(() => {
