@@ -31,70 +31,51 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   chatKey,
 }) => {
   // Format the containerId for the SharePoint Embedded API
-  // The SharePoint API expects a specific GUID format without decorations
-  const extractValidGuid = (id: string): string | null => {
-    try {
-      // Regular expression to find a GUID pattern
-      const guidRegex = /([0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})|([0-9a-f]{32})/i;
+  const formatContainerId = (rawId: string): string => {
+    console.log('Raw containerId:', rawId);
+    
+    // If we have a b! prefix, extract just the first part (before any underscore)
+    if (rawId.startsWith('b!')) {
+      const idWithoutPrefix = rawId.substring(2);
       
-      // Remove 'b!' prefix if it exists
-      const strippedId = id.startsWith('b!') ? id.substring(2) : id;
+      // Look for a standard GUID pattern
+      const guidPattern = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+      const match = idWithoutPrefix.match(guidPattern);
       
-      // Try to find a GUID in the string
-      const match = strippedId.match(guidRegex);
-      
-      if (match && match[0]) {
-        // Format the GUID if it's not already in the standard format with dashes
-        const guid = match[0];
-        if (guid.length === 32 && !guid.includes('-')) {
-          // Insert dashes in the correct positions for a standard GUID format
-          return `${guid.slice(0,8)}-${guid.slice(8,12)}-${guid.slice(12,16)}-${guid.slice(16,20)}-${guid.slice(20)}`;
-        }
-        return guid;
+      if (match && match[1]) {
+        console.log('Found GUID pattern in b! ID:', match[1]);
+        return match[1];
       }
-    } catch (err) {
-      console.error('Error extracting GUID:', err);
+      
+      // If no GUID pattern found, take the part before any underscore
+      const parts = idWithoutPrefix.split('_');
+      const firstPart = parts[0];
+      
+      // If the first part is a potential GUID without dashes, format it
+      if (firstPart.length === 32) {
+        const formattedGuid = `${firstPart.slice(0,8)}-${firstPart.slice(8,12)}-${firstPart.slice(12,16)}-${firstPart.slice(16,20)}-${firstPart.slice(20)}`;
+        console.log('Formatted GUID from b! ID:', formattedGuid);
+        return formattedGuid;
+      }
+      
+      console.log('Using first part of b! ID:', firstPart);
+      return firstPart;
     }
-    return null;
+    
+    return rawId;
   };
 
-  // Process the containerId with multiple fallback mechanisms
-  const processContainerId = (): string => {
-    // Original value for debugging
-    console.log('Original containerId:', containerId);
-    
-    // First attempt: try to extract a valid GUID
-    const extractedGuid = extractValidGuid(containerId);
-    if (extractedGuid) {
-      console.log('Successfully extracted GUID:', extractedGuid);
-      return extractedGuid;
-    }
-    
-    // Second attempt: If the ID starts with b!, take the first part after splitting by underscore
-    if (containerId.startsWith('b!')) {
-      const parts = containerId.substring(2).split('_');
-      if (parts.length > 0 && parts[0]) {
-        console.log('Using first part after b!:', parts[0]);
-        return parts[0];
-      }
-    }
-    
-    // Last resort: Just use the plain ID without any b! prefix
-    const fallbackId = containerId.startsWith('b!') ? containerId.substring(2) : containerId;
-    console.log('Using fallback ID:', fallbackId);
-    return fallbackId;
-  };
-
-  const formattedContainerId = processContainerId();
+  const formattedContainerId = formatContainerId(containerId);
   
-  // Additional debugging
+  // Add more debug info
   useEffect(() => {
-    console.log('CopilotDesktopView - containerId processing:', {
-      original: containerId,
-      formatted: formattedContainerId,
-      length: formattedContainerId.length
-    });
-  }, [containerId, formattedContainerId]);
+    if (isOpen) {
+      console.log('CopilotDesktopView - containerId details:', {
+        original: containerId,
+        formatted: formattedContainerId
+      });
+    }
+  }, [isOpen, containerId, formattedContainerId]);
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
