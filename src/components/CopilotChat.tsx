@@ -36,6 +36,11 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     [getAccessToken]
   );
 
+  // Handle the API being available
+  const handleApiAvailable = (api: ChatEmbeddedAPI) => {
+    setChatApi(api);
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -54,8 +59,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
             <ChatEmbedded
               containerId={containerId}
               authProvider={authProvider}
-              height="100%"
-              onApiAvailable={setChatApi}
+              style={{ height: '100%' }}
+              onApiAvailable={handleApiAvailable}
             />
           )}
         </div>
@@ -65,4 +70,3 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
 };
 
 export default CopilotChat;
-
