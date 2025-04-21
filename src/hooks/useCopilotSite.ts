@@ -48,10 +48,13 @@ export const useCopilotSite = (containerId: string) => {
     if (!siteUrl) return "https://pucelikenterprise.sharepoint.com";
     
     try {
-      // Parse the URL and ensure no trailing slashes
-      const url = new URL(siteUrl);
-      // Build the hostname URL with protocol but without trailing slash
+      // Make sure we're working with a clean URL string
+      const urlStr = siteUrl.trim().replace(/\/+$/, '');
+      const url = new URL(urlStr);
+      
+      // Build the hostname URL with protocol but without any path or trailing slash
       const hostname = `${url.protocol}//${url.hostname}`;
+      
       console.log('SharePoint hostname extracted:', hostname);
       return hostname;
     } catch (e) {

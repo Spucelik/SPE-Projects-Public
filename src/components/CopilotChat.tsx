@@ -82,23 +82,30 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   }, [siteUrl]);
 
   const authProvider = useMemo(
-    () => ({
-      hostname: sharePointHostname,
-      getToken: async () => {
-        try {
-          const token = await getAccessToken(sharePointHostname);
-          console.log('Token acquired successfully:', token ? 'Valid token' : 'No token');
-          if (!token) throw new Error('No access token available');
-          return token;
-        } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : 'Failed to get token';
-          console.error('Auth provider error:', errorMessage);
-          setCopilotError(errorMessage);
-          throw err;
-        }
-      },
-      siteUrl: siteUrl || undefined,
-    }),
+    () => {
+      // Ensure hostname has no trailing slash
+      const cleanHostname = sharePointHostname ? sharePointHostname.replace(/\/+$/, '') : '';
+      console.log('Clean SharePoint hostname for auth provider:', cleanHostname);
+      
+      return {
+        hostname: cleanHostname,
+        getToken: async () => {
+          try {
+            console.log('Getting token for hostname:', cleanHostname);
+            const token = await getAccessToken(cleanHostname);
+            console.log('Token acquired successfully:', token ? 'Valid token' : 'No token');
+            if (!token) throw new Error('No access token available');
+            return token;
+          } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to get token';
+            console.error('Auth provider error:', errorMessage);
+            setCopilotError(errorMessage);
+            throw err;
+          }
+        },
+        siteUrl: siteUrl ? siteUrl.replace(/\/+$/, '') : undefined,
+      };
+    },
     [getAccessToken, siteUrl, sharePointHostname]
   );
 
@@ -113,6 +120,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         error,
         isMobileView,
         sharePointHostname,
+        cleanHostname: sharePointHostname ? sharePointHostname.replace(/\/+$/, '') : '',
         chatKey
       });
     }
