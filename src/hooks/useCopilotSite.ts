@@ -25,6 +25,7 @@ export const useCopilotSite = (containerId: string) => {
           return;
         }
         
+        console.log('Fetching container details for:', containerId);
         const containerDetails = await sharePointService.getContainerDetails(token, containerId);
         console.log('Container details retrieved:', containerDetails);
         
@@ -35,6 +36,13 @@ export const useCopilotSite = (containerId: string) => {
       } catch (err) {
         console.error('Error fetching site info:', err);
         setError('Failed to load site information');
+        
+        // Fallback to using the default SharePoint hostname
+        if (!siteUrl) {
+          const fallbackUrl = appConfig.sharePointHostname.replace(/\/+$/, '');
+          console.log('Using fallback SharePoint URL:', fallbackUrl);
+          setSiteUrl(fallbackUrl);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -50,16 +58,21 @@ export const useCopilotSite = (containerId: string) => {
       // If no site URL yet, use the default from config
       if (!siteUrl) {
         const defaultHostname = appConfig.sharePointHostname.replace(/\/+$/, '');
+        console.log('Using default SharePoint hostname:', defaultHostname);
         return defaultHostname;
       }
       
       // Parse only the hostname part from the URL with protocol
       const url = new URL(siteUrl);
-      return `${url.protocol}//${url.hostname}`;
+      const hostname = `${url.protocol}//${url.hostname}`;
+      console.log('Extracted SharePoint hostname from URL:', hostname);
+      return hostname;
     } catch (e) {
       console.error('Error parsing site URL:', e);
       // Return default from config as fallback
-      return appConfig.sharePointHostname.replace(/\/+$/, '');
+      const fallback = appConfig.sharePointHostname.replace(/\/+$/, '');
+      console.log('Using fallback SharePoint hostname after error:', fallback);
+      return fallback;
     }
   }, [siteUrl]);
 

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare, ExternalLink } from 'lucide-react';
@@ -30,6 +30,15 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   onApiReady,
   chatKey,
 }) => {
+  const [chatLoadFailed, setChatLoadFailed] = useState(false);
+  
+  // Reset error state when the chat is reopened
+  useEffect(() => {
+    if (isOpen) {
+      setChatLoadFailed(false);
+    }
+  }, [isOpen, chatKey]);
+  
   // Format the containerId for the SharePoint Embedded API
   const formatContainerId = (rawId: string): string => {
     // If the ID is already correctly formatted with 'b!' prefix, use it directly
@@ -59,6 +68,25 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   // Get a correctly formatted containerId
   const validContainerId = formatContainerId(containerId);
   
+  // Detect CSP errors with frames
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleCspError = (event: ErrorEvent) => {
+      if (
+        event.message.includes('Content Security Policy') ||
+        event.message.includes('frame-ancestors') ||
+        event.message.includes('SecurityError')
+      ) {
+        console.error('CSP error detected in CopilotDesktopView:', event.message);
+        setChatLoadFailed(true);
+      }
+    };
+    
+    window.addEventListener('error', handleCspError);
+    return () => window.removeEventListener('error', handleCspError);
+  }, [isOpen]);
+  
   // Add debug info
   useEffect(() => {
     if (isOpen) {
@@ -66,10 +94,11 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         original: containerId,
         formatted: validContainerId,
         authProvider,
-        chatKey
+        chatKey,
+        chatLoadFailed
       });
     }
-  }, [isOpen, containerId, validContainerId, authProvider, chatKey]);
+  }, [isOpen, containerId, validContainerId, authProvider, chatKey, chatLoadFailed]);
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -90,16 +119,23 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
             </div>
-          ) : error ? (
+          ) : error || chatLoadFailed ? (
             <div className="flex flex-col items-center justify-center h-full p-6">
-              <p className="text-destructive mb-4">{error}</p>
+              <p className="text-destructive mb-4">
+                {error || "Unable to load the embedded chat due to security restrictions."}
+              </p>
+              <p className="text-sm text-center mb-4">
+                {chatLoadFailed ? 
+                  "SharePoint's Content Security Policy is preventing the chat from loading in this window." : 
+                  "Try opening the chat in a new window instead."}
+              </p>
               <Button 
                 variant="outline" 
                 className="gap-2"
                 onClick={openExternalChat}
               >
                 <ExternalLink size={16} />
-                Try External Chat
+                Open in New Window
               </Button>
             </div>
           ) : (

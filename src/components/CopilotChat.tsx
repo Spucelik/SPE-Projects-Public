@@ -7,7 +7,7 @@ import { useCopilotSite } from '../hooks/useCopilotSite';
 import CopilotMobileView from './copilot/CopilotMobileView';
 import CopilotDesktopView from './copilot/CopilotDesktopView';
 import { Button } from '@/components/ui/button';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, ExternalLink } from 'lucide-react';
 
 interface CopilotChatProps {
   containerId: string;
@@ -20,12 +20,18 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [isMobileView, setIsMobileView] = useState(false);
   const [chatKey, setChatKey] = useState(0);
   const [copilotError, setCopilotError] = useState<string | null>(null);
+  const [useExternalChatOnly, setUseExternalChatOnly] = useState(false);
   
   // Log when component mounts/unmounts and containerId info
   useEffect(() => {
     console.log('CopilotChat component mounted with containerId:', containerId);
-    console.log('ContainerId type:', typeof containerId);
-    console.log('ContainerId length:', containerId?.length);
+    
+    // Check if we've previously encountered CSP errors and prefer external chat
+    const preferExternal = localStorage.getItem('preferExternalCopilotChat');
+    if (preferExternal === 'true') {
+      console.log('Using external chat due to previous CSP issues');
+      setUseExternalChatOnly(true);
+    }
     
     return () => {
       console.log('CopilotChat component unmounting');
@@ -56,13 +62,40 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !useExternalChatOnly) {
       // When opening the chat, reset errors and refresh the component
       console.log('Chat opened - resetting error state and refreshing');
       setCopilotError(null);
       setChatKey(prev => prev + 1);
     }
-  }, [isOpen]);
+  }, [isOpen, useExternalChatOnly]);
+
+  // Handle CSP errors by switching to external chat
+  useEffect(() => {
+    const handleCspError = (event: ErrorEvent) => {
+      if (
+        event.message.includes('Content Security Policy') ||
+        event.message.includes('frame-ancestors') ||
+        event.message.includes('SecurityError')
+      ) {
+        console.error('CSP error detected, switching to external chat:', event.message);
+        setUseExternalChatOnly(true);
+        localStorage.setItem('preferExternalCopilotChat', 'true');
+        
+        if (isOpen) {
+          toast({
+            title: "Chat Display Issue",
+            description: "Opening chat in a new window for better compatibility",
+            variant: "default",
+          });
+          openExternalChat();
+        }
+      }
+    };
+    
+    window.addEventListener('error', handleCspError);
+    return () => window.removeEventListener('error', handleCspError);
+  }, [isOpen, siteUrl]);
 
   const openExternalChat = useCallback(() => {
     if (!siteUrl) {
@@ -87,6 +120,9 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     
     console.log('Opening external Copilot Chat at:', chatUrl);
     window.open(chatUrl, '_blank', 'noopener,noreferrer');
+    
+    // Close the internal chat panel if it's open
+    setIsOpen(false);
   }, [siteUrl]);
 
   // Updated auth provider with CSP compatible settings
@@ -147,10 +183,11 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         isMobileView,
         sharePointHostname,
         authProvider,
-        chatKey
+        chatKey,
+        useExternalChatOnly
       });
     }
-  }, [isOpen, containerId, siteUrl, siteName, isLoading, error, authProvider, isMobileView, sharePointHostname, chatKey]);
+  }, [isOpen, containerId, siteUrl, siteName, isLoading, error, authProvider, isMobileView, sharePointHostname, chatKey, useExternalChatOnly]);
 
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
     console.log('Copilot Chat API ready');
@@ -200,15 +237,15 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     );
   }
 
-  // If auth provider is null, show external chat option
-  if (!authProvider) {
+  // If auth provider is null or we're using external chat only, show external chat option
+  if (!authProvider || useExternalChatOnly) {
     return (
       <Button 
         variant="outline" 
         className="gap-2"
         onClick={openExternalChat}
       >
-        <MessageSquare size={16} />
+        <ExternalLink size={16} />
         <span>Open Copilot Chat</span>
       </Button>
     );
