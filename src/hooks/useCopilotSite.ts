@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -49,6 +48,7 @@ export const useCopilotSite = (containerId: string) => {
     
     try {
       const url = new URL(siteUrl);
+      // Explicitly remove trailing slash
       return `${url.protocol}//${url.hostname}`;
     } catch (e) {
       console.error('Error parsing site URL:', e);
