@@ -30,25 +30,41 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   chatKey,
 }) => {
   // Format the containerId for the SharePoint Embedded API
-  // The correct format is typically just the GUID portion without any prefixes
+  // The SharePoint API expects a proper GUID format
   const formatContainerId = (id: string): string => {
-    // Check if it starts with 'b!' format
-    if (id.startsWith('b!')) {
-      // Extract just the GUID portion (likely the first part after 'b!')
-      const parts = id.substring(2).split('_');
-      if (parts.length > 0) {
-        return parts[0]; // Return just the first part which should be the GUID
+    try {
+      // For IDs in the 'b!' format
+      if (id.startsWith('b!')) {
+        // Extract the first GUID segment, before any underscore
+        const strippedId = id.substring(2); // Remove 'b!' prefix
+        
+        // If there's an underscore, take only the part before it
+        // This should be the DriveId GUID which is what Copilot expects
+        const firstSegment = strippedId.split('_')[0];
+        
+        // Check if it's a valid GUID-like string (basic check)
+        if (firstSegment && firstSegment.length >= 32) {
+          console.log('Using first GUID segment:', firstSegment);
+          return firstSegment;
+        }
+        
+        // If splitting didn't work as expected, return the whole stripped string
+        return strippedId;
       }
+      
+      // For already formatted GUIDs without 'b!' prefix
+      return id;
+    } catch (err) {
+      console.error('Error formatting containerId:', err);
+      // Return original as fallback
+      return id;
     }
-    
-    // If we can't parse it properly, return the original without 'b!' prefix
-    return id.startsWith('b!') ? id.substring(2) : id;
   };
 
   const formattedContainerId = formatContainerId(containerId);
   
-  // Debug log to help troubleshoot
-  console.log('Formatted containerId:', {
+  // Debug logging
+  console.log('ContainerId processing:', {
     original: containerId,
     formatted: formattedContainerId
   });

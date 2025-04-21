@@ -17,18 +17,22 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
   const [isMobileView, setIsMobileView] = useState(false);
   const [chatKey, setChatKey] = useState(0);
+  const [copilotError, setCopilotError] = useState<string | null>(null);
   
   // Log the containerId for debugging
   console.log('CopilotChat received containerId:', containerId);
   
-  // Use the same containerId format for the useCopilotSite hook
+  // Use the useCopilotSite hook
   const {
     isLoading,
-    error,
+    error: siteError,
     siteUrl,
     siteName,
     sharePointHostname,
   } = useCopilotSite(containerId);
+
+  // Combine errors
+  const error = copilotError || siteError;
 
   // Detect mobile view
   useEffect(() => {
@@ -47,6 +51,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   // Reset error state and force re-render when opening chat
   useEffect(() => {
     if (isOpen) {
+      setCopilotError(null);
       setChatKey(prev => prev + 1);
     }
   }, [isOpen]);
@@ -80,6 +85,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to get token';
           console.error('Auth provider error:', errorMessage);
+          setCopilotError(errorMessage);
           throw err;
         }
       },
@@ -107,6 +113,17 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
     console.log('Copilot Chat API ready');
     setChatApi(api);
+  }, []);
+
+  // Handle API errors
+  const handleChatError = useCallback((error: Error) => {
+    console.error('Copilot Chat error:', error);
+    setCopilotError(error.message);
+    toast({
+      title: "Copilot Chat Error",
+      description: error.message,
+      variant: "destructive",
+    });
   }, []);
 
   return isMobileView ? (
