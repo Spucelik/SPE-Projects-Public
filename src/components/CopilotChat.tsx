@@ -36,8 +36,9 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     [getAccessToken]
   );
 
-  // Handle the API being available
-  const handleApiAvailable = (api: ChatEmbeddedAPI) => {
+  // Callback to handle when the Chat API is ready
+  const onApiReady = (api: ChatEmbeddedAPI) => {
+    console.log('Copilot Chat API is ready:', api);
     setChatApi(api);
   };
 
@@ -60,7 +61,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
               containerId={containerId}
               authProvider={authProvider}
               style={{ height: '100%' }}
-              onApiAvailable={handleApiAvailable}
+              onApiReady={onApiReady}
             />
           )}
         </div>
