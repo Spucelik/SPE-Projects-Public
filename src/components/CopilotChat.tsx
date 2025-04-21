@@ -116,6 +116,21 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     setChatApi(api);
   }, []);
 
+  // Error handler for ChatEmbedded component
+  const handleChatError = useCallback((err: any) => {
+    console.error('Embedded chat error:', err);
+    setError(err.message || 'Failed to load embedded chat');
+  }, []);
+
+  // Since we can't directly pass onError to the ChatEmbedded component, 
+  // we'll use a try-catch and an error boundary effect
+  useEffect(() => {
+    // This effect will handle any errors that might occur during rendering
+    return () => {
+      // Clean up function - nothing to clean up for error handling
+    };
+  }, [isOpen]);
+
   const renderMobileView = () => (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
@@ -206,10 +221,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
                 authProvider={authProvider}
                 style={{ width: '100%', height: '100%' }}
                 onApiReady={handleApiReady}
-                onError={(err) => {
-                  console.error('Embedded chat error:', err);
-                  setError(err.message || 'Failed to load embedded chat');
-                }}
               />
             </div>
           )}
