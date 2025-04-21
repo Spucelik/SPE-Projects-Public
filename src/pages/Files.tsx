@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +12,7 @@ import FolderNavigation from '@/components/files/FolderNavigation';
 import { ConfigAlert } from '../components/ConfigAlert';
 import FilePreviewDialog from '@/components/files/FilePreviewDialog';
 import { FileItem } from '@/services/sharePointService';
+import CopilotChat from '@/components/CopilotChat';
 
 interface File {
   id: string;
@@ -223,7 +225,13 @@ const Files = () => {
 
   return (
     <div className="space-y-6">
-      <ConfigAlert />
+      <div className="flex justify-between items-center">
+        <ConfigAlert />
+        
+        {containerId && (
+          <CopilotChat containerId={containerId} />
+        )}
+      </div>
       
       <FolderNavigation 
         currentPath={currentPath}

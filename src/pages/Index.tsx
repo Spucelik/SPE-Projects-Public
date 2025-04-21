@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -7,6 +8,7 @@ import { Folder, Settings, AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { ConfigAlert } from '../components/ConfigAlert';
 import { appConfig } from '../config/appConfig';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 interface Container {
   id: string;
@@ -65,9 +67,9 @@ const Index = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold mb-2">Welcome to SharePoint Embedded File Upload</h1>
+        <h1 className="text-2xl font-bold mb-2">{appConfig.appName}</h1>
         <p className="text-gray-600">
-          This application allows you to manage and upload files to your SharePoint Embedded containers.
+          This application allows you to manage files and collaborate on projects using SharePoint Embedded.
         </p>
       </div>
 
@@ -82,73 +84,87 @@ const Index = () => {
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="border rounded-lg p-6 bg-white shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Folder className="text-blue-500" />
-            <h2 className="text-xl font-semibold">Your Containers</h2>
-          </div>
-          {loading ? (
-            <div className="animate-pulse space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 bg-gray-200 rounded"></div>
-              ))}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Folder className="text-blue-500" />
+              <CardTitle>Your Containers</CardTitle>
             </div>
-          ) : error ? (
-            <div className="text-red-500">
-              <p>There was an error loading containers.</p>
+            <CardDescription>
+              Access your project containers to manage files and collaborate
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="animate-pulse space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-12 bg-gray-200 rounded"></div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="text-red-500">
+                <p>There was an error loading containers.</p>
+              </div>
+            ) : containers.length > 0 ? (
+              <ul className="space-y-2">
+                {containers.map((container) => (
+                  <li key={container.id} className="border-b pb-2">
+                    <Link 
+                      to={`/files/${container.id}`}
+                      className="hover:text-blue-600 font-medium"
+                    >
+                      {container.displayName}
+                    </Link>
+                    {container.description && (
+                      <p className="text-sm text-gray-500">{container.description}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500">No containers found. Create your first container to get started.</p>
+            )}
+            <div className="mt-4">
+              <Link 
+                to="/containers" 
+                className="text-blue-600 hover:underline text-sm"
+              >
+                View all containers →
+              </Link>
             </div>
-          ) : containers.length > 0 ? (
-            <ul className="space-y-2">
-              {containers.map((container) => (
-                <li key={container.id} className="border-b pb-2">
-                  <Link 
-                    to={`/files/${container.id}`}
-                    className="hover:text-blue-600 font-medium"
-                  >
-                    {container.displayName}
-                  </Link>
-                  {container.description && (
-                    <p className="text-sm text-gray-500">{container.description}</p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">No containers found. Create your first container to get started.</p>
-          )}
-          <div className="mt-4">
-            <Link 
-              to="/containers" 
-              className="text-blue-600 hover:underline text-sm"
-            >
-              View all containers →
-            </Link>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
         
-        <div className="border rounded-lg p-6 bg-white shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Settings className="text-blue-500" />
-            <h2 className="text-xl font-semibold">Getting Started</h2>
-          </div>
-          <ol className="list-decimal list-inside space-y-3 text-gray-700">
-            <li>Make sure you have the correct permissions in your Microsoft tenant</li>
-            <li>Create a new container or browse existing ones</li>
-            <li>Upload files to your containers</li>
-            <li>Browse and preview files in containers</li>
-          </ol>
-          <div className="mt-6 p-4 bg-gray-100 rounded-md text-sm">
-            <p className="font-semibold">Need help?</p>
-            <a 
-              href="https://aka.ms/start-spe" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              Get Started with SharePoint Embedded →
-            </a>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Settings className="text-blue-500" />
+              <CardTitle>Getting Started</CardTitle>
+            </div>
+            <CardDescription>
+              Follow these steps to start working with SharePoint Embedded
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ol className="list-decimal list-inside space-y-3 text-gray-700">
+              <li>Make sure you have the correct permissions in your Microsoft tenant</li>
+              <li>Create a new container or browse existing ones</li>
+              <li>Upload files to your containers</li>
+              <li>Browse and preview files in containers</li>
+            </ol>
+            <div className="mt-6 p-4 bg-gray-100 rounded-md text-sm">
+              <p className="font-semibold">Need help?</p>
+              <a 
+                href="https://aka.ms/start-spe" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                Get Started with SharePoint Embedded →
+              </a>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
