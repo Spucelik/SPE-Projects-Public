@@ -16,7 +16,7 @@ interface CopilotChatContainerProps {
 const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId }) => {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
-  const { getAccessToken } = useAuth();
+  const { getAccessToken, getSharePointToken } = useAuth();
   const [chatKey, setChatKey] = useState(0);
   const chatApiRef = useRef<ChatEmbeddedAPI | null>(null);
   
@@ -56,7 +56,8 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       hostname: sharePointHostname,
       getToken: async () => {
         try {
-          const token = await getAccessToken();
+          // Get a SharePoint specific token instead of a Graph token
+          const token = await getSharePointToken(sharePointHostname);
           console.log('Auth token retrieved for Copilot chat', token ? 'successfully' : 'failed');
           return token || '';
         } catch (err) {
@@ -66,14 +67,14 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
         }
       }
     };
-  }, [sharePointHostname, getAccessToken]);
+  }, [sharePointHostname, getSharePointToken]);
   
   // Auth provider instance
   const authProvider = createAuthProvider();
   
   // Handles API ready event from ChatEmbedded component
   const handleApiReady = (api: ChatEmbeddedAPI) => {
-    console.log('Copilot chat API is ready', api);
+    console.log('Copilot chat API is ready');
     chatApiRef.current = api;
     
     // Configure chat if we have settings

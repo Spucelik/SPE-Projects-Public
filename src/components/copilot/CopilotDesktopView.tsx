@@ -170,7 +170,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   authProvider={authProvider}
                   onApiReady={handleApiReady}
                   style={{ height: '100%', width: '100%' }}
-                  config={chatConfig} // Pass the config via the config prop instead of updating it later
                 />
               ) : (
                 <div className="flex items-center justify-center h-full p-6 text-center">
