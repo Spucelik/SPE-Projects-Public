@@ -130,6 +130,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       // Check if the API has the expected methods
       if (typeof api.openChat === 'function') {
         console.log('openChat method is available');
+        // Try to open the chat automatically
+        api.openChat();
       }
     } catch (err) {
       console.error('Error with Copilot API:', err);
