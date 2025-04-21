@@ -55,6 +55,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           ) : (
             <div className="h-full" key={chatKey}>
               <ChatEmbedded
+                containerId={containerId}
                 authProvider={authProvider}
                 onApiReady={onApiReady}
                 style={{ height: '100%' }}
