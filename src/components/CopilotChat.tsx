@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare } from 'lucide-react';
@@ -36,11 +36,32 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     [getAccessToken]
   );
   
-  // Callback for API ready - explicitly typed and defined
+  // Callback for API ready
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
     console.log('Copilot Chat API ready:', api);
     setChatApi(api);
   }, []);
+
+  // Effect to open the chat when the API is ready
+  useEffect(() => {
+    const openChat = async () => {
+      if (!chatApi) {
+        return;
+      }
+      
+      console.log('Attempting to open chat with API');
+      try {
+        await chatApi.openChat();
+        console.log('Chat opened successfully');
+      } catch (error) {
+        console.error('Failed to open chat:', error);
+      }
+    };
+
+    if (isOpen && chatApi) {
+      openChat();
+    }
+  }, [chatApi, isOpen]);
 
   console.log('CopilotChat rendering with containerId:', containerId);
 
