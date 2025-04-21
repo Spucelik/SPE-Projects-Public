@@ -169,6 +169,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   containerId={validContainerId}
                   authProvider={authProvider}
                   onApiReady={handleApiReady}
+                  config={chatConfig}
                   style={{ height: '100%', width: '100%' }}
                 />
               ) : (

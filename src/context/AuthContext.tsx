@@ -155,11 +155,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Extract the hostname without protocol
       const domain = hostname.replace(/^https?:\/\//, '');
       
-      // Use the SharePoint Online scope format
-      const sharePointScope = `https://${domain}/.default`;
-      console.log(`Requesting SharePoint token for: ${sharePointScope}`);
-      
-      return await getAccessToken(sharePointScope);
+      // Use the SharePoint Online scope format with the specific domain
+      return await getAccessToken(`https://${domain}`);
     } catch (error) {
       console.error('Failed to get SharePoint token:', error);
       return null;
