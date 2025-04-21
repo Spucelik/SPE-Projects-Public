@@ -56,7 +56,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center space-y-4 h-full">
-              <Alert variant="info" className="mb-4">
+              <Alert variant="default" className="mb-4">
                 <AlertCircle className="h-4 w-4 mr-2" />
                 <AlertDescription>
                   Copilot Chat works best in its own dedicated window due to browser security policies.
