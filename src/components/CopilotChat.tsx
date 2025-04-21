@@ -71,6 +71,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
           return token;
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to get token';
+          console.error('Auth provider error:', errorMessage);
           throw err;
         }
       },
@@ -83,6 +84,21 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     console.log('Copilot Chat API ready');
     setChatApi(api);
   }, []);
+
+  // Debug output
+  useEffect(() => {
+    if (isOpen) {
+      console.log('Copilot Chat rendering with:', {
+        containerId,
+        siteUrl,
+        siteName,
+        isLoading,
+        error,
+        authProvider,
+        isMobileView
+      });
+    }
+  }, [isOpen, containerId, siteUrl, siteName, isLoading, error, authProvider, isMobileView]);
 
   return isMobileView ? (
     <CopilotMobileView

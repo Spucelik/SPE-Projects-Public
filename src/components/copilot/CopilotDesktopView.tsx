@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare, ExternalLink } from 'lucide-react';
@@ -31,6 +31,29 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   onApiReady,
   chatKey,
 }) => {
+  // Chat configuration
+  const [chatConfig] = useState({
+    header: {
+      title: 'Copilot',
+      subtitle: 'Ask me about your files',
+    },
+    theme: {
+      primaryColor: '#0078d4',
+    },
+    zeroQueryPrompts: [
+      'What files are available in this container?',
+      'Summarize the recent documents',
+      'Help me understand this project'
+    ],
+    suggestedPrompts: [
+      'Find documents about marketing strategy',
+      'What's the latest sales report?',
+      'Show me project timelines'
+    ],
+    instruction: 'I am an AI assistant that can help you with your documents in SharePoint.',
+    locale: 'en',
+  });
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -73,6 +96,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 authProvider={authProvider}
                 style={{ width: '100%', height: '100%' }}
                 onApiReady={onApiReady}
+                config={chatConfig}
               />
             </div>
           )}
