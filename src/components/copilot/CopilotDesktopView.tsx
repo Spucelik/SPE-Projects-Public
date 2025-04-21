@@ -29,11 +29,29 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   onApiReady,
   chatKey,
 }) => {
-  // The SharePoint Embedded Copilot Chat component expects a specific format for the containerId
-  // The format is typically a DriveId without the 'b!' prefix
-  const formattedContainerId = containerId.startsWith('b!') 
-    ? containerId.substring(2) 
-    : containerId;
+  // Format the containerId for the SharePoint Embedded API
+  // The correct format is typically just the GUID portion without any prefixes
+  const formatContainerId = (id: string): string => {
+    // Check if it starts with 'b!' format
+    if (id.startsWith('b!')) {
+      // Extract just the GUID portion (likely the first part after 'b!')
+      const parts = id.substring(2).split('_');
+      if (parts.length > 0) {
+        return parts[0]; // Return just the first part which should be the GUID
+      }
+    }
+    
+    // If we can't parse it properly, return the original without 'b!' prefix
+    return id.startsWith('b!') ? id.substring(2) : id;
+  };
+
+  const formattedContainerId = formatContainerId(containerId);
+  
+  // Debug log to help troubleshoot
+  console.log('Formatted containerId:', {
+    original: containerId,
+    formatted: formattedContainerId
+  });
     
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
