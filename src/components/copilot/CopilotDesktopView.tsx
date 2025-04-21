@@ -47,7 +47,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     ],
     suggestedPrompts: [
       'Find documents about marketing strategy',
-      'What's the latest sales report?',
+      "What's the latest sales report?", // Escaped apostrophe
       'Show me project timelines'
     ],
     instruction: 'I am an AI assistant that can help you with your documents in SharePoint.',
