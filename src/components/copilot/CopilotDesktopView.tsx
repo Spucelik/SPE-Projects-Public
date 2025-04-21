@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare, ExternalLink } from 'lucide-react';
@@ -31,28 +31,30 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   onApiReady,
   chatKey,
 }) => {
-  // Chat configuration
-  const [chatConfig] = useState({
-    header: {
-      title: 'Copilot',
-      subtitle: 'Ask me about your files',
-    },
-    theme: {
-      primaryColor: '#0078d4',
-    },
-    zeroQueryPrompts: [
-      'What files are available in this container?',
-      'Summarize the recent documents',
-      'Help me understand this project'
-    ],
-    suggestedPrompts: [
-      'Find documents about marketing strategy',
-      "What's the latest sales report?", // Escaped apostrophe
-      'Show me project timelines'
-    ],
-    instruction: 'I am an AI assistant that can help you with your documents in SharePoint.',
-    locale: 'en',
-  });
+  const [localChatApi, setLocalChatApi] = useState<ChatEmbeddedAPI | null>(null);
+
+  // Handle API ready and trigger chat opening
+  const handleApiReady = (api: ChatEmbeddedAPI) => {
+    console.log('Chat API ready');
+    setLocalChatApi(api);
+    onApiReady(api);
+  };
+
+  // Open chat when API is ready and component is open
+  useEffect(() => {
+    const openChat = async () => {
+      if (!localChatApi || !isOpen) return;
+      
+      try {
+        console.log('Opening chat...');
+        await localChatApi.openChat();
+      } catch (error) {
+        console.error('Error opening chat:', error);
+      }
+    };
+
+    openChat();
+  }, [localChatApi, isOpen]);
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -95,8 +97,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 containerId={containerId}
                 authProvider={authProvider}
                 style={{ width: '100%', height: '100%' }}
-                onApiReady={onApiReady}
-                config={chatConfig}
+                onApiReady={handleApiReady}
               />
             </div>
           )}
