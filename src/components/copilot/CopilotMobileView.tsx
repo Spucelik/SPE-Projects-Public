@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from '@/components/ui/drawer';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, ExternalLink } from 'lucide-react';
+import { appConfig } from '@/config/appConfig';
 
 interface CopilotMobileViewProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ const CopilotMobileView: React.FC<CopilotMobileViewProps> = ({
   siteName,
   isLoading,
   error,
+  openExternalChat,
 }) => {
   return (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
@@ -42,8 +45,14 @@ const CopilotMobileView: React.FC<CopilotMobileViewProps> = ({
               <p>Could not load Copilot Chat: {error}</p>
             </div>
           ) : (
-            <div className="text-center">
-              <p>For the best experience on mobile devices, open the side panel chat.</p>
+            <div className="flex flex-col items-center justify-center h-full space-y-4">
+              <p className="text-center">For the best experience, use Copilot in the desktop view.</p>
+              {openExternalChat && (
+                <Button onClick={openExternalChat} className="gap-2">
+                  <ExternalLink size={16} />
+                  <span>Open Chat</span>
+                </Button>
+              )}
             </div>
           )}
         </div>

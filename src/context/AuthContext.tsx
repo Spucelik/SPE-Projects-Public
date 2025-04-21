@@ -3,7 +3,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { 
   PublicClientApplication, 
   AuthenticationResult, 
-  AccountInfo 
+  AccountInfo,
+  InteractionRequiredAuthError 
 } from '@azure/msal-browser';
 import { appConfig } from '../config/appConfig';
 
@@ -46,15 +47,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (accounts.length > 0) {
       setIsAuthenticated(true);
       setUser(accounts[0]);
+      msalInstance.setActiveAccount(accounts[0]);
     }
   }, []);
 
   const login = async (): Promise<void> => {
     try {
       // Ensure MSAL is initialized
-      if (!msalInstance.getActiveAccount()) {
-        await msalInstance.initialize();
-      }
+      await msalInstance.initialize();
       
       // Using empty scopes for login as instructed
       const loginRequest = {
@@ -89,7 +89,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(null);
       // Clear any local storage
       sessionStorage.clear();
-      localStorage.clear();
+      localStorage.removeItem('preferExternalChat');
+      localStorage.removeItem('lastChatError');
     }).catch(error => {
       console.error('Logout failed:', error);
     });
@@ -122,21 +123,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       return tokenResponse.accessToken;
     } catch (error) {
-      console.error(`Failed to get access token silently for resource: ${resource || 'graph'}, trying popup`, error);
-      
-      try {
-        // If silent acquisition fails, try popup
-        const tokenScopes = resource 
-          ? [`${resource}/.default`]
-          : ["https://graph.microsoft.com/.default"];
-          
-        const tokenResponse = await msalInstance.acquireTokenPopup({
-          scopes: tokenScopes
-        });
-        console.log('Token acquired with popup for resource:', resource || 'graph');
-        return tokenResponse.accessToken;
-      } catch (fallbackError) {
-        console.error(`Failed to get access token with popup for resource: ${resource || 'graph'}`, fallbackError);
+      if (error instanceof InteractionRequiredAuthError) {
+        console.log(`Silent token acquisition failed for resource: ${resource || 'graph'}, trying popup`);
+        
+        try {
+          // If silent acquisition fails, try popup
+          const tokenScopes = resource 
+            ? [`${resource}/.default`]
+            : ["https://graph.microsoft.com/.default"];
+            
+          const tokenResponse = await msalInstance.acquireTokenPopup({
+            scopes: tokenScopes
+          });
+          console.log('Token acquired with popup for resource:', resource || 'graph');
+          return tokenResponse.accessToken;
+        } catch (fallbackError) {
+          console.error(`Failed to get access token with popup for resource: ${resource || 'graph'}`, fallbackError);
+          return null;
+        }
+      } else {
+        console.error(`Failed to get access token for resource: ${resource || 'graph'}`, error);
         return null;
       }
     }

@@ -210,35 +210,63 @@ class SharePointService {
     }));
   }
   
-  // Upload a file
-  async uploadFile(token: string, driveId: string, folderId: string, file: File): Promise<FileItem> {
-    const folderPath = folderId === 'root' ? 'root:' : `${folderId}:`;
-    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${driveId}/items/${folderPath}/${file.name}:/content`;
+  // Upload a file with progress tracking
+  async uploadFile(
+    token: string, 
+    driveId: string, 
+    folderId: string, 
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<FileItem> {
+    const folderPath = folderId === 'root' ? 'root:' : `items/${folderId}:`;
+    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${driveId}/${folderPath}/${file.name}:/content`;
     
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': file.type || 'application/octet-stream'
-      },
-      body: file
+    console.log('Uploading file to URL:', url);
+    
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      xhr.open('PUT', url, true);
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable && onProgress) {
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+          onProgress(percentComplete);
+        }
+      };
+      
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            resolve({
+              ...data,
+              isFolder: false
+            });
+          } catch (error) {
+            reject(new Error('Invalid response format'));
+          }
+        } else {
+          reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+        }
+      };
+      
+      xhr.onerror = () => {
+        reject(new Error('Network error occurred during upload'));
+      };
+      
+      xhr.send(file);
     });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to upload file: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return {
-      ...data,
-      isFolder: false
-    };
   }
 
   // Create a new folder
   async createFolder(token: string, driveId: string, parentFolderId: string, folderName: string): Promise<FileItem> {
-    const folderPath = parentFolderId === 'root' ? 'root' : parentFolderId;
-    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${driveId}/items/${folderPath}/children`;
+    const folderPath = parentFolderId === 'root' ? 'root' : `items/${parentFolderId}`;
+    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${driveId}/${folderPath}/children`;
+    
+    console.log('Creating folder with URL:', url);
     
     const response = await fetch(url, {
       method: 'POST',

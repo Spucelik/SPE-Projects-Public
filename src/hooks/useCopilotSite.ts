@@ -1,8 +1,6 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
-import { toast } from '@/hooks/use-toast';
 import { appConfig } from '../config/appConfig';
 
 export const useCopilotSite = (containerId: string) => {
@@ -12,8 +10,21 @@ export const useCopilotSite = (containerId: string) => {
   const [siteName, setSiteName] = useState<string | null>(null);
   const { getAccessToken } = useAuth();
 
+  // Normalize container ID to handle different formats
+  const normalizedContainerId = useMemo(() => {
+    if (!containerId) return '';
+    
+    // If it already starts with b!, keep it as is
+    if (containerId.startsWith('b!')) {
+      return containerId;
+    }
+    
+    // Otherwise, add the b! prefix
+    return `b!${containerId}`;
+  }, [containerId]);
+
   useEffect(() => {
-    if (!containerId) return;
+    if (!normalizedContainerId) return;
     
     const fetchSiteInfo = async () => {
       try {
@@ -25,8 +36,8 @@ export const useCopilotSite = (containerId: string) => {
           return;
         }
         
-        console.log('Fetching container details for:', containerId);
-        const containerDetails = await sharePointService.getContainerDetails(token, containerId);
+        console.log('Fetching container details for:', normalizedContainerId);
+        const containerDetails = await sharePointService.getContainerDetails(token, normalizedContainerId);
         console.log('Container details retrieved:', containerDetails);
         
         // Store the site URL without any trailing slashes
@@ -49,7 +60,7 @@ export const useCopilotSite = (containerId: string) => {
     };
     
     fetchSiteInfo();
-  }, [containerId, getAccessToken]);
+  }, [normalizedContainerId, getAccessToken, siteUrl]);
 
   // Get the base SharePoint hostname (without any paths or trailing slashes)
   // This is used for authentication and CSP compatibility
