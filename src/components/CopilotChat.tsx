@@ -295,7 +295,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
               authProvider={authProvider}
               style={{ width: '100%', height: '100%' }}
               onApiReady={handleApiReady}
-              sandboxAttributes="allow-scripts allow-same-origin allow-forms allow-popups"
             />
           )}
           
