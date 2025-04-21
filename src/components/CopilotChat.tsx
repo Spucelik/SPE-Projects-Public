@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 // Import correct exports from the SDK
 import {
@@ -22,15 +23,29 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { getAccessToken } = useAuth();
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Auth provider for the SDK
   const authProvider: IChatEmbeddedApiAuthProvider = useMemo(
     () => ({
       hostname: SPE_HOSTNAME,
       getToken: async () => {
-        const token = await getAccessToken();
-        if (!token) throw new Error('No access token available for Copilot Chat');
-        return token;
+        try {
+          setError(null);
+          const token = await getAccessToken();
+          if (!token) {
+            const noTokenError = 'No access token available for Copilot Chat';
+            setError(noTokenError);
+            throw new Error(noTokenError);
+          }
+          return token;
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : 'Failed to get token';
+          setError(errorMessage);
+          console.error('Token acquisition failed:', errorMessage);
+          throw err;
+        }
       },
     }),
     [getAccessToken]
@@ -49,12 +64,25 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         return;
       }
       
+      setIsLoading(true);
+      setError(null);
       console.log('Attempting to open chat with API');
       try {
         await chatApi.openChat();
         console.log('Chat opened successfully');
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        setError(`Failed to open chat: ${errorMessage}`);
         console.error('Failed to open chat:', error);
+        
+        // Notify user about the error
+        toast({
+          title: "Copilot Chat Error",
+          description: "Could not connect to Copilot Chat. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -77,8 +105,18 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         <div className="flex-shrink-0 border-b px-6 py-4">
           <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
           <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
+          {error && (
+            <div className="mt-2 p-2 bg-red-50 text-red-800 rounded text-sm">
+              {error}
+            </div>
+          )}
         </div>
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 relative">
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          )}
           {isOpen && containerId && (
             <ChatEmbedded
               containerId={containerId}
