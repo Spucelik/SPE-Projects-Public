@@ -27,6 +27,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [detailedError, setDetailedError] = useState<any | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [isSiteUrlFetched, setIsSiteUrlFetched] = useState(false);
   const [siteUrl, setSiteUrl] = useState<string | null>(null);
@@ -51,7 +52,16 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     }
   }, [containerId]);
 
-  // Auth provider for the SDK
+  // Detailed diagnostics for the site URL
+  useEffect(() => {
+    if (!containerId) return;
+    
+    console.log('Current route contains containerId:', containerId);
+    console.log('Container parts parsing result:', containerParts);
+    console.log('Current site URL being used:', siteUrl);
+  }, [containerId, containerParts, siteUrl]);
+
+  // Auth provider for the SDK with debugging
   const authProvider: IChatEmbeddedApiAuthProvider = useMemo(
     () => ({
       hostname: SPE_HOSTNAME,
@@ -60,35 +70,49 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
           setError(null);
           console.log('Getting access token for Copilot Chat...');
           const token = await getAccessToken();
+          
           if (!token) {
             const noTokenError = 'No access token available for Copilot Chat';
+            console.error(noTokenError);
             setError(noTokenError);
             throw new Error(noTokenError);
           }
-          console.log('Access token obtained successfully');
+          
+          // Log token details (safely)
+          console.log('Access token obtained successfully', {
+            length: token.length,
+            prefix: token.substring(0, 5) + '...',
+            timestamp: new Date().toISOString()
+          });
+          
           return token;
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to get token';
           setError(errorMessage);
-          console.error('Token acquisition failed:', errorMessage);
+          console.error('Token acquisition failed:', errorMessage, err);
           throw err;
         }
       },
-      // Use the determined site URL
+      // Use the determined site URL with detailed logging
       siteUrl: siteUrl || (containerParts ? `${SPE_HOSTNAME}/contentstorage/CSP_${containerParts.contentId}` : undefined),
     }),
     [getAccessToken, containerParts, siteUrl]
   );
   
-  // Callback for API ready
+  // Callback for API ready with enhanced logging
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
-    console.log('Copilot Chat API ready:', api);
+    console.log('Copilot Chat API ready, inspecting API properties:', {
+      apiExists: !!api,
+      apiMethods: Object.keys(api),
+      timestamp: new Date().toISOString()
+    });
     setChatApi(api);
   }, []);
 
   // Function to handle retry
   const handleRetry = useCallback(() => {
     setError(null);
+    setDetailedError(null);
     setRetryCount(prev => prev + 1);
   }, []);
 
@@ -101,19 +125,24 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         const token = await getAccessToken();
         if (!token) return;
         
-        // Try multiple possible site URL formats
+        // Try multiple possible site URL formats with detailed logging
         const possibleSiteUrls = [
           `${SPE_HOSTNAME}/contentstorage/CSP_${containerParts.contentId}`,
           `${SPE_HOSTNAME}/sites/contentstorage_${containerParts.contentId}`,
-          `${SPE_HOSTNAME}/_api/v2.1/drives/${containerId}/root`
+          `${SPE_HOSTNAME}/_api/v2.1/drives/${containerId}/root`,
+          // Include the raw containerId as is, in case it's already a valid site path
+          `${SPE_HOSTNAME}/sites/${containerId}`,
+          // Support for document libraries format
+          `${SPE_HOSTNAME}/personal/${containerParts.contentId}_onmicrosoft_com/Documents`
         ];
         
-        console.log('Trying possible site URLs:', possibleSiteUrls);
+        console.log('Attempting site URL discovery with formats:', possibleSiteUrls);
         
-        // Try each URL format
+        // Try each URL format with detailed diagnostics
         for (const url of possibleSiteUrls) {
           try {
-            console.log('Trying to validate with URL:', url);
+            console.log('Validating site URL:', url);
+            
             // For the _api URLs, we make an actual fetch
             if (url.includes('_api')) {
               const response = await fetch(url, {
@@ -123,10 +152,11 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
                 }
               });
               
+              console.log('API validation response status:', response.status);
+              
               if (response.ok) {
-                console.log('URL validation successful with:', url);
                 const data = await response.json();
-                console.log('Site data:', data);
+                console.log('Site data received:', data);
                 
                 // If we got webUrl from the response, use it directly
                 if (data.webUrl) {
@@ -135,30 +165,36 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
                   console.log('Set site URL from API response:', data.webUrl);
                   return;
                 }
+              } else {
+                const errorText = await response.text();
+                console.warn('API validation failed with status:', response.status, errorText);
               }
             } else {
               // For potential direct URLs, set it and let the SDK try
               setSiteUrl(url);
               setIsSiteUrlFetched(true);
-              console.log('Set site URL to try:', url);
+              console.log('Setting site URL to try:', url);
               return;
             }
           } catch (err) {
-            console.warn('Failed attempt with URL format:', url, err);
+            console.warn('Failed validation attempt with URL format:', url, err);
           }
         }
         
         // If we get here, none of the formats worked
-        console.warn('Could not validate any site URL format');
+        console.warn('Could not validate any site URL format, using default format');
+        // Fall back to the default format as last resort
+        setSiteUrl(`${SPE_HOSTNAME}/contentstorage/CSP_${containerParts.contentId}`);
+        setIsSiteUrlFetched(true);
       } catch (err) {
-        console.warn('Site URL validation failed:', err);
+        console.error('Site URL validation failed:', err);
       }
     };
     
     fetchSiteUrl();
   }, [containerId, containerParts, getAccessToken]);
 
-  // Effect to open the chat when the API is ready
+  // Effect to open the chat when the API is ready with enhanced error handling
   useEffect(() => {
     const openChat = async () => {
       if (!chatApi) {
@@ -167,21 +203,53 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       
       setIsLoading(true);
       setError(null);
-      console.log('Attempting to open chat with API with containerId:', containerId);
-      console.log('Using site URL:', siteUrl || (containerParts ? `${SPE_HOSTNAME}/contentstorage/CSP_${containerParts.contentId}` : 'undefined'));
+      setDetailedError(null);
+      console.log('Attempting to open chat with API:', {
+        containerId,
+        siteUrl: siteUrl || (containerParts ? `${SPE_HOSTNAME}/contentstorage/CSP_${containerParts.contentId}` : 'undefined'),
+        retryCount,
+        timestamp: new Date().toISOString()
+      });
       
       try {
+        // Setup direct error event listeners on the chat component if possible
+        if (typeof chatApi.addEventListener === 'function') {
+          chatApi.addEventListener('error', (event: any) => {
+            console.error('Chat API error event:', event);
+          });
+        }
+        
         await chatApi.openChat();
         console.log('Chat opened successfully');
       } catch (error) {
+        // Capture all error details for diagnosis
+        const errorObj = error instanceof Error ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+          // Capture any additional properties on the error object
+          ...Object.fromEntries(
+            Object.getOwnPropertyNames(error)
+              .filter(prop => prop !== 'name' && prop !== 'message' && prop !== 'stack')
+              .map(prop => [prop, (error as any)[prop]])
+          )
+        } : error;
+        
+        console.error('Failed to open chat - detailed error:', errorObj);
+        setDetailedError(errorObj);
+        
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         setError(`Failed to open chat: ${errorMessage}`);
-        console.error('Failed to open chat details:', error);
+        
+        // Check for specific error conditions
+        if (errorMessage.includes('site URL') || errorMessage.includes('siteUrl')) {
+          console.warn('Site URL related error detected, might need different URL format');
+        }
         
         // Notify user about the error
         toast({
           title: "Copilot Chat Error",
-          description: "Could not connect to Copilot Chat. Please try again later.",
+          description: "Could not connect to Copilot Chat. See console for details.",
           variant: "destructive",
         });
       } finally {
@@ -208,16 +276,39 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         <div className="flex-shrink-0 border-b px-6 py-4">
           <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
           <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
+          
           {error && (
             <div className="mt-2 p-2 bg-red-50 text-red-800 rounded text-sm">
-              <p>{error}</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleRetry} 
-                className="mt-2">
-                Retry Connection
-              </Button>
+              <p className="font-medium">Error: {error}</p>
+              
+              {detailedError && (
+                <div className="mt-2 overflow-auto max-h-40 text-xs p-2 bg-red-100 rounded">
+                  <p className="font-mono whitespace-pre-wrap">
+                    {typeof detailedError === 'object' 
+                      ? JSON.stringify(detailedError, null, 2)
+                      : String(detailedError)
+                    }
+                  </p>
+                </div>
+              )}
+              
+              <div className="mt-3 flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRetry} 
+                  className="flex-1">
+                  Retry Connection
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {console.clear(); console.log('Console cleared for fresh diagnostics'); handleRetry();}}
+                  className="flex-1">
+                  Clear & Retry
+                </Button>
+              </div>
             </div>
           )}
         </div>
