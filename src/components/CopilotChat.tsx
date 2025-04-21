@@ -133,10 +133,19 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
           // Include the raw containerId as is, in case it's already a valid site path
           `${SPE_HOSTNAME}/sites/${containerId}`,
           // Support for document libraries format
-          `${SPE_HOSTNAME}/personal/${containerParts.contentId}_onmicrosoft_com/Documents`
-        ];
+          `${SPE_HOSTNAME}/personal/${containerParts.contentId}_onmicrosoft_com/Documents`,
+          // Try the unprocessed containerId directly
+          `${SPE_HOSTNAME}/personal/${containerId}`,
+          // Try with b! prefix removed if present
+          containerId.startsWith('b!') ? 
+            `${SPE_HOSTNAME}/personal/${containerId.substring(2)}` : 
+            null,
+          // Try with the drive directly
+          `${SPE_HOSTNAME}/drives/${containerId}`
+        ].filter(Boolean); // Remove null entries
         
         console.log('Attempting site URL discovery with formats:', possibleSiteUrls);
+        console.log('Raw containerId being used:', containerId);
         
         // Try each URL format with detailed diagnostics
         for (const url of possibleSiteUrls) {
@@ -212,12 +221,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       });
       
       try {
-        // Setup direct error event listeners on the chat component if possible
-        if (typeof chatApi.addEventListener === 'function') {
-          chatApi.addEventListener('error', (event: any) => {
-            console.error('Chat API error event:', event);
-          });
-        }
+        // Removed the addEventListener calls that caused TypeScript errors
         
         await chatApi.openChat();
         console.log('Chat opened successfully');
