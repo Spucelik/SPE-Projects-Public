@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
+import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from '@/components/ui/drawer';
 import { MessageSquare, ExternalLink } from 'lucide-react';
 
 interface CopilotMobileViewProps {
@@ -31,7 +31,7 @@ const CopilotMobileView: React.FC<CopilotMobileViewProps> = ({
       </DrawerTrigger>
       <DrawerContent className="flex flex-col h-96">
         <div className="flex-shrink-0 border-b px-6 py-4">
-          <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
+          <DrawerTitle className="text-lg font-semibold">SharePoint Embedded Copilot</DrawerTitle>
           {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
         </div>
         <div className="flex-1 min-h-0 p-6">

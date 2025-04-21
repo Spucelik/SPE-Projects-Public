@@ -52,12 +52,16 @@ const FilePreviewDialog: React.FC<FilePreviewDialogProps> = ({
               src={previewUrl}
               className="w-full h-full border-0"
               title="File Preview"
+              aria-describedby="file-preview-description"
             ></iframe>
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500">
               Preview not available
             </div>
           )}
+        </div>
+        <div id="file-preview-description" className="sr-only">
+          File preview iframe displaying the selected document
         </div>
       </DialogContent>
     </Dialog>
