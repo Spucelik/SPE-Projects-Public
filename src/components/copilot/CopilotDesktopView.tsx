@@ -35,38 +35,31 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     try {
       console.log('Raw containerId:', rawId);
       
-      // If the ID is from a URL path, extract just the ID part after /files/
-      const pathMatch = rawId.match(/\/files\/([^\/]+)/);
-      if (pathMatch && pathMatch[1]) {
-        rawId = pathMatch[1];
-        console.log('Extracted from path:', rawId);
+      // If the ID is from a URL path, extract just the ID part
+      if (rawId.includes('/files/')) {
+        const parts = rawId.split('/files/');
+        if (parts.length > 1) {
+          rawId = parts[1];
+          console.log('Extracted from URL path:', rawId);
+        }
       }
       
-      // Handle "b!" prefix specifically - SharePoint uses this to indicate a driveItem
+      // Handle "b!" prefix specifically
       if (rawId.startsWith('b!')) {
-        console.log('Processing b! prefixed ID');
-        
-        // For b! IDs, we need to extract a specific segment
-        // According to SharePoint API docs, the b! format contains encoded information
-        // that may not be directly usable as a GUID
-        
-        // Recommended approach: When presented with a b! ID in a URL, 
-        // use it directly as the API expects this format
+        console.log('Using b! prefixed ID:', rawId);
         return rawId;
       }
       
       // If it's already a GUID with dashes, return it directly
       if (rawId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        console.log('Already a valid GUID format:', rawId);
+        console.log('Using GUID format:', rawId);
         return rawId;
       }
       
-      // For any other format, just return as is and let the API handle it
       console.log('Using original ID format:', rawId);
       return rawId;
     } catch (error) {
       console.error('Error formatting containerId:', error);
-      // Return the original ID as fallback
       return rawId;
     }
   };
@@ -74,15 +67,16 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   // Get a correctly formatted containerId
   const validContainerId = formatContainerId(containerId);
   
-  // Add more debug info
+  // Add debug info
   useEffect(() => {
     if (isOpen) {
-      console.log('CopilotDesktopView - containerId details:', {
+      console.log('CopilotDesktopView - Details:', {
         original: containerId,
-        formatted: validContainerId
+        formatted: validContainerId,
+        authProvider
       });
     }
-  }, [isOpen, containerId, validContainerId]);
+  }, [isOpen, containerId, validContainerId, authProvider]);
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>

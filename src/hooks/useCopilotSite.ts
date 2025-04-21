@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -47,9 +48,12 @@ export const useCopilotSite = (containerId: string) => {
     if (!siteUrl) return "https://pucelikenterprise.sharepoint.com";
     
     try {
+      // Parse the URL and ensure no trailing slashes
       const url = new URL(siteUrl);
-      // Explicitly remove trailing slash
-      return `${url.protocol}//${url.hostname}`;
+      // Build the hostname URL with protocol but without trailing slash
+      const hostname = `${url.protocol}//${url.hostname}`;
+      console.log('SharePoint hostname extracted:', hostname);
+      return hostname;
     } catch (e) {
       console.error('Error parsing site URL:', e);
       return "https://pucelikenterprise.sharepoint.com";
