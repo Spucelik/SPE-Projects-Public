@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare, RefreshCw } from 'lucide-react';
-import { ChatEmbedded, ChatEmbeddedAPI } from '@microsoft/sharepointembedded-copilotchat-react';
+import { ChatEmbedded, ChatEmbeddedAPI, ChatEmbeddedProps } from '@microsoft/sharepointembedded-copilotchat-react';
 
 interface CopilotDesktopViewProps {
   isOpen: boolean;
@@ -37,14 +36,12 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   const [chatLoadFailed, setChatLoadFailed] = useState(false);
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
   
-  // Reset error state when the chat is reopened
   useEffect(() => {
     if (isOpen) {
       setChatLoadFailed(false);
     }
   }, [isOpen, chatKey]);
   
-  // Open chat when API is ready
   useEffect(() => {
     const openChat = async () => {
       if (!chatApi || !isOpen) {
@@ -63,7 +60,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     openChat();
   }, [chatApi, isOpen, onError]);
   
-  // Format the containerId for the SharePoint Embedded API
   const formatContainerId = (rawId: string): string => {
     if (rawId.startsWith('b!')) {
       console.log('Using b! prefixed ID:', rawId);
@@ -87,7 +83,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
 
   const validContainerId = formatContainerId(containerId);
   
-  // Add debug info
   useEffect(() => {
     if (isOpen) {
       console.log('CopilotDesktopView - Details:', {
@@ -107,13 +102,11 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     onError("The chat component failed to load. Please try resetting the chat.");
   };
   
-  // Custom error handling for ChatEmbedded
   const handleChatError = (event: Event) => {
     console.error('ChatEmbedded component error:', event);
     handleChatApiError();
   };
   
-  // Add event listener for errors from the ChatEmbedded component
   useEffect(() => {
     if (isOpen) {
       window.addEventListener('error', handleChatError);
@@ -124,7 +117,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     }
   }, [isOpen]);
 
-  // Handle API ready event
   const handleApiReady = (api: ChatEmbeddedAPI) => {
     console.log('Copilot chat API is ready');
     setChatApi(api);
@@ -169,10 +161,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   containerId={validContainerId}
                   authProvider={authProvider}
                   onApiReady={handleApiReady}
-                  // The ChatEmbedded component expects different prop names
-                  // Logging the right props for debugging
                   themeV8={chatConfig?.theme}
-                  headerText={chatConfig?.header}
                   promptInstruction={chatConfig?.instruction}
                   localeCountry={chatConfig?.locale}
                   suggestedPrompts={chatConfig?.zeroQueryPrompts}
