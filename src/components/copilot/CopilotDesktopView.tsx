@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { MessageSquare, ExternalLink } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { ChatEmbedded } from '@microsoft/sharepointembedded-copilotchat-react';
 
 interface CopilotDesktopViewProps {
@@ -11,7 +11,7 @@ interface CopilotDesktopViewProps {
   siteName: string | null;
   isLoading: boolean;
   error: string | null;
-  openExternalChat: () => void;
+  openExternalChat: (() => void) | null;
   containerId: string;
   authProvider: any;
   onApiReady: (api: any) => void;
@@ -24,7 +24,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   siteName,
   isLoading,
   error,
-  openExternalChat,
   containerId,
   authProvider,
   onApiReady,
@@ -41,51 +40,27 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   
   // Format the containerId for the SharePoint Embedded API
   const formatContainerId = (rawId: string): string => {
-    // If the ID is already correctly formatted with 'b!' prefix, use it directly
     if (rawId.startsWith('b!')) {
       console.log('Using b! prefixed ID:', rawId);
       return rawId;
     }
     
-    // If it's a path from a URL, extract just the ID part
     if (rawId.includes('/files/')) {
       const parts = rawId.split('/files/');
       if (parts.length > 1) {
         const extractedId = parts[1];
         console.log('Extracted ID from URL path:', extractedId);
-        // If extracted part has b! prefix, return it
         if (extractedId.startsWith('b!')) {
           return extractedId;
         }
       }
     }
     
-    // For any other format, return as is
     console.log('Using original ID format:', rawId);
     return rawId;
   };
 
-  // Get a correctly formatted containerId
   const validContainerId = formatContainerId(containerId);
-  
-  // Detect CSP errors with frames
-  useEffect(() => {
-    if (!isOpen) return;
-    
-    const handleCspError = (event: ErrorEvent) => {
-      if (
-        event.message.includes('Content Security Policy') ||
-        event.message.includes('frame-ancestors') ||
-        event.message.includes('SecurityError')
-      ) {
-        console.error('CSP error detected in CopilotDesktopView:', event.message);
-        setChatLoadFailed(true);
-      }
-    };
-    
-    window.addEventListener('error', handleCspError);
-    return () => window.removeEventListener('error', handleCspError);
-  }, [isOpen]);
   
   // Add debug info
   useEffect(() => {
@@ -122,21 +97,8 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           ) : error || chatLoadFailed ? (
             <div className="flex flex-col items-center justify-center h-full p-6">
               <p className="text-destructive mb-4">
-                {error || "Unable to load the embedded chat due to security restrictions."}
+                {error || "Unable to load the chat. Please try again."}
               </p>
-              <p className="text-sm text-center mb-4">
-                {chatLoadFailed ? 
-                  "SharePoint's Content Security Policy is preventing the chat from loading in this window." : 
-                  "Try opening the chat in a new window instead."}
-              </p>
-              <Button 
-                variant="outline" 
-                className="gap-2"
-                onClick={openExternalChat}
-              >
-                <ExternalLink size={16} />
-                Open in New Window
-              </Button>
             </div>
           ) : (
             <div className="h-full" key={chatKey}>

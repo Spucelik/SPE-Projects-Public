@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from '@/components/ui/drawer';
-import { MessageSquare, ExternalLink } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 
 interface CopilotMobileViewProps {
   isOpen: boolean;
@@ -10,7 +9,7 @@ interface CopilotMobileViewProps {
   siteName: string | null;
   isLoading: boolean;
   error: string | null;
-  openExternalChat: () => void;
+  openExternalChat: (() => void) | null;
 }
 
 const CopilotMobileView: React.FC<CopilotMobileViewProps> = ({
@@ -19,7 +18,6 @@ const CopilotMobileView: React.FC<CopilotMobileViewProps> = ({
   siteName,
   isLoading,
   error,
-  openExternalChat,
 }) => {
   return (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
@@ -42,26 +40,10 @@ const CopilotMobileView: React.FC<CopilotMobileViewProps> = ({
           ) : error ? (
             <div className="text-destructive text-center p-4">
               <p>Could not load Copilot Chat: {error}</p>
-              <Button 
-                variant="outline" 
-                className="mt-4 gap-2"
-                onClick={openExternalChat}
-              >
-                <ExternalLink size={16} />
-                Open in new tab
-              </Button>
             </div>
           ) : (
             <div className="text-center">
-              <p>Copilot Chat works best in a new tab on mobile devices.</p>
-              <Button 
-                variant="outline" 
-                className="mt-4 gap-2"
-                onClick={openExternalChat}
-              >
-                <ExternalLink size={16} />
-                Open Copilot Chat
-              </Button>
+              <p>For the best experience on mobile devices, open the side panel chat.</p>
             </div>
           )}
         </div>
