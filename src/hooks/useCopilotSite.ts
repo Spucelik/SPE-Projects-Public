@@ -26,7 +26,10 @@ export const useCopilotSite = (containerId: string) => {
         
         const containerDetails = await sharePointService.getContainerDetails(token, containerId);
         console.log('Container details retrieved:', containerDetails);
-        setSiteUrl(containerDetails.webUrl);
+        
+        // Store the site URL without any trailing slashes
+        const normalizedUrl = containerDetails.webUrl.replace(/\/+$/, '');
+        setSiteUrl(normalizedUrl);
         setSiteName(containerDetails.name);
       } catch (err) {
         console.error('Error fetching site info:', err);
@@ -39,19 +42,13 @@ export const useCopilotSite = (containerId: string) => {
     fetchSiteInfo();
   }, [containerId, getAccessToken]);
 
+  // Normalize the SharePoint hostname for CSP compatibility
   const sharePointHostname = siteUrl ? 
     (() => {
       try {
-        // Normalize URL to ensure no trailing slash
-        let normalizedUrl = siteUrl;
-        // Remove trailing slash if present
-        if (normalizedUrl.endsWith('/')) {
-          normalizedUrl = normalizedUrl.slice(0, -1);
-        }
-        
-        const url = new URL(normalizedUrl);
-        // Return protocol and hostname without any trailing slashes
-        return `${url.protocol}//${url.hostname}`.replace(/\/+$/, '');
+        // Extract just the protocol and hostname, ensuring no trailing slashes
+        const url = new URL(siteUrl);
+        return `${url.protocol}//${url.hostname}`;
       } catch (e) {
         console.error('Error parsing site URL:', e);
         return "https://pucelikenterprise.sharepoint.com";

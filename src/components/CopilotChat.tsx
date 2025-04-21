@@ -57,7 +57,9 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       return;
     }
     
-    const chatUrl = `${siteUrl}/_layouts/15/CopilotGallery.aspx`;
+    // Make sure we're using a clean URL without trailing slashes for the external chat
+    const baseUrl = siteUrl.replace(/\/+$/, '');
+    const chatUrl = `${baseUrl}/_layouts/15/CopilotGallery.aspx`;
     window.open(chatUrl, '_blank');
   }, [siteUrl]);
 
@@ -75,15 +77,11 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
           throw err;
         }
       },
-      siteUrl: siteUrl || undefined,
+      // Only include siteUrl if it's defined and make sure it has no trailing slash
+      siteUrl: siteUrl ? siteUrl.replace(/\/+$/, '') : undefined,
     }),
     [getAccessToken, siteUrl, sharePointHostname]
   );
-
-  const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
-    console.log('Copilot Chat API ready');
-    setChatApi(api);
-  }, []);
 
   // Debug output
   useEffect(() => {
@@ -99,6 +97,11 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       });
     }
   }, [isOpen, containerId, siteUrl, siteName, isLoading, error, authProvider, isMobileView]);
+
+  const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
+    console.log('Copilot Chat API ready');
+    setChatApi(api);
+  }, []);
 
   return isMobileView ? (
     <CopilotMobileView
