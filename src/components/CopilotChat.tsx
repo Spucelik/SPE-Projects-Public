@@ -65,10 +65,12 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
 
   const authProvider = useMemo(
     () => ({
-      hostname: sharePointHostname,
+      // Ensure hostname has no trailing slash
+      hostname: sharePointHostname.replace(/\/+$/, ''),
       getToken: async () => {
         try {
-          const token = await getAccessToken(sharePointHostname);
+          // Pass the clean hostname to getAccessToken
+          const token = await getAccessToken(sharePointHostname.replace(/\/+$/, ''));
           if (!token) throw new Error('No access token available');
           return token;
         } catch (err) {
@@ -83,7 +85,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     [getAccessToken, siteUrl, sharePointHostname]
   );
 
-  // Debug output
+  // Debug output - add detailed information about the CSP 
   useEffect(() => {
     if (isOpen) {
       console.log('Copilot Chat rendering with:', {
@@ -93,10 +95,11 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         isLoading,
         error,
         authProvider,
-        isMobileView
+        isMobileView,
+        sharePointHostname: sharePointHostname.replace(/\/+$/, '')
       });
     }
-  }, [isOpen, containerId, siteUrl, siteName, isLoading, error, authProvider, isMobileView]);
+  }, [isOpen, containerId, siteUrl, siteName, isLoading, error, authProvider, isMobileView, sharePointHostname]);
 
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
     console.log('Copilot Chat API ready');
