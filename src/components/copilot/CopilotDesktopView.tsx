@@ -169,12 +169,13 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   containerId={validContainerId}
                   authProvider={authProvider}
                   onApiReady={handleApiReady}
-                  // Pass the chat configuration through individual props instead of using 'config'
-                  theme={chatConfig?.theme}
-                  header={chatConfig?.header}
-                  instruction={chatConfig?.instruction}
-                  locale={chatConfig?.locale}
-                  zeroQueryPrompts={chatConfig?.zeroQueryPrompts}
+                  // The ChatEmbedded component expects different prop names
+                  // Logging the right props for debugging
+                  themeV8={chatConfig?.theme}
+                  headerText={chatConfig?.header}
+                  promptInstruction={chatConfig?.instruction}
+                  localeCountry={chatConfig?.locale}
+                  suggestedPrompts={chatConfig?.zeroQueryPrompts}
                   style={{ height: '100%', width: '100%' }}
                 />
               ) : (
