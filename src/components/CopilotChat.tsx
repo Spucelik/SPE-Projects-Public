@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -7,7 +6,6 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { sharePointService } from '../services/sharePointService';
 
-// Import correct exports from the SDK
 import {
   ChatEmbedded,
   ChatEmbeddedAPI,
@@ -29,21 +27,18 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [siteUrl, setSiteUrl] = useState<string | null>(null);
   const [siteName, setSiteName] = useState<string | null>(null);
   const [isFetchingSiteInfo, setIsFetchingSiteInfo] = useState(false);
-  const [showExternalChatOption, setShowExternalChatOption] = useState(true); // Default to showing external option
+  const [showExternalChatOption, setShowExternalChatOption] = useState(true);
   const [embeddedChatAttempted, setEmbeddedChatAttempted] = useState(false);
 
-  // Effect to fetch correct site URL when container ID changes
   useEffect(() => {
     if (!containerId) return;
     
     const fetchSiteInfo = async () => {
       try {
         setIsFetchingSiteInfo(true);
-        // Use Graph API token for this call
         const token = await getAccessToken();
         if (!token) return;
         
-        // Use the service method to get container details
         console.log('Fetching site info for containerId:', containerId);
         const containerDetails = await sharePointService.getContainerDetails(token, containerId);
         
@@ -52,7 +47,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         setSiteName(containerDetails.name);
       } catch (err) {
         console.error('Error fetching site info:', err);
-        // Don't set error state here as we might still be able to proceed with default values
       } finally {
         setIsFetchingSiteInfo(false);
       }
@@ -61,7 +55,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     fetchSiteInfo();
   }, [containerId, getAccessToken]);
 
-  // Get the SharePoint hostname from the site URL
   const sharePointHostname = useMemo(() => {
     if (siteUrl) {
       try {
@@ -74,7 +67,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     return "https://pucelikenterprise.sharepoint.com";
   }, [siteUrl]);
 
-  // Auth provider for the SDK
   const authProvider: IChatEmbeddedApiAuthProvider = useMemo(
     () => ({
       hostname: sharePointHostname,
@@ -83,7 +75,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
           setError(null);
           console.log('Getting SharePoint access token for Copilot Chat...');
           
-          // Request token specifically for SharePoint
           const token = await getAccessToken(sharePointHostname);
           
           if (!token) {
@@ -107,13 +98,11 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
           throw err;
         }
       },
-      // Use the fetched site URL
       siteUrl: siteUrl || undefined,
     }),
     [getAccessToken, siteUrl, sharePointHostname]
   );
-  
-  // Callback for API ready
+
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
     console.log('Copilot Chat API ready, inspecting API properties:', {
       apiExists: !!api,
@@ -123,7 +112,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     setChatApi(api);
   }, []);
 
-  // Function to handle retry
   const handleRetry = useCallback(() => {
     setError(null);
     setDetailedError(null);
@@ -132,12 +120,10 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     setShowExternalChatOption(false);
   }, []);
 
-  // Function to open chat in a new tab
   const openChatInNewTab = useCallback(() => {
     if (siteUrl) {
-      // Construct a URL to the SharePoint site's Copilot chat
-      const chatUrl = `${siteUrl}/_layouts/15/sharepoint.aspx`;
-      window.open(chatUrl, '_blank');
+      const chatUrl = `${siteUrl}/_layouts/15/copilotchat.aspx`;
+      window.open(chatUrl, '_blank', 'noopener,noreferrer');
     } else {
       toast({
         title: "Missing Site Information",
@@ -147,7 +133,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     }
   }, [siteUrl]);
 
-  // Effect to open the chat when the API is ready
   useEffect(() => {
     const openChat = async () => {
       if (!chatApi || !siteUrl || embeddedChatAttempted) {
@@ -170,15 +155,12 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       try {
         await chatApi.openChat();
         console.log('Chat opened successfully');
-        // Hide external option if embedded chat works
         setShowExternalChatOption(false);
       } catch (error) {
-        // Capture all error details for diagnosis
         const errorObj = error instanceof Error ? {
           name: error.name,
           message: error.message,
           stack: error.stack,
-          // Capture any additional properties on the error object
           ...Object.fromEntries(
             Object.getOwnPropertyNames(error)
               .filter(prop => prop !== 'name' && prop !== 'message' && prop !== 'stack')
@@ -192,10 +174,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         setError(`Failed to open chat: ${errorMessage}`);
         
-        // Show external chat option as fallback
         setShowExternalChatOption(true);
         
-        // Notify user about the error
         toast({
           title: "Copilot Chat Error",
           description: "Could not embed Copilot Chat. Using external option instead.",
@@ -211,7 +191,16 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     }
   }, [chatApi, isOpen, containerId, retryCount, siteUrl, siteName, embeddedChatAttempted]);
 
-  console.log('CopilotChat rendering with containerId:', containerId);
+  useEffect(() => {
+    console.log('CopilotChat Component State:', {
+      isOpen,
+      containerId,
+      siteUrl,
+      chatApiReady: !!chatApi,
+      showExternalChatOption,
+      embeddedChatAttempted
+    });
+  }, [isOpen, containerId, siteUrl, chatApi, showExternalChatOption, embeddedChatAttempted]);
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -247,8 +236,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
                 Open Chat in New Tab
               </Button>
               <p className="text-xs text-muted-foreground mt-1">
-                The embedded chat has known issues with cross-origin restrictions. 
-                Opening in a new tab provides the full experience.
+                Due to browser security restrictions, the chat needs to be opened in a separate tab.
               </p>
             </div>
           )}
