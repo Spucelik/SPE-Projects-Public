@@ -32,6 +32,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   chatKey,
 }) => {
   const [localChatApi, setLocalChatApi] = useState<ChatEmbeddedAPI | null>(null);
+  const [cspError, setCspError] = useState<boolean>(false);
 
   // Handle API ready and trigger chat opening
   const handleApiReady = (api: ChatEmbeddedAPI) => {
@@ -39,6 +40,20 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     setLocalChatApi(api);
     onApiReady(api);
   };
+
+  // Handle errors including CSP errors
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      if (event.message.includes('Content Security Policy') || 
+          event.message.includes('frame-ancestors')) {
+        console.error('CSP Error detected:', event.message);
+        setCspError(true);
+      }
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
 
   // Open chat when API is ready and component is open
   useEffect(() => {
@@ -77,9 +92,13 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
             </div>
           )}
           
-          {error && (
+          {(error || cspError) && (
             <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-background/80 z-10">
-              <p className="text-destructive mb-4">Failed to load embedded chat: {error}</p>
+              <p className="text-destructive mb-4">
+                {cspError 
+                  ? "Content Security Policy restrictions prevent embedding Copilot here." 
+                  : `Failed to load embedded chat: ${error}`}
+              </p>
               <Button 
                 variant="outline" 
                 className="gap-2"
@@ -91,7 +110,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
             </div>
           )}
           
-          {isOpen && containerId && !error && (
+          {isOpen && containerId && !error && !cspError && (
             <div className="h-full w-full" key={chatKey}>
               <ChatEmbedded
                 containerId={containerId}
