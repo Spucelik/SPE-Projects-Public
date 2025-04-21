@@ -46,14 +46,14 @@ export const useCopilotSite = (containerId: string) => {
   // Get the base SharePoint hostname (without any paths or trailing slashes)
   // This is used for authentication and CSP compatibility
   const sharePointHostname = useMemo(() => {
-    // If no site URL yet, use the default from config
-    if (!siteUrl) {
-      const defaultHostname = appConfig.sharePointHostname.replace(/\/+$/, '');
-      return defaultHostname;
-    }
-    
     try {
-      // Parse only the hostname part from the URL
+      // If no site URL yet, use the default from config
+      if (!siteUrl) {
+        const defaultHostname = appConfig.sharePointHostname.replace(/\/+$/, '');
+        return defaultHostname;
+      }
+      
+      // Parse only the hostname part from the URL with protocol
       const url = new URL(siteUrl);
       return `${url.protocol}//${url.hostname}`;
     } catch (e) {

@@ -74,11 +74,19 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       return;
     }
     
-    const baseUrl = siteUrl.replace(/\/+$/, '');
-    const chatUrl = `${baseUrl}/_layouts/15/CopilotGallery.aspx`;
+    // Extract only the hostname and protocol from the siteUrl
+    let chatUrl;
+    try {
+      const url = new URL(siteUrl);
+      chatUrl = `${url.protocol}//${url.hostname}/_layouts/15/CopilotGallery.aspx`;
+    } catch (e) {
+      // If URL parsing fails, use the original siteUrl
+      const baseUrl = siteUrl.replace(/\/+$/, '');
+      chatUrl = `${baseUrl}/_layouts/15/CopilotGallery.aspx`;
+    }
     
     console.log('Opening external Copilot Chat at:', chatUrl);
-    window.open(chatUrl, '_blank');
+    window.open(chatUrl, '_blank', 'noopener,noreferrer');
   }, [siteUrl]);
 
   // Updated auth provider with CSP compatible settings
@@ -97,25 +105,34 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       siteUrl: cleanSiteUrl
     });
     
-    return {
-      hostname,
-      getToken: async () => {
-        try {
-          console.log('Getting token for hostname:', hostname);
-          // Use the explicit hostname without any path
-          const token = await getAccessToken(hostname);
-          console.log('Token acquired successfully:', token ? 'Valid token' : 'No token');
-          if (!token) throw new Error('No access token available');
-          return token;
-        } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : 'Failed to get token';
-          console.error('Auth provider error:', errorMessage);
-          setCopilotError(errorMessage);
-          throw err;
-        }
-      },
-      siteUrl: cleanSiteUrl
-    };
+    try {
+      // Make sure the hostname is a valid URL
+      new URL(hostname);
+      
+      return {
+        hostname,
+        getToken: async () => {
+          try {
+            console.log('Getting token for hostname:', hostname);
+            // Use the explicit hostname without any path
+            const token = await getAccessToken(hostname);
+            console.log('Token acquired successfully:', token ? 'Valid token' : 'No token');
+            if (!token) throw new Error('No access token available');
+            return token;
+          } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to get token';
+            console.error('Auth provider error:', errorMessage);
+            setCopilotError(errorMessage);
+            throw err;
+          }
+        },
+        siteUrl: cleanSiteUrl
+      };
+    } catch (err) {
+      console.error('Invalid hostname format:', err);
+      setCopilotError('Invalid SharePoint hostname');
+      return null;
+    }
   }, [getAccessToken, siteUrl, sharePointHostname]);
 
   // Debug output when key components change
@@ -148,7 +165,14 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       if (typeof api.openChat === 'function') {
         console.log('openChat method is available');
         // Try to open the chat automatically
-        api.openChat();
+        setTimeout(() => {
+          try {
+            api.openChat();
+            console.log('Chat opened automatically');
+          } catch (e) {
+            console.error('Error auto-opening chat:', e);
+          }
+        }, 500);
       }
     } catch (err) {
       console.error('Error with Copilot API:', err);
@@ -176,7 +200,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     );
   }
 
-  // If auth provider is null, show error
+  // If auth provider is null, show external chat option
   if (!authProvider) {
     return (
       <Button 

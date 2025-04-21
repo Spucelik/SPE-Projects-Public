@@ -32,36 +32,28 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
 }) => {
   // Format the containerId for the SharePoint Embedded API
   const formatContainerId = (rawId: string): string => {
-    try {
-      console.log('Raw containerId:', rawId);
-      
-      // If the ID is from a URL path, extract just the ID part
-      if (rawId.includes('/files/')) {
-        const parts = rawId.split('/files/');
-        if (parts.length > 1) {
-          rawId = parts[1];
-          console.log('Extracted from URL path:', rawId);
-        }
-      }
-      
-      // Handle "b!" prefix specifically
-      if (rawId.startsWith('b!')) {
-        console.log('Using b! prefixed ID:', rawId);
-        return rawId;
-      }
-      
-      // If it's already a GUID with dashes, return it directly
-      if (rawId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        console.log('Using GUID format:', rawId);
-        return rawId;
-      }
-      
-      console.log('Using original ID format:', rawId);
-      return rawId;
-    } catch (error) {
-      console.error('Error formatting containerId:', error);
+    // If the ID is already correctly formatted with 'b!' prefix, use it directly
+    if (rawId.startsWith('b!')) {
+      console.log('Using b! prefixed ID:', rawId);
       return rawId;
     }
+    
+    // If it's a path from a URL, extract just the ID part
+    if (rawId.includes('/files/')) {
+      const parts = rawId.split('/files/');
+      if (parts.length > 1) {
+        const extractedId = parts[1];
+        console.log('Extracted ID from URL path:', extractedId);
+        // If extracted part has b! prefix, return it
+        if (extractedId.startsWith('b!')) {
+          return extractedId;
+        }
+      }
+    }
+    
+    // For any other format, return as is
+    console.log('Using original ID format:', rawId);
+    return rawId;
   };
 
   // Get a correctly formatted containerId
@@ -73,10 +65,11 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
       console.log('CopilotDesktopView - Details:', {
         original: containerId,
         formatted: validContainerId,
-        authProvider
+        authProvider,
+        chatKey
       });
     }
-  }, [isOpen, containerId, validContainerId, authProvider]);
+  }, [isOpen, containerId, validContainerId, authProvider, chatKey]);
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -86,7 +79,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           <span>Copilot Chat</span>
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-[400px] sm:w-[540px] flex flex-col h-full p-0">
+      <SheetContent className="w-[400px] sm:w-[540px] flex flex-col h-full p-0" side="right">
         <div className="flex-shrink-0 border-b px-6 py-4">
           <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
           {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
