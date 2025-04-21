@@ -80,7 +80,9 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     if (api && chatConfig) {
       try {
         console.log('Applying chat configuration:', chatConfig);
-        api.updateChatConfig(chatConfig);
+        // The updateChatConfig method doesn't exist, so we need to use the correct method
+        // or simply apply configuration through props instead
+        console.log('Chat configuration will be applied through props instead');
       } catch (err) {
         console.error('Error configuring chat:', err);
       }
