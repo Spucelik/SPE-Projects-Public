@@ -5,9 +5,9 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-// Import Copilot SDK
+// Import Copilot SDK with the correct export name
 import {
-  ChatEmbeddedCopilot,
+  ChatEmbeddedAPI,
   IChatEmbeddedApiAuthProvider,
 } from '@microsoft/sharepointembedded-copilotchat-react';
 
@@ -49,7 +49,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
           <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
         </div>
         <div className="flex-1 min-h-0">
-          <ChatEmbeddedCopilot
+          <ChatEmbeddedAPI
             containerId={containerId}
             authProvider={authProvider}
             height="100%"
