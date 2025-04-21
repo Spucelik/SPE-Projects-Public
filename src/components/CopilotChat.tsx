@@ -26,6 +26,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [siteUrl, setSiteUrl] = useState<string | null>(null);
   const [siteName, setSiteName] = useState<string | null>(null);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [chatKey, setChatKey] = useState(0); // Add key to force re-render
 
   // Detect mobile view
   useEffect(() => {
@@ -41,6 +42,15 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     };
   }, []);
 
+  // Reset error state when opening/closing the chat
+  useEffect(() => {
+    if (isOpen) {
+      setError(null);
+      // Force re-render of ChatEmbedded when opening
+      setChatKey(prev => prev + 1);
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (!containerId) return;
     
@@ -48,9 +58,14 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       try {
         setIsLoading(true);
         const token = await getAccessToken();
-        if (!token) return;
+        if (!token) {
+          setError('Authentication token not available');
+          setIsLoading(false);
+          return;
+        }
         
         const containerDetails = await sharePointService.getContainerDetails(token, containerId);
+        console.log('Container details retrieved:', containerDetails);
         setSiteUrl(containerDetails.webUrl);
         setSiteName(containerDetails.name);
         setIsLoading(false);
@@ -121,15 +136,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     console.error('Embedded chat error:', err);
     setError(err.message || 'Failed to load embedded chat');
   }, []);
-
-  // Since we can't directly pass onError to the ChatEmbedded component, 
-  // we'll use a try-catch and an error boundary effect
-  useEffect(() => {
-    // This effect will handle any errors that might occur during rendering
-    return () => {
-      // Clean up function - nothing to clean up for error handling
-    };
-  }, [isOpen]);
 
   const renderMobileView = () => (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
@@ -215,7 +221,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
           )}
           
           {isOpen && containerId && siteUrl && !error && (
-            <div className="h-full w-full">
+            <div className="h-full w-full" key={chatKey}>
               <ChatEmbedded
                 containerId={containerId}
                 authProvider={authProvider}
