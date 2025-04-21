@@ -29,7 +29,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [siteUrl, setSiteUrl] = useState<string | null>(null);
   const [siteName, setSiteName] = useState<string | null>(null);
   const [isFetchingSiteInfo, setIsFetchingSiteInfo] = useState(false);
-  const [showExternalChatOption, setShowExternalChatOption] = useState(false);
+  const [showExternalChatOption, setShowExternalChatOption] = useState(true); // Default to showing external option
+  const [embeddedChatAttempted, setEmbeddedChatAttempted] = useState(false);
 
   // Effect to fetch correct site URL when container ID changes
   useEffect(() => {
@@ -127,6 +128,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     setError(null);
     setDetailedError(null);
     setRetryCount(prev => prev + 1);
+    setEmbeddedChatAttempted(false);
+    setShowExternalChatOption(false);
   }, []);
 
   // Function to open chat in a new tab
@@ -147,13 +150,15 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   // Effect to open the chat when the API is ready
   useEffect(() => {
     const openChat = async () => {
-      if (!chatApi || !siteUrl) {
+      if (!chatApi || !siteUrl || embeddedChatAttempted) {
         return;
       }
       
       setIsLoading(true);
       setError(null);
       setDetailedError(null);
+      setEmbeddedChatAttempted(true);
+      
       console.log('Attempting to open chat with API:', {
         containerId,
         siteUrl,
@@ -193,7 +198,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         // Notify user about the error
         toast({
           title: "Copilot Chat Error",
-          description: "Could not embed Copilot Chat. You can try opening it in a new browser tab.",
+          description: "Could not embed Copilot Chat. Using external option instead.",
           variant: "destructive",
         });
       } finally {
@@ -201,10 +206,10 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       }
     };
 
-    if (isOpen && chatApi && siteUrl) {
+    if (isOpen && chatApi && siteUrl && !embeddedChatAttempted) {
       openChat();
     }
-  }, [chatApi, isOpen, containerId, retryCount, siteUrl, siteName]);
+  }, [chatApi, isOpen, containerId, retryCount, siteUrl, siteName, embeddedChatAttempted]);
 
   console.log('CopilotChat rendering with containerId:', containerId);
 
@@ -242,8 +247,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
                 Open Chat in New Tab
               </Button>
               <p className="text-xs text-muted-foreground mt-1">
-                The embedded chat is having trouble with cross-origin restrictions. 
-                Try opening it in a new tab instead.
+                The embedded chat has known issues with cross-origin restrictions. 
+                Opening in a new tab provides the full experience.
               </p>
             </div>
           )}
@@ -289,7 +294,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
             </div>
           )}
-          {isOpen && containerId && siteUrl && !showExternalChatOption && (
+          
+          {isOpen && !showExternalChatOption && containerId && siteUrl && (
             <ChatEmbedded
               containerId={containerId}
               authProvider={authProvider}
