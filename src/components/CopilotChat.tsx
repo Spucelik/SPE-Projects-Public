@@ -5,10 +5,11 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-// Import Copilot SDK with the correct export name
+// Import the correct classes and interfaces from the SDK
 import {
-  ChatEmbeddedAPI,
-  IChatEmbeddedApiAuthProvider,
+  createChatEmbeddedInstance,
+  IChatEmbeddedConfig,
+  IChatEmbeddedApiAuthProvider
 } from '@microsoft/sharepointembedded-copilotchat-react';
 
 interface CopilotChatProps {
@@ -20,6 +21,7 @@ const SPE_HOSTNAME = 'https://m365x10735106.sharepoint.com'; // Replace with you
 const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { getAccessToken } = useAuth();
+  const chatContainerId = React.useRef(`copilot-chat-container-${Math.random().toString(36).substring(2, 11)}`);
 
   // Create an authProvider compatible with the SDK requirements
   const authProvider: IChatEmbeddedApiAuthProvider = useMemo(
@@ -35,6 +37,28 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     [getAccessToken]
   );
 
+  // Initialize chat component when sheet is opened
+  React.useEffect(() => {
+    if (isOpen) {
+      const config: IChatEmbeddedConfig = {
+        containerId: chatContainerId.current,
+        authProvider: authProvider,
+        siteContainerId: containerId,
+        height: '100%'
+      };
+
+      // Create instance
+      const cleanup = createChatEmbeddedInstance(config);
+      
+      // Clean up on unmount
+      return () => {
+        if (cleanup && typeof cleanup === 'function') {
+          cleanup();
+        }
+      };
+    }
+  }, [isOpen, authProvider, containerId]);
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -48,12 +72,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
           <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
           <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
         </div>
-        <div className="flex-1 min-h-0">
-          <ChatEmbeddedAPI
-            containerId={containerId}
-            authProvider={authProvider}
-            height="100%"
-          />
+        <div className="flex-1 min-h-0" id={chatContainerId.current}>
+          {/* The chat component will be rendered here by the SDK */}
         </div>
       </SheetContent>
     </Sheet>
