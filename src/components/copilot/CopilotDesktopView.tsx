@@ -33,20 +33,44 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
 }) => {
   const [localChatApi, setLocalChatApi] = useState<ChatEmbeddedAPI | null>(null);
   const [cspError, setCspError] = useState<boolean>(false);
-
-  // Handle API ready and trigger chat opening
-  const handleApiReady = (api: ChatEmbeddedAPI) => {
-    console.log('Chat API ready');
-    setLocalChatApi(api);
-    onApiReady(api);
-  };
-
-  // Handle errors including CSP errors
+  
+  // Pre-check for CSP issues by trying to access a test iframe
+  useEffect(() => {
+    // Function to detect if we can access iframes
+    const detectCSPRestrictions = () => {
+      try {
+        // Create a test iframe to check if we can access its document
+        const testFrame = document.createElement('iframe');
+        testFrame.style.display = 'none';
+        document.body.appendChild(testFrame);
+        
+        // Try to access the iframe's document - this will throw a CSP error if restricted
+        if (testFrame.contentWindow) {
+          // Just accessing the property is enough to trigger CSP
+          const _ = testFrame.contentWindow.document;
+        }
+        
+        // Clean up
+        document.body.removeChild(testFrame);
+      } catch (e) {
+        console.error('CSP pre-check failed:', e);
+        setCspError(true);
+        return true;
+      }
+      return false;
+    };
+    
+    // Run the check when the component mounts
+    detectCSPRestrictions();
+  }, []);
+  
+  // Handle error events (backup detection)
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
       if (event.message.includes('Content Security Policy') || 
-          event.message.includes('frame-ancestors')) {
-        console.error('CSP Error detected:', event.message);
+          event.message.includes('frame-ancestors') ||
+          event.message.includes('SecurityError')) {
+        console.error('CSP Error detected from event:', event.message);
         setCspError(true);
       }
     };
@@ -55,21 +79,34 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     return () => window.removeEventListener('error', handleError);
   }, []);
 
+  // Handle API ready and trigger chat opening
+  const handleApiReady = (api: ChatEmbeddedAPI) => {
+    console.log('Chat API ready');
+    setLocalChatApi(api);
+    onApiReady(api);
+  };
+
   // Open chat when API is ready and component is open
   useEffect(() => {
     const openChat = async () => {
-      if (!localChatApi || !isOpen) return;
+      if (!localChatApi || !isOpen || cspError) return;
       
       try {
         console.log('Opening chat...');
         await localChatApi.openChat();
       } catch (error) {
         console.error('Error opening chat:', error);
+        // Check if the error is CSP related
+        if (error instanceof Error && 
+            (error.message.includes('SecurityError') || 
+             error.message.includes('Content Security Policy'))) {
+          setCspError(true);
+        }
       }
     };
 
     openChat();
-  }, [localChatApi, isOpen]);
+  }, [localChatApi, isOpen, cspError]);
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
