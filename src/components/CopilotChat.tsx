@@ -81,33 +81,42 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     window.open(chatUrl, '_blank');
   }, [siteUrl]);
 
-  const authProvider = useMemo(
-    () => {
-      // Ensure hostname has no trailing slash
-      const cleanHostname = sharePointHostname ? sharePointHostname.replace(/\/+$/, '') : '';
-      console.log('Clean SharePoint hostname for auth provider:', cleanHostname);
-      
-      return {
-        hostname: cleanHostname,
-        getToken: async () => {
-          try {
-            console.log('Getting token for hostname:', cleanHostname);
-            const token = await getAccessToken(cleanHostname);
-            console.log('Token acquired successfully:', token ? 'Valid token' : 'No token');
-            if (!token) throw new Error('No access token available');
-            return token;
-          } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to get token';
-            console.error('Auth provider error:', errorMessage);
-            setCopilotError(errorMessage);
-            throw err;
-          }
-        },
-        siteUrl: siteUrl ? siteUrl.replace(/\/+$/, '') : undefined,
-      };
-    },
-    [getAccessToken, siteUrl, sharePointHostname]
-  );
+  // Updated auth provider with CSP compatible settings
+  const authProvider = useMemo(() => {
+    if (!sharePointHostname) {
+      console.log('SharePoint hostname not available');
+      return null;
+    }
+    
+    // Ensure all URLs have no trailing slashes
+    const hostname = sharePointHostname.replace(/\/+$/, '');
+    const cleanSiteUrl = siteUrl ? siteUrl.replace(/\/+$/, '') : undefined;
+    
+    console.log('Configuring auth provider with:', {
+      hostname,
+      siteUrl: cleanSiteUrl
+    });
+    
+    return {
+      hostname,
+      getToken: async () => {
+        try {
+          console.log('Getting token for hostname:', hostname);
+          // Use the explicit hostname without any path
+          const token = await getAccessToken(hostname);
+          console.log('Token acquired successfully:', token ? 'Valid token' : 'No token');
+          if (!token) throw new Error('No access token available');
+          return token;
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : 'Failed to get token';
+          console.error('Auth provider error:', errorMessage);
+          setCopilotError(errorMessage);
+          throw err;
+        }
+      },
+      siteUrl: cleanSiteUrl
+    };
+  }, [getAccessToken, siteUrl, sharePointHostname]);
 
   // Debug output when key components change
   useEffect(() => {
@@ -120,7 +129,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         error,
         isMobileView,
         sharePointHostname,
-        cleanHostname: sharePointHostname ? sharePointHostname.replace(/\/+$/, '') : '',
+        authProvider,
         chatKey
       });
     }
@@ -163,6 +172,20 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       >
         <MessageSquare size={16} />
         <span>Copilot Unavailable</span>
+      </Button>
+    );
+  }
+
+  // If auth provider is null, show error
+  if (!authProvider) {
+    return (
+      <Button 
+        variant="outline" 
+        className="gap-2"
+        onClick={openExternalChat}
+      >
+        <MessageSquare size={16} />
+        <span>Open Copilot Chat</span>
       </Button>
     );
   }
