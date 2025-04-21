@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -6,6 +5,8 @@ import { ChatEmbeddedAPI } from '@microsoft/sharepointembedded-copilotchat-react
 import { useCopilotSite } from '../hooks/useCopilotSite';
 import CopilotMobileView from './copilot/CopilotMobileView';
 import CopilotDesktopView from './copilot/CopilotDesktopView';
+import { Button } from '@/components/ui/button';
+import { MessageSquare } from 'lucide-react';
 
 interface CopilotChatProps {
   containerId: string;
@@ -19,17 +20,14 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [chatKey, setChatKey] = useState(0);
   const [copilotError, setCopilotError] = useState<string | null>(null);
   
-  // Enhanced debugging
   useEffect(() => {
     console.log('CopilotChat component mounted with containerId:', containerId);
     
-    // Return cleanup function
     return () => {
       console.log('CopilotChat component unmounting');
     };
   }, [containerId]);
   
-  // Use the useCopilotSite hook
   const {
     isLoading,
     error: siteError,
@@ -38,10 +36,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     sharePointHostname,
   } = useCopilotSite(containerId);
 
-  // Combine errors
   const error = copilotError || siteError;
 
-  // Detect mobile view
   useEffect(() => {
     const checkMobile = () => {
       setIsMobileView(window.innerWidth < 768);
@@ -55,7 +51,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     };
   }, []);
 
-  // Reset error state and force re-render when opening chat
   useEffect(() => {
     if (isOpen) {
       console.log('Chat opened - resetting error state and refreshing');
@@ -74,7 +69,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       return;
     }
     
-    // Make sure we're using a clean URL without trailing slashes for the external chat
     const baseUrl = siteUrl.replace(/\/+$/, '');
     const chatUrl = `${baseUrl}/_layouts/15/CopilotGallery.aspx`;
     
@@ -102,7 +96,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     [getAccessToken, siteUrl, sharePointHostname]
   );
 
-  // Debug output when key components change
   useEffect(() => {
     if (isOpen) {
       console.log('Copilot Chat dependencies updated:', {
@@ -137,7 +130,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     }
   }, []);
 
-  // If container ID is invalid, show an appropriate message
   if (containerId && containerId.length < 10) {
     return (
       <Button 
