@@ -86,6 +86,23 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     onError("The chat component failed to load. Please try resetting the chat.");
   };
   
+  // Custom error handling for ChatEmbedded
+  const handleChatError = (event: Event) => {
+    console.error('ChatEmbedded component error:', event);
+    handleChatApiError();
+  };
+  
+  // Add event listener for errors from the ChatEmbedded component
+  useEffect(() => {
+    if (isOpen) {
+      window.addEventListener('error', handleChatError);
+      
+      return () => {
+        window.removeEventListener('error', handleChatError);
+      };
+    }
+  }, [isOpen]);
+  
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -125,7 +142,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   authProvider={authProvider}
                   onApiReady={onApiReady}
                   style={{ height: '100%' }}
-                  onError={handleChatApiError}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full p-6 text-center">
