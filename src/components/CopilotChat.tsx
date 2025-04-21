@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -37,10 +36,11 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     const fetchSiteInfo = async () => {
       try {
         setIsFetchingSiteInfo(true);
+        // Use Graph API token for this call
         const token = await getAccessToken();
         if (!token) return;
         
-        // Use the new service method to get container details
+        // Use the service method to get container details
         console.log('Fetching site info for containerId:', containerId);
         const containerDetails = await sharePointService.getContainerDetails(token, containerId);
         
@@ -58,15 +58,30 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     fetchSiteInfo();
   }, [containerId, getAccessToken]);
 
+  // Get the SharePoint hostname from the site URL
+  const sharePointHostname = useMemo(() => {
+    if (siteUrl) {
+      try {
+        const url = new URL(siteUrl);
+        return `${url.protocol}//${url.hostname}`;
+      } catch (e) {
+        console.error('Error parsing site URL:', e);
+      }
+    }
+    return "https://pucelikenterprise.sharepoint.com";
+  }, [siteUrl]);
+
   // Auth provider for the SDK
   const authProvider: IChatEmbeddedApiAuthProvider = useMemo(
     () => ({
-      hostname: siteUrl?.split('/').slice(0, 3).join('/') || "https://pucelikenterprise.sharepoint.com",
+      hostname: sharePointHostname,
       getToken: async () => {
         try {
           setError(null);
-          console.log('Getting access token for Copilot Chat...');
-          const token = await getAccessToken();
+          console.log('Getting SharePoint access token for Copilot Chat...');
+          
+          // Request token specifically for SharePoint
+          const token = await getAccessToken(sharePointHostname);
           
           if (!token) {
             const noTokenError = 'No access token available for Copilot Chat';
@@ -75,7 +90,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
             throw new Error(noTokenError);
           }
           
-          console.log('Access token obtained successfully', {
+          console.log('SharePoint access token obtained successfully', {
             length: token.length,
             prefix: token.substring(0, 5) + '...',
             timestamp: new Date().toISOString()
@@ -92,7 +107,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       // Use the fetched site URL
       siteUrl: siteUrl || undefined,
     }),
-    [getAccessToken, siteUrl]
+    [getAccessToken, siteUrl, sharePointHostname]
   );
   
   // Callback for API ready

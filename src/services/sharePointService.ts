@@ -94,6 +94,8 @@ class SharePointService {
             name: data.name || 'SharePoint Drive'
           };
         }
+      } else {
+        console.error('Error fetching drive details:', await response.text());
       }
       
       // If the direct approach failed, try to get the root item which often has the webUrl
@@ -118,6 +120,8 @@ class SharePointService {
             name: rootData.name || 'SharePoint Root'
           };
         }
+      } else {
+        console.error('Error fetching root item:', await rootResponse.text());
       }
       
       // As a last resort, fall back to a generic format
