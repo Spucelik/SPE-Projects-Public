@@ -29,6 +29,27 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [isSiteUrlFetched, setIsSiteUrlFetched] = useState(false);
+  const [siteUrl, setSiteUrl] = useState<string | null>(null);
+
+  // Extract container details for better site URL construction
+  const containerParts = useMemo(() => {
+    if (!containerId) return null;
+    try {
+      const parts = containerId.split('!');
+      if (parts.length > 1) {
+        const secondPart = parts[1].split('_');
+        return {
+          fullId: containerId,
+          firstPart: parts[0],
+          contentId: secondPart[0]
+        };
+      }
+      return null;
+    } catch (e) {
+      console.error('Error parsing container ID:', e);
+      return null;
+    }
+  }, [containerId]);
 
   // Auth provider for the SDK
   const authProvider: IChatEmbeddedApiAuthProvider = useMemo(
@@ -53,10 +74,10 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
           throw err;
         }
       },
-      // Add site URL - this is required to resolve the site URL issue
-      siteUrl: `${SPE_HOSTNAME}/contentstorage/CSP_${containerId.split('!')[1].split('_')[0]}`,
+      // Use the determined site URL
+      siteUrl: siteUrl || (containerParts ? `${SPE_HOSTNAME}/contentstorage/CSP_${containerParts.contentId}` : undefined),
     }),
-    [getAccessToken, containerId]
+    [getAccessToken, containerParts, siteUrl]
   );
   
   // Callback for API ready
@@ -71,36 +92,71 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     setRetryCount(prev => prev + 1);
   }, []);
 
-  // Pre-fetch the site URL when container ID changes
+  // Try multiple site URL formats when container ID changes
   useEffect(() => {
-    if (!containerId) return;
+    if (!containerId || !containerParts) return;
     
     const fetchSiteUrl = async () => {
       try {
         const token = await getAccessToken();
         if (!token) return;
         
-        // Attempt to fetch the driveId info to confirm we have connectivity
-        const response = await fetch(`${SPE_HOSTNAME}/_api/v2.1/drives/${containerId}?$select=id,name,webUrl`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
+        // Try multiple possible site URL formats
+        const possibleSiteUrls = [
+          `${SPE_HOSTNAME}/contentstorage/CSP_${containerParts.contentId}`,
+          `${SPE_HOSTNAME}/sites/contentstorage_${containerParts.contentId}`,
+          `${SPE_HOSTNAME}/_api/v2.1/drives/${containerId}/root`
+        ];
         
-        if (response.ok) {
-          setIsSiteUrlFetched(true);
-          console.log('Successfully validated site URL connection');
-        } else {
-          console.warn('Could not validate site URL, may encounter issues with Copilot Chat');
+        console.log('Trying possible site URLs:', possibleSiteUrls);
+        
+        // Try each URL format
+        for (const url of possibleSiteUrls) {
+          try {
+            console.log('Trying to validate with URL:', url);
+            // For the _api URLs, we make an actual fetch
+            if (url.includes('_api')) {
+              const response = await fetch(url, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Accept': 'application/json'
+                }
+              });
+              
+              if (response.ok) {
+                console.log('URL validation successful with:', url);
+                const data = await response.json();
+                console.log('Site data:', data);
+                
+                // If we got webUrl from the response, use it directly
+                if (data.webUrl) {
+                  setSiteUrl(data.webUrl);
+                  setIsSiteUrlFetched(true);
+                  console.log('Set site URL from API response:', data.webUrl);
+                  return;
+                }
+              }
+            } else {
+              // For potential direct URLs, set it and let the SDK try
+              setSiteUrl(url);
+              setIsSiteUrlFetched(true);
+              console.log('Set site URL to try:', url);
+              return;
+            }
+          } catch (err) {
+            console.warn('Failed attempt with URL format:', url, err);
+          }
         }
+        
+        // If we get here, none of the formats worked
+        console.warn('Could not validate any site URL format');
       } catch (err) {
         console.warn('Site URL validation failed:', err);
       }
     };
     
     fetchSiteUrl();
-  }, [containerId, getAccessToken]);
+  }, [containerId, containerParts, getAccessToken]);
 
   // Effect to open the chat when the API is ready
   useEffect(() => {
@@ -112,6 +168,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       setIsLoading(true);
       setError(null);
       console.log('Attempting to open chat with API with containerId:', containerId);
+      console.log('Using site URL:', siteUrl || (containerParts ? `${SPE_HOSTNAME}/contentstorage/CSP_${containerParts.contentId}` : 'undefined'));
+      
       try {
         await chatApi.openChat();
         console.log('Chat opened successfully');
@@ -134,7 +192,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     if (isOpen && chatApi) {
       openChat();
     }
-  }, [chatApi, isOpen, containerId, retryCount]);
+  }, [chatApi, isOpen, containerId, retryCount, containerParts, siteUrl]);
 
   console.log('CopilotChat rendering with containerId:', containerId);
 
