@@ -42,20 +42,19 @@ export const useCopilotSite = (containerId: string) => {
     fetchSiteInfo();
   }, [containerId, getAccessToken]);
 
-  // Normalize the SharePoint hostname for CSP compatibility
-  const sharePointHostname = siteUrl ? 
-    (() => {
-      try {
-        // Extract just the hostname without path or trailing slashes
-        const url = new URL(siteUrl);
-        // Ensure no trailing slash after the hostname
-        return `${url.protocol}//${url.hostname}`.replace(/\/+$/, '');
-      } catch (e) {
-        console.error('Error parsing site URL:', e);
-        return "https://pucelikenterprise.sharepoint.com";
-      }
-    })() : 
-    "https://pucelikenterprise.sharepoint.com";
+  // Get the base SharePoint hostname (without any paths or trailing slashes)
+  // This is used for authentication and CSP compatibility
+  const sharePointHostname = useMemo(() => {
+    if (!siteUrl) return "https://pucelikenterprise.sharepoint.com";
+    
+    try {
+      const url = new URL(siteUrl);
+      return `${url.protocol}//${url.hostname}`;
+    } catch (e) {
+      console.error('Error parsing site URL:', e);
+      return "https://pucelikenterprise.sharepoint.com";
+    }
+  }, [siteUrl]);
 
   return {
     isLoading,

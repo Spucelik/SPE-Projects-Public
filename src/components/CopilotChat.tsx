@@ -60,17 +60,17 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     // Make sure we're using a clean URL without trailing slashes for the external chat
     const baseUrl = siteUrl.replace(/\/+$/, '');
     const chatUrl = `${baseUrl}/_layouts/15/CopilotGallery.aspx`;
+    
+    console.log('Opening external Copilot Chat at:', chatUrl);
     window.open(chatUrl, '_blank');
   }, [siteUrl]);
 
   const authProvider = useMemo(
     () => ({
-      // Ensure hostname has no trailing slash
-      hostname: sharePointHostname.replace(/\/+$/, ''),
+      hostname: sharePointHostname,
       getToken: async () => {
         try {
-          // Pass the clean hostname to getAccessToken
-          const token = await getAccessToken(sharePointHostname.replace(/\/+$/, ''));
+          const token = await getAccessToken(sharePointHostname);
           if (!token) throw new Error('No access token available');
           return token;
         } catch (err) {
@@ -79,13 +79,12 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
           throw err;
         }
       },
-      // Only include siteUrl if it's defined and make sure it has no trailing slash
-      siteUrl: siteUrl ? siteUrl.replace(/\/+$/, '') : undefined,
+      siteUrl: siteUrl || undefined,
     }),
     [getAccessToken, siteUrl, sharePointHostname]
   );
 
-  // Debug output - add detailed information about the CSP 
+  // Debug output
   useEffect(() => {
     if (isOpen) {
       console.log('Copilot Chat rendering with:', {
@@ -96,7 +95,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         error,
         authProvider,
         isMobileView,
-        sharePointHostname: sharePointHostname.replace(/\/+$/, '')
+        sharePointHostname
       });
     }
   }, [isOpen, containerId, siteUrl, siteName, isLoading, error, authProvider, isMobileView, sharePointHostname]);
