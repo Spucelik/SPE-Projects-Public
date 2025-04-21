@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
 import CopilotDesktopView from './CopilotDesktopView';
 import CopilotMobileView from './CopilotMobileView';
@@ -12,7 +12,7 @@ interface CopilotChatContainerProps {
 }
 
 const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId }) => {
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   
   // Parse containerId to ensure consistent format
@@ -95,11 +95,12 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       siteName={siteName}
       isLoading={isLoading}
       error={error}
-      siteUrl={siteUrl}
-      sharePointHostname={sharePointHostname}
       containerId={normalizedContainerId}
       onError={handleError}
       chatConfig={getChatConfig()}
+      authProvider={null}
+      onApiReady={() => {}}
+      chatKey={0}
     />
   );
 };

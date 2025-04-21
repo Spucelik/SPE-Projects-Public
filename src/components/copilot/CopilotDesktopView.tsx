@@ -11,8 +11,9 @@ interface CopilotDesktopViewProps {
   siteName: string | null;
   isLoading: boolean;
   error: string | null;
-  openExternalChat: (() => void) | null;
   containerId: string;
+  onError: (errorMessage: string) => void;
+  chatConfig: any;
   authProvider: any;
   onApiReady: (api: any) => void;
   chatKey: number;
@@ -102,12 +103,14 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
             </div>
           ) : (
             <div className="h-full" key={chatKey}>
-              <ChatEmbedded
-                containerId={validContainerId}
-                authProvider={authProvider}
-                onApiReady={onApiReady}
-                style={{ height: '100%' }}
-              />
+              {authProvider && (
+                <ChatEmbedded
+                  containerId={validContainerId}
+                  authProvider={authProvider}
+                  onApiReady={onApiReady}
+                  style={{ height: '100%' }}
+                />
+              )}
             </div>
           )}
         </div>
