@@ -1,11 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { MessageSquare, ExternalLink, AlertCircle } from 'lucide-react';
-import { ChatEmbedded, ChatEmbeddedAPI } from '@microsoft/sharepointembedded-copilotchat-react';
-import { IChatEmbeddedApiAuthProvider } from '@microsoft/sharepointembedded-copilotchat-react';
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MessageSquare } from 'lucide-react';
+import { ChatEmbedded } from '@microsoft/sharepointembedded-copilotchat-react';
 
 interface CopilotDesktopViewProps {
   isOpen: boolean;
@@ -15,8 +13,8 @@ interface CopilotDesktopViewProps {
   error: string | null;
   openExternalChat: () => void;
   containerId: string;
-  authProvider: IChatEmbeddedApiAuthProvider;
-  onApiReady: (api: ChatEmbeddedAPI) => void;
+  authProvider: any;
+  onApiReady: (api: any) => void;
   chatKey: number;
 }
 
@@ -26,15 +24,11 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   siteName,
   isLoading,
   error,
-  openExternalChat,
   containerId,
   authProvider,
   onApiReady,
   chatKey,
 }) => {
-  // Always direct to external chat in this environment due to CSP restrictions
-  const useExternalChatOnly = true;
-
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -49,32 +43,22 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
           <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
         </div>
-        <div className="flex-1 min-h-0 relative p-6">
+        <div className="flex-1 min-h-0 relative">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
             </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-destructive">{error}</p>
+            </div>
           ) : (
-            <div className="flex flex-col items-center justify-center space-y-4 h-full">
-              <Alert variant="default" className="mb-4">
-                <AlertCircle className="h-4 w-4 mr-2" />
-                <AlertDescription>
-                  Copilot Chat works best in its own dedicated window due to browser security policies.
-                </AlertDescription>
-              </Alert>
-              
-              <Button 
-                variant="default" 
-                className="gap-2 w-full max-w-xs"
-                onClick={openExternalChat}
-              >
-                <ExternalLink size={16} />
-                Open Copilot Chat
-              </Button>
-              
-              <p className="text-sm text-muted-foreground text-center mt-4">
-                This will open Copilot Chat in a new tab where you can interact with your SharePoint content.
-              </p>
+            <div className="h-full" key={chatKey}>
+              <ChatEmbedded
+                authProvider={authProvider}
+                onApiReady={onApiReady}
+                style={{ height: '100%' }}
+              />
             </div>
           )}
         </div>
