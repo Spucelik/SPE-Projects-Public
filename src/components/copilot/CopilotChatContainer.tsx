@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
 import CopilotDesktopView from './CopilotDesktopView';
@@ -7,7 +7,7 @@ import CopilotMobileView from './CopilotMobileView';
 import { toast } from '@/hooks/use-toast';
 import { appConfig } from '@/config/appConfig';
 import { useAuth } from '@/context/AuthContext';
-import { IChatEmbeddedApiAuthProvider } from '@microsoft/sharepointembedded-copilotchat-react';
+import { IChatEmbeddedApiAuthProvider, ChatEmbeddedAPI } from '@microsoft/sharepointembedded-copilotchat-react';
 
 interface CopilotChatContainerProps {
   containerId: string;
@@ -18,6 +18,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const [isOpen, setIsOpen] = useState(false);
   const { getAccessToken } = useAuth();
   const [chatKey, setChatKey] = useState(0);
+  const chatApiRef = useRef<ChatEmbeddedAPI | null>(null);
   
   // Parse containerId to ensure consistent format
   const normalizedContainerId = containerId.startsWith('b!') 
@@ -56,6 +57,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       getToken: async () => {
         try {
           const token = await getAccessToken();
+          console.log('Auth token retrieved for Copilot chat', token ? 'successfully' : 'failed');
           return token || '';
         } catch (err) {
           console.error('Error getting token for Copilot chat:', err);
@@ -70,8 +72,19 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const authProvider = createAuthProvider();
   
   // Handles API ready event from ChatEmbedded component
-  const handleApiReady = (api: any) => {
-    console.log('Copilot chat API is ready');
+  const handleApiReady = (api: ChatEmbeddedAPI) => {
+    console.log('Copilot chat API is ready', api);
+    chatApiRef.current = api;
+    
+    // Configure chat if we have settings
+    if (api && chatConfig) {
+      try {
+        console.log('Applying chat configuration:', chatConfig);
+        api.updateChatConfig(chatConfig);
+      } catch (err) {
+        console.error('Error configuring chat:', err);
+      }
+    }
   };
   
   // Generate dynamic prompts based on container name
@@ -98,7 +111,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   };
   
   // Generate chat configuration
-  const getChatConfig = () => {
+  const getChatConfig = useCallback(() => {
     const containerName = getContainerName();
     
     return {
@@ -108,11 +121,20 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       instruction: "You are a helpful project management assistant. Help users find information, summarize content, and gain insights from the documents in this project. Always provide references to the source documents when possible.",
       locale: "en",
     };
-  };
+  }, [siteName]);
+  
+  // Chat configuration
+  const chatConfig = getChatConfig();
   
   // Reset chat when there's an issue
   const handleResetChat = () => {
     setChatKey(prev => prev + 1);
+    
+    // Close and reopen the chat panel
+    setIsOpen(false);
+    setTimeout(() => {
+      setIsOpen(true);
+    }, 500);
   };
 
   return isMobile ? (
@@ -133,7 +155,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       error={error}
       containerId={normalizedContainerId}
       onError={handleError}
-      chatConfig={getChatConfig()}
+      chatConfig={chatConfig}
       authProvider={authProvider}
       onApiReady={handleApiReady}
       chatKey={chatKey}

@@ -8,9 +8,11 @@ interface CopilotChatProps {
 
 const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   if (!containerId) {
+    console.error('CopilotChat: No containerId provided');
     return null;
   }
   
+  console.log('CopilotChat rendering with containerId:', containerId);
   return <CopilotChatContainer containerId={containerId} />;
 };
 

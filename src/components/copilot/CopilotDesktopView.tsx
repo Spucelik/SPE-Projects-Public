@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare, RefreshCw } from 'lucide-react';
-import { ChatEmbedded } from '@microsoft/sharepointembedded-copilotchat-react';
+import { ChatEmbedded, ChatEmbeddedAPI } from '@microsoft/sharepointembedded-copilotchat-react';
 
 interface CopilotDesktopViewProps {
   isOpen: boolean;
@@ -35,6 +35,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   onResetChat,
 }) => {
   const [chatLoadFailed, setChatLoadFailed] = useState(false);
+  const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
   
   // Reset error state when the chat is reopened
   useEffect(() => {
@@ -42,6 +43,25 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
       setChatLoadFailed(false);
     }
   }, [isOpen, chatKey]);
+  
+  // Open chat when API is ready
+  useEffect(() => {
+    const openChat = async () => {
+      if (!chatApi || !isOpen) {
+        return;
+      }
+
+      try {
+        console.log('Opening Copilot chat...');
+        await chatApi.openChat();
+      } catch (err) {
+        console.error('Failed to open chat:', err);
+        onError('Failed to open chat. Please try again.');
+      }
+    };
+
+    openChat();
+  }, [chatApi, isOpen, onError]);
   
   // Format the containerId for the SharePoint Embedded API
   const formatContainerId = (rawId: string): string => {
@@ -76,10 +96,11 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         authProvider,
         chatKey,
         chatLoadFailed,
-        chatConfig
+        chatConfig,
+        chatApiReady: !!chatApi
       });
     }
-  }, [isOpen, containerId, validContainerId, authProvider, chatKey, chatLoadFailed, chatConfig]);
+  }, [isOpen, containerId, validContainerId, authProvider, chatKey, chatLoadFailed, chatConfig, chatApi]);
 
   const handleChatApiError = () => {
     setChatLoadFailed(true);
@@ -102,6 +123,13 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
       };
     }
   }, [isOpen]);
+
+  // Handle API ready event
+  const handleApiReady = (api: ChatEmbeddedAPI) => {
+    console.log('Copilot chat API is ready');
+    setChatApi(api);
+    onApiReady(api);
+  };
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -140,8 +168,8 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 <ChatEmbedded
                   containerId={validContainerId}
                   authProvider={authProvider}
-                  onApiReady={onApiReady}
-                  style={{ height: '100%' }}
+                  onApiReady={handleApiReady}
+                  style={{ height: '100%', width: '100%' }}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full p-6 text-center">
