@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, ExternalLink } from 'lucide-react';
 import { ChatEmbedded } from '@microsoft/sharepointembedded-copilotchat-react';
 
 interface CopilotDesktopViewProps {
@@ -24,51 +24,78 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   siteName,
   isLoading,
   error,
+  openExternalChat,
   containerId,
   authProvider,
   onApiReady,
   chatKey,
 }) => {
   // Format the containerId for the SharePoint Embedded API
-  // The SharePoint API expects a proper GUID format
-  const formatContainerId = (id: string): string => {
+  // The SharePoint API expects a specific GUID format without decorations
+  const extractValidGuid = (id: string): string | null => {
     try {
-      // For IDs in the 'b!' format
-      if (id.startsWith('b!')) {
-        // Extract the first GUID segment, before any underscore
-        const strippedId = id.substring(2); // Remove 'b!' prefix
-        
-        // If there's an underscore, take only the part before it
-        // This should be the DriveId GUID which is what Copilot expects
-        const firstSegment = strippedId.split('_')[0];
-        
-        // Check if it's a valid GUID-like string (basic check)
-        if (firstSegment && firstSegment.length >= 32) {
-          console.log('Using first GUID segment:', firstSegment);
-          return firstSegment;
-        }
-        
-        // If splitting didn't work as expected, return the whole stripped string
-        return strippedId;
-      }
+      // Regular expression to find a GUID pattern
+      const guidRegex = /([0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})|([0-9a-f]{32})/i;
       
-      // For already formatted GUIDs without 'b!' prefix
-      return id;
+      // Remove 'b!' prefix if it exists
+      const strippedId = id.startsWith('b!') ? id.substring(2) : id;
+      
+      // Try to find a GUID in the string
+      const match = strippedId.match(guidRegex);
+      
+      if (match && match[0]) {
+        // Format the GUID if it's not already in the standard format with dashes
+        const guid = match[0];
+        if (guid.length === 32 && !guid.includes('-')) {
+          // Insert dashes in the correct positions for a standard GUID format
+          return `${guid.slice(0,8)}-${guid.slice(8,12)}-${guid.slice(12,16)}-${guid.slice(16,20)}-${guid.slice(20)}`;
+        }
+        return guid;
+      }
     } catch (err) {
-      console.error('Error formatting containerId:', err);
-      // Return original as fallback
-      return id;
+      console.error('Error extracting GUID:', err);
     }
+    return null;
   };
 
-  const formattedContainerId = formatContainerId(containerId);
-  
-  // Debug logging
-  console.log('ContainerId processing:', {
-    original: containerId,
-    formatted: formattedContainerId
-  });
+  // Process the containerId with multiple fallback mechanisms
+  const processContainerId = (): string => {
+    // Original value for debugging
+    console.log('Original containerId:', containerId);
     
+    // First attempt: try to extract a valid GUID
+    const extractedGuid = extractValidGuid(containerId);
+    if (extractedGuid) {
+      console.log('Successfully extracted GUID:', extractedGuid);
+      return extractedGuid;
+    }
+    
+    // Second attempt: If the ID starts with b!, take the first part after splitting by underscore
+    if (containerId.startsWith('b!')) {
+      const parts = containerId.substring(2).split('_');
+      if (parts.length > 0 && parts[0]) {
+        console.log('Using first part after b!:', parts[0]);
+        return parts[0];
+      }
+    }
+    
+    // Last resort: Just use the plain ID without any b! prefix
+    const fallbackId = containerId.startsWith('b!') ? containerId.substring(2) : containerId;
+    console.log('Using fallback ID:', fallbackId);
+    return fallbackId;
+  };
+
+  const formattedContainerId = processContainerId();
+  
+  // Additional debugging
+  useEffect(() => {
+    console.log('CopilotDesktopView - containerId processing:', {
+      original: containerId,
+      formatted: formattedContainerId,
+      length: formattedContainerId.length
+    });
+  }, [containerId, formattedContainerId]);
+  
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -89,8 +116,16 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
             </div>
           ) : error ? (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-destructive">{error}</p>
+            <div className="flex flex-col items-center justify-center h-full p-6">
+              <p className="text-destructive mb-4">{error}</p>
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={openExternalChat}
+              >
+                <ExternalLink size={16} />
+                Try External Chat
+              </Button>
             </div>
           ) : (
             <div className="h-full" key={chatKey}>

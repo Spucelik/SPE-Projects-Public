@@ -19,8 +19,15 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [chatKey, setChatKey] = useState(0);
   const [copilotError, setCopilotError] = useState<string | null>(null);
   
-  // Log the containerId for debugging
-  console.log('CopilotChat received containerId:', containerId);
+  // Enhanced debugging
+  useEffect(() => {
+    console.log('CopilotChat component mounted with containerId:', containerId);
+    
+    // Return cleanup function
+    return () => {
+      console.log('CopilotChat component unmounting');
+    };
+  }, [containerId]);
   
   // Use the useCopilotSite hook
   const {
@@ -51,6 +58,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   // Reset error state and force re-render when opening chat
   useEffect(() => {
     if (isOpen) {
+      console.log('Chat opened - resetting error state and refreshing');
       setCopilotError(null);
       setChatKey(prev => prev + 1);
     }
@@ -94,10 +102,10 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     [getAccessToken, siteUrl, sharePointHostname]
   );
 
-  // Debug output
+  // Debug output when key components change
   useEffect(() => {
     if (isOpen) {
-      console.log('Copilot Chat rendering with:', {
+      console.log('Copilot Chat dependencies updated:', {
         containerId,
         siteUrl,
         siteName,
@@ -105,24 +113,26 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         error,
         authProvider,
         isMobileView,
-        sharePointHostname
+        sharePointHostname,
+        chatKey
       });
     }
-  }, [isOpen, containerId, siteUrl, siteName, isLoading, error, authProvider, isMobileView, sharePointHostname]);
+  }, [isOpen, containerId, siteUrl, siteName, isLoading, error, authProvider, isMobileView, sharePointHostname, chatKey]);
 
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
     console.log('Copilot Chat API ready');
     setChatApi(api);
-  }, []);
-
-  // Handle API errors
-  const handleChatError = useCallback((error: Error) => {
-    console.error('Copilot Chat error:', error);
-    setCopilotError(error.message);
-    toast({
-      title: "Copilot Chat Error",
-      description: error.message,
-      variant: "destructive",
+    
+    // Listen for errors
+    api.addEventListener('error', (event: any) => {
+      console.error('Copilot API error event:', event);
+      const errorMessage = event?.error?.message || 'Unknown Copilot error';
+      setCopilotError(errorMessage);
+      toast({
+        title: "Copilot Chat Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     });
   }, []);
 
