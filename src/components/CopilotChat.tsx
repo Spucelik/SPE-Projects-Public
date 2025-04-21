@@ -36,11 +36,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     [getAccessToken]
   );
 
-  // Callback to handle when the Chat API is ready
-  const onApiReady = (api: ChatEmbeddedAPI) => {
-    console.log('Copilot Chat API is ready:', api);
-    setChatApi(api);
-  };
+  console.log('CopilotChat rendering with containerId:', containerId);
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -60,8 +56,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
             <ChatEmbedded
               containerId={containerId}
               authProvider={authProvider}
-              style={{ height: '100%' }}
-              onApiReady={onApiReady}
+              style={{ width: '100%', height: '100%' }}
+              onApiReady={setChatApi} // Directly use setChatApi as the callback
             />
           )}
         </div>
