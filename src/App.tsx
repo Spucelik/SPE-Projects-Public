@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ConfigProvider } from "./context/ConfigContext";
+import { SidebarProvider } from "./components/ui/sidebar";
 import Layout from "./components/Layout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -23,16 +24,18 @@ const App = () => {
         <Router>
           <AuthProvider>
             <ConfigProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                <Route path="/containers" element={<ProtectedRoute><Containers /></ProtectedRoute>} />
-                <Route path="/files/:containerId" element={<ProtectedRoute><Files /></ProtectedRoute>} />
-                <Route path="/files" element={<ProtectedRoute><Navigate to="/containers" replace /></ProtectedRoute>} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <SidebarProvider>
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                  <Route path="/containers" element={<ProtectedRoute><Containers /></ProtectedRoute>} />
+                  <Route path="/files/:containerId" element={<ProtectedRoute><Files /></ProtectedRoute>} />
+                  <Route path="/files" element={<ProtectedRoute><Navigate to="/containers" replace /></ProtectedRoute>} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </SidebarProvider>
             </ConfigProvider>
           </AuthProvider>
         </Router>
