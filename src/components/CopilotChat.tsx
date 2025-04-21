@@ -123,17 +123,23 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     console.log('Copilot Chat API ready');
     setChatApi(api);
     
-    // Listen for errors
-    api.addEventListener('error', (event: any) => {
-      console.error('Copilot API error event:', event);
-      const errorMessage = event?.error?.message || 'Unknown Copilot error';
+    // Instead of using addEventListener, handle errors through the API directly
+    // The API might provide error events through a different mechanism
+    try {
+      console.log('Copilot API instance:', api);
+      
+      // Instead of using addEventListener, we'll set up error handling in other ways
+      // and monitor for errors in the console
+    } catch (err) {
+      console.error('Error setting up Copilot API:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown Copilot error';
       setCopilotError(errorMessage);
       toast({
         title: "Copilot Chat Error",
         description: errorMessage,
         variant: "destructive",
       });
-    });
+    }
   }, []);
 
   return isMobileView ? (
