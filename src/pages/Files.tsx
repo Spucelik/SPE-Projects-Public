@@ -46,10 +46,30 @@ const Files = () => {
   const [currentPath, setCurrentPath] = useState<BreadcrumbItem[]>([
     { id: '', name: 'Root' }
   ]);
+  const [containerDetails, setContainerDetails] = useState<{ webUrl: string, name: string } | null>(null);
   
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated || !containerId) return;
+
+    const fetchContainerDetails = async () => {
+      try {
+        const token = await getAccessToken();
+        if (!token) return;
+        
+        const details = await sharePointService.getContainerDetails(token, containerId);
+        setContainerDetails(details);
+        console.log('Container details for Files page:', details);
+      } catch (error) {
+        console.error('Error fetching container details:', error);
+      }
+    };
+
+    fetchContainerDetails();
+  }, [isAuthenticated, getAccessToken, containerId]);
 
   useEffect(() => {
     if (!isAuthenticated || !containerId) return;
@@ -227,6 +247,12 @@ const Files = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <ConfigAlert />
+        
+        {containerDetails && (
+          <div className="text-sm text-muted-foreground">
+            <span>Connected to:</span> <a href={containerDetails.webUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{containerDetails.name}</a>
+          </div>
+        )}
         
         {containerId && (
           <CopilotChat containerId={containerId} />

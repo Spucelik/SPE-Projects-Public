@@ -7,6 +7,9 @@ export const appConfig = {
   containerTypeId: "ee469b9e-3451-0e71-1384-0fbc70aa001a", // Replace with your container type ID
   appName: "Project Management using SharePoint Embedded",
   
+  // Add the SharePoint hostname explicitly
+  sharePointHostname: "https://pucelikenterprise.sharepoint.com",
+  
   // MSAL configuration
   msalConfig: {
     auth: {

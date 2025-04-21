@@ -69,6 +69,79 @@ class SharePointService {
     return await response.json();
   }
   
+  // Get container details including the web URL for Copilot
+  async getContainerDetails(token: string, containerId: string): Promise<{ webUrl: string, name: string }> {
+    try {
+      // First try to get the web URL directly from the drive
+      const url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}`;
+      console.log('Getting container details with URL:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Container details retrieved:', data);
+        
+        if (data.webUrl) {
+          // Return the web URL and name from the drive
+          return {
+            webUrl: data.webUrl,
+            name: data.name || 'SharePoint Drive'
+          };
+        }
+      }
+      
+      // If the direct approach failed, try to get the root item which often has the webUrl
+      const rootUrl = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/root`;
+      console.log('Getting container root with URL:', rootUrl);
+      
+      const rootResponse = await fetch(rootUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (rootResponse.ok) {
+        const rootData = await rootResponse.json();
+        console.log('Container root retrieved:', rootData);
+        
+        if (rootData.webUrl) {
+          // Return the web URL from the root and a default name
+          return {
+            webUrl: rootData.webUrl,
+            name: rootData.name || 'SharePoint Root'
+          };
+        }
+      }
+      
+      // As a last resort, fall back to a generic format
+      // Parse container ID to try to extract meaningful parts
+      let parsedId = containerId;
+      if (containerId.startsWith('b!')) {
+        parsedId = containerId.substring(2);
+      }
+      
+      // If we couldn't get a valid webUrl from the API, construct a basic one
+      return {
+        webUrl: `${appConfig.sharePointHostname}/sites/shared-${parsedId.substring(0, 8)}`,
+        name: 'SharePoint Container'
+      };
+    } catch (error) {
+      console.error('Error getting container details:', error);
+      // Return a basic fallback
+      return {
+        webUrl: `${appConfig.sharePointHostname}`,
+        name: 'SharePoint'
+      };
+    }
+  }
+  
   // Create a container
   async createContainer(token: string, displayName: string, description: string = ''): Promise<Container> {
     const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.fileStorage}${appConfig.endpoints.containers}`;
