@@ -17,7 +17,9 @@ interface CopilotChatProps {
   containerId: string;
 }
 
-const SPE_HOSTNAME = 'https://m365x10735106.sharepoint.com'; // Replace with your actual SharePoint Embedded host if not this demo
+// The hostname should match your actual SharePoint tenant
+// The format should be: https://tenantname.sharepoint.com (without trailing slash)
+const SPE_HOSTNAME = 'https://pucelikenterprise.sharepoint.com'; 
 
 const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,6 +27,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Auth provider for the SDK
   const authProvider: IChatEmbeddedApiAuthProvider = useMemo(
@@ -33,12 +36,14 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       getToken: async () => {
         try {
           setError(null);
+          console.log('Getting access token for Copilot Chat...');
           const token = await getAccessToken();
           if (!token) {
             const noTokenError = 'No access token available for Copilot Chat';
             setError(noTokenError);
             throw new Error(noTokenError);
           }
+          console.log('Access token obtained successfully');
           return token;
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to get token';
@@ -57,6 +62,12 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     setChatApi(api);
   }, []);
 
+  // Function to handle retry
+  const handleRetry = useCallback(() => {
+    setError(null);
+    setRetryCount(prev => prev + 1);
+  }, []);
+
   // Effect to open the chat when the API is ready
   useEffect(() => {
     const openChat = async () => {
@@ -66,14 +77,14 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       
       setIsLoading(true);
       setError(null);
-      console.log('Attempting to open chat with API');
+      console.log('Attempting to open chat with API with containerId:', containerId);
       try {
         await chatApi.openChat();
         console.log('Chat opened successfully');
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         setError(`Failed to open chat: ${errorMessage}`);
-        console.error('Failed to open chat:', error);
+        console.error('Failed to open chat details:', error);
         
         // Notify user about the error
         toast({
@@ -89,7 +100,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     if (isOpen && chatApi) {
       openChat();
     }
-  }, [chatApi, isOpen]);
+  }, [chatApi, isOpen, containerId, retryCount]);
 
   console.log('CopilotChat rendering with containerId:', containerId);
 
@@ -107,7 +118,14 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
           <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
           {error && (
             <div className="mt-2 p-2 bg-red-50 text-red-800 rounded text-sm">
-              {error}
+              <p>{error}</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRetry} 
+                className="mt-2">
+                Retry Connection
+              </Button>
             </div>
           )}
         </div>
