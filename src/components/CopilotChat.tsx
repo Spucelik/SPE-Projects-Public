@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -20,8 +21,11 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [chatKey, setChatKey] = useState(0);
   const [copilotError, setCopilotError] = useState<string | null>(null);
   
+  // Log when component mounts/unmounts and containerId info
   useEffect(() => {
     console.log('CopilotChat component mounted with containerId:', containerId);
+    console.log('ContainerId type:', typeof containerId);
+    console.log('ContainerId length:', containerId?.length);
     
     return () => {
       console.log('CopilotChat component unmounting');
@@ -53,6 +57,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
 
   useEffect(() => {
     if (isOpen) {
+      // When opening the chat, reset errors and refresh the component
       console.log('Chat opened - resetting error state and refreshing');
       setCopilotError(null);
       setChatKey(prev => prev + 1);
@@ -82,6 +87,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       getToken: async () => {
         try {
           const token = await getAccessToken(sharePointHostname);
+          console.log('Token acquired successfully:', token ? 'Valid token' : 'No token');
           if (!token) throw new Error('No access token available');
           return token;
         } catch (err) {
@@ -96,6 +102,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     [getAccessToken, siteUrl, sharePointHostname]
   );
 
+  // Debug output when key components change
   useEffect(() => {
     if (isOpen) {
       console.log('Copilot Chat dependencies updated:', {
@@ -104,7 +111,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         siteName,
         isLoading,
         error,
-        authProvider,
         isMobileView,
         sharePointHostname,
         chatKey
@@ -117,7 +123,14 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     setChatApi(api);
     
     try {
-      console.log('Copilot API instance:', api);
+      // Log API information for debugging
+      console.log('Copilot API instance properties:', Object.keys(api));
+      console.log('Copilot API type:', api.constructor?.name);
+      
+      // Check if the API has the expected methods
+      if (typeof api.openChat === 'function') {
+        console.log('openChat method is available');
+      }
     } catch (err) {
       console.error('Error with Copilot API:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unknown Copilot error';
@@ -130,7 +143,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     }
   }, []);
 
-  if (containerId && containerId.length < 10) {
+  // If container ID is invalid or too short, show disabled button
+  if (!containerId || containerId.length < 10) {
     return (
       <Button 
         variant="outline" 
