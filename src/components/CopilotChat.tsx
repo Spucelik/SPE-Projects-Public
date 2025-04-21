@@ -1,7 +1,8 @@
+
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, ExternalLink } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { sharePointService } from '../services/sharePointService';
@@ -28,6 +29,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   const [siteUrl, setSiteUrl] = useState<string | null>(null);
   const [siteName, setSiteName] = useState<string | null>(null);
   const [isFetchingSiteInfo, setIsFetchingSiteInfo] = useState(false);
+  const [showExternalChatOption, setShowExternalChatOption] = useState(false);
 
   // Effect to fetch correct site URL when container ID changes
   useEffect(() => {
@@ -127,6 +129,21 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     setRetryCount(prev => prev + 1);
   }, []);
 
+  // Function to open chat in a new tab
+  const openChatInNewTab = useCallback(() => {
+    if (siteUrl) {
+      // Construct a URL to the SharePoint site's Copilot chat
+      const chatUrl = `${siteUrl}/_layouts/15/sharepoint.aspx`;
+      window.open(chatUrl, '_blank');
+    } else {
+      toast({
+        title: "Missing Site Information",
+        description: "Unable to determine the SharePoint site URL for Copilot Chat.",
+        variant: "destructive",
+      });
+    }
+  }, [siteUrl]);
+
   // Effect to open the chat when the API is ready
   useEffect(() => {
     const openChat = async () => {
@@ -148,6 +165,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       try {
         await chatApi.openChat();
         console.log('Chat opened successfully');
+        // Hide external option if embedded chat works
+        setShowExternalChatOption(false);
       } catch (error) {
         // Capture all error details for diagnosis
         const errorObj = error instanceof Error ? {
@@ -168,10 +187,13 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         setError(`Failed to open chat: ${errorMessage}`);
         
+        // Show external chat option as fallback
+        setShowExternalChatOption(true);
+        
         // Notify user about the error
         toast({
           title: "Copilot Chat Error",
-          description: "Could not connect to Copilot Chat. See console for details.",
+          description: "Could not embed Copilot Chat. You can try opening it in a new browser tab.",
           variant: "destructive",
         });
       } finally {
@@ -209,7 +231,24 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
             </div>
           )}
           
-          {error && (
+          {showExternalChatOption && (
+            <div className="mt-3">
+              <Button
+                variant="outline"
+                onClick={openChatInNewTab}
+                className="w-full gap-2 mt-2"
+              >
+                <ExternalLink size={16} />
+                Open Chat in New Tab
+              </Button>
+              <p className="text-xs text-muted-foreground mt-1">
+                The embedded chat is having trouble with cross-origin restrictions. 
+                Try opening it in a new tab instead.
+              </p>
+            </div>
+          )}
+          
+          {error && !showExternalChatOption && (
             <div className="mt-2 p-2 bg-red-50 text-red-800 rounded text-sm">
               <p className="font-medium">Error: {error}</p>
               
@@ -250,13 +289,35 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
             </div>
           )}
-          {isOpen && containerId && siteUrl && (
+          {isOpen && containerId && siteUrl && !showExternalChatOption && (
             <ChatEmbedded
               containerId={containerId}
               authProvider={authProvider}
               style={{ width: '100%', height: '100%' }}
               onApiReady={handleApiReady}
+              sandboxAttributes="allow-scripts allow-same-origin allow-forms allow-popups"
             />
+          )}
+          
+          {isOpen && showExternalChatOption && (
+            <div className="flex items-center justify-center h-full p-8 text-center">
+              <div>
+                <div className="bg-muted p-6 rounded-lg mb-4">
+                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                  <h3 className="text-lg font-medium">Chat in New Tab</h3>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Due to browser security restrictions, the chat needs to be opened in a separate tab.
+                  </p>
+                </div>
+                <Button
+                  onClick={openChatInNewTab}
+                  className="w-full gap-2"
+                >
+                  <ExternalLink size={16} />
+                  Open Copilot Chat
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </SheetContent>
