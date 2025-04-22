@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -11,6 +10,7 @@ import {
   Info,
   AlertCircle
 } from 'lucide-react';
+import { ProjectDashboard } from '@/components/dashboard/ProjectDashboard';
 import { 
   Sheet, 
   SheetContent, 
@@ -183,42 +183,28 @@ const Projects = () => {
           ))}
         </div>
       ) : projects.length > 0 ? (
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {projects.map((project) => (
-                <TableRow key={project.id}>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <Folder className="flex-shrink-0 h-5 w-5 text-gray-400 mr-2" />
-                      <Link
-                        to={`/files/${project.id}`}
-                        className="hover:text-blue-600 font-medium"
-                      >
-                        {project.displayName}
-                      </Link>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-gray-500 truncate max-w-xs">
-                    {project.description || "-"}
-                  </TableCell>
-                  <TableCell>
+        <div className="space-y-8">
+          {projects.map((project) => (
+            <div key={project.id} className="border rounded-lg overflow-hidden bg-white">
+              <ProjectDashboard projectName={project.displayName} />
+              <div className="p-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Folder className="flex-shrink-0 h-5 w-5 text-gray-400 mr-2" />
+                    <Link
+                      to={`/files/${project.id}`}
+                      className="hover:text-blue-600 font-medium"
+                    >
+                      {project.displayName}
+                    </Link>
+                  </div>
+                  <div className="flex items-center gap-4">
                     <div className="flex items-center">
                       <Calendar className="flex-shrink-0 h-4 w-4 text-gray-400 mr-1" />
                       <span className="text-sm text-gray-500">
                         {formatDate(project.createdDateTime)}
                       </span>
                     </div>
-                  </TableCell>
-                  <TableCell>
                     <button 
                       onClick={() => viewProjectInfo(project)}
                       className="text-blue-600 hover:text-blue-800 flex items-center"
@@ -226,11 +212,11 @@ const Projects = () => {
                       <Info className="h-4 w-4 mr-1" />
                       Details
                     </button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="border rounded-lg p-12 text-center bg-white">

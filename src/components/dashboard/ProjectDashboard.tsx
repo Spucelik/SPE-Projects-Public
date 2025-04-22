@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -50,7 +49,7 @@ const COLORS = ['#00C49F', '#0088FE', '#FFBB28', '#FF8042'];
 export function ProjectDashboard({ projectName }: ProjectDashboardProps) {
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">{projectName} Dashboard</h1>
+      <h2 className="text-xl font-bold">{projectName} Dashboard</h2>
       
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -98,13 +97,12 @@ export function ProjectDashboard({ projectName }: ProjectDashboardProps) {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Progress Donut Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Projects by Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[200px]">
               <ChartContainer config={{
                 completedStatus: {
                   color: "#00C49F",
@@ -121,8 +119,8 @@ export function ProjectDashboard({ projectName }: ProjectDashboardProps) {
                       data={mockData.progressData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
+                      innerRadius={40}
+                      outerRadius={60}
                       paddingAngle={5}
                       dataKey="value"
                     >
@@ -138,13 +136,12 @@ export function ProjectDashboard({ projectName }: ProjectDashboardProps) {
           </CardContent>
         </Card>
 
-        {/* Effort by Project Bar Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Effort by Project</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[200px]">
               <ChartContainer config={{
                 effortMetric: {
                   color: "#0088FE",
@@ -164,13 +161,12 @@ export function ProjectDashboard({ projectName }: ProjectDashboardProps) {
           </CardContent>
         </Card>
 
-        {/* Project Manager Distribution */}
         <Card>
           <CardHeader>
             <CardTitle>Projects by Project Manager</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[200px]">
               <ChartContainer config={{
                 managerDistribution: {
                   color: "#00C49F",
@@ -183,7 +179,7 @@ export function ProjectDashboard({ projectName }: ProjectDashboardProps) {
                       data={mockData.managerDistribution}
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
+                      outerRadius={60}
                       dataKey="value"
                     >
                       {mockData.managerDistribution.map((entry, index) => (
