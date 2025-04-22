@@ -76,58 +76,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const handleApiReady = (api: ChatEmbeddedAPI) => {
     console.log('Copilot chat API is ready');
     chatApiRef.current = api;
-    
-    // Configure chat if we have settings
-    if (api && chatConfig) {
-      try {
-        console.log('Applying chat configuration:', chatConfig);
-        // The updateChatConfig method doesn't exist, so we need to use the correct method
-        // or simply apply configuration through props instead
-        console.log('Chat configuration will be applied through props instead');
-      } catch (err) {
-        console.error('Error configuring chat:', err);
-      }
-    }
   };
-  
-  // Generate dynamic prompts based on container name
-  const generatePrompts = () => {
-    const containerName = getContainerName();
-    
-    return {
-      headerText: `Chat with content in ${containerName}`,
-      promptSuggestionList: [
-        {
-          suggestionText: 'Show me recent files',
-        },
-        {
-          suggestionText: 'Summarize the content in this container',
-        },
-        {
-          suggestionText: 'What are the key milestones in this project?',
-        },
-        {
-          suggestionText: 'Generate a status report based on these files',
-        },
-      ]
-    };
-  };
-  
-  // Generate chat configuration
-  const getChatConfig = useCallback(() => {
-    const containerName = getContainerName();
-    
-    return {
-      header: `Project Assistant - ${containerName}`,
-      theme: appConfig.copilotTheme,
-      zeroQueryPrompts: generatePrompts(),
-      instruction: "You are a helpful project management assistant. Help users find information, summarize content, and gain insights from the documents in this project. Always provide references to the source documents when possible.",
-      locale: "en",
-    };
-  }, [siteName]);
-  
-  // Chat configuration
-  const chatConfig = getChatConfig();
   
   // Reset chat when there's an issue
   const handleResetChat = () => {
@@ -138,6 +87,11 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     setTimeout(() => {
       setIsOpen(true);
     }, 500);
+  };
+
+  // Simplified chat configuration object
+  const chatConfig = {
+    theme: appConfig.copilotTheme
   };
 
   return isMobile ? (

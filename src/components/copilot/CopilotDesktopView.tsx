@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare, RefreshCw } from 'lucide-react';
-import { ChatEmbedded, ChatEmbeddedAPI, ChatEmbeddedProps } from '@microsoft/sharepointembedded-copilotchat-react';
+import { ChatEmbedded, ChatEmbeddedAPI, IChatEmbeddedApiAuthProvider } from '@microsoft/sharepointembedded-copilotchat-react';
 
 interface CopilotDesktopViewProps {
   isOpen: boolean;
@@ -13,8 +14,8 @@ interface CopilotDesktopViewProps {
   containerId: string;
   onError: (errorMessage: string) => void;
   chatConfig: any;
-  authProvider: any;
-  onApiReady: (api: any) => void;
+  authProvider: IChatEmbeddedApiAuthProvider | null;
+  onApiReady: (api: ChatEmbeddedAPI) => void;
   chatKey: number;
   onResetChat?: () => void;
 }
@@ -161,10 +162,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   containerId={validContainerId}
                   authProvider={authProvider}
                   onApiReady={handleApiReady}
-                  themeV8={chatConfig?.theme}
-                  promptInstruction={chatConfig?.instruction}
-                  localeCountry={chatConfig?.locale}
-                  suggestedPrompts={chatConfig?.zeroQueryPrompts}
                   style={{ height: '100%', width: '100%' }}
                 />
               ) : (
