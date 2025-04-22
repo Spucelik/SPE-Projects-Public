@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { sharePointService } from '@/services/sharePointService';
-import { ProjectDashboard } from '@/components/dashboard/ProjectDashboard';
+import { RollupDashboard } from '@/components/dashboard/RollupDashboard';
 
 const Index = () => {
   const { getAccessToken } = useAuth();
@@ -39,8 +38,7 @@ const Index = () => {
 
   return (
     <div className="space-y-8">
-      {/* Add ProjectDashboard at the top */}
-      <ProjectDashboard projectName="Project Overview" />
+      <RollupDashboard />
       
       <div className="grid grid-cols-1 gap-4">
         <Card>
