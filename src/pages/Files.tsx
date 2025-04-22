@@ -28,6 +28,7 @@ import { useFilePreview } from '@/hooks/useFilePreview';
 import { useAuth } from '@/context/AuthContext';
 import { sharePointService } from '@/services/sharePointService';
 import { toast } from '@/hooks/use-toast';
+import { ProjectDashboard } from '../components/dashboard/ProjectDashboard';
 
 const Files = () => {
   const { containerId } = useParams<{ containerId: string }>();
