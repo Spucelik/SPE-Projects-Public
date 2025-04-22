@@ -106,9 +106,13 @@ export function ProjectDashboard({ projectName }: ProjectDashboardProps) {
           <CardContent>
             <div className="h-[300px]">
               <ChartContainer config={{
-                color: {
-                  completed: "#00C49F",
-                  inProgress: "#0088FE"
+                completedStatus: {
+                  color: "#00C49F",
+                  label: "Completed"
+                },
+                inProgressStatus: {
+                  color: "#0088FE",
+                  label: "In Progress"
                 }
               }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -142,8 +146,9 @@ export function ProjectDashboard({ projectName }: ProjectDashboardProps) {
           <CardContent>
             <div className="h-[300px]">
               <ChartContainer config={{
-                color: {
-                  effort: "#0088FE"
+                effortMetric: {
+                  color: "#0088FE",
+                  label: "Effort"
                 }
               }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -167,8 +172,9 @@ export function ProjectDashboard({ projectName }: ProjectDashboardProps) {
           <CardContent>
             <div className="h-[300px]">
               <ChartContainer config={{
-                color: {
-                  manager: "#00C49F"
+                managerDistribution: {
+                  color: "#00C49F",
+                  label: "Manager Distribution"
                 }
               }}>
                 <ResponsiveContainer width="100%" height="100%">
