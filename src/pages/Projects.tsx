@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -10,7 +9,8 @@ import {
   CircleAlert,
   CircleDot,
   Calendar,
-  Clock
+  Clock,
+  Info
 } from 'lucide-react';
 import { 
   Sheet, 
@@ -19,7 +19,8 @@ import {
   SheetTitle, 
   SheetDescription,
   SheetFooter,
-  SheetClose
+  SheetClose,
+  SheetTrigger
 } from "@/components/ui/sheet";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ConfigAlert } from '../components/ConfigAlert';
+import { useContainerDetails } from '../hooks/useContainerDetails';
 
 interface Project {
   id: string;
@@ -39,7 +41,6 @@ interface Project {
   description: string;
   containerTypeId: string;
   createdDateTime: string;
-  // Added fields for the rollup view
   type: 'Project' | 'Tracker' | 'Enhancement' | 'Production Support';
   status: 'Not Started' | 'In Progress' | 'Completed';
   health: 'Green' | 'Yellow' | 'Red';
@@ -47,6 +48,58 @@ interface Project {
   startDate: string;
   endDate: string;
 }
+
+const ProjectDetails = ({ project }: { project: Project }) => {
+  const containerDetails = useContainerDetails(project.id);
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h4 className="font-semibold">Project URL</h4>
+        {containerDetails?.webUrl ? (
+          <a 
+            href={containerDetails.webUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline"
+          >
+            {containerDetails.webUrl}
+          </a>
+        ) : (
+          <p className="text-muted-foreground">Loading URL...</p>
+        )}
+      </div>
+      
+      <div>
+        <h4 className="font-semibold">Project Name</h4>
+        <p>{project.displayName}</p>
+      </div>
+      
+      <div>
+        <h4 className="font-semibold">Description</h4>
+        <p>{project.description || 'No description available'}</p>
+      </div>
+      
+      <div>
+        <h4 className="font-semibold">Created</h4>
+        <p>{new Date(project.createdDateTime).toLocaleDateString()}</p>
+      </div>
+      
+      <div>
+        <h4 className="font-semibold">Status</h4>
+        <p>{project.status}</p>
+      </div>
+      
+      <div>
+        <h4 className="font-semibold">Progress</h4>
+        <div className="flex items-center gap-2">
+          <Progress value={project.percentComplete} className="h-2" />
+          <span>{project.percentComplete}%</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Projects = () => {
   const { isAuthenticated, getAccessToken } = useAuth();
@@ -68,7 +121,6 @@ const Projects = () => {
         }
 
         const projectsData = await sharePointService.listContainers(token);
-        // For demonstration, we'll add mock rollup data
         const enhancedProjects = projectsData.map(project => ({
           ...project,
           type: ['Project', 'Tracker', 'Enhancement', 'Production Support'][Math.floor(Math.random() * 4)] as Project['type'],
@@ -141,6 +193,7 @@ const Projects = () => {
                 <TableHead className="w-[200px]">Progress</TableHead>
                 <TableHead>Start Date</TableHead>
                 <TableHead>End Date</TableHead>
+                <TableHead className="w-[50px]">Details</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -180,6 +233,32 @@ const Projects = () => {
                       <Clock className="h-4 w-4 text-gray-500" />
                       {formatDate(project.endDate)}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Info className="h-4 w-4" />
+                          <span className="sr-only">View Details</span>
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent>
+                        <SheetHeader>
+                          <SheetTitle>Project Details</SheetTitle>
+                          <SheetDescription>
+                            View detailed information about this project
+                          </SheetDescription>
+                        </SheetHeader>
+                        <div className="mt-6">
+                          <ProjectDetails project={project} />
+                        </div>
+                        <SheetFooter className="mt-6">
+                          <SheetClose asChild>
+                            <Button variant="secondary">Close</Button>
+                          </SheetClose>
+                        </SheetFooter>
+                      </SheetContent>
+                    </Sheet>
                   </TableCell>
                 </TableRow>
               ))}
