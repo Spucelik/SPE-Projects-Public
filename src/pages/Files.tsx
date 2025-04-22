@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -28,7 +29,6 @@ import { useFilePreview } from '@/hooks/useFilePreview';
 import { useAuth } from '@/context/AuthContext';
 import { sharePointService } from '@/services/sharePointService';
 import { toast } from '@/hooks/use-toast';
-import { ProjectDashboard } from '../components/dashboard/ProjectDashboard';
 
 const Files = () => {
   const { containerId } = useParams<{ containerId: string }>();
@@ -190,10 +190,6 @@ const Files = () => {
 
   return (
     <div className="space-y-6">
-      {containerDetails?.name && (
-        <ProjectDashboard projectName={containerDetails.name} />
-      )}
-      
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex-1">
           <ConfigAlert />
