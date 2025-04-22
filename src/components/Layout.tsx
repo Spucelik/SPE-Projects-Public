@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -60,12 +59,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   asChild 
-                  isActive={location.pathname === '/containers'}
-                  tooltip="Containers"
+                  isActive={location.pathname === '/projects'}
+                  tooltip="Projects"
                 >
-                  <Link to="/containers">
+                  <Link to="/projects">
                     <FolderOpen />
-                    <span>Containers</span>
+                    <span>Projects</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -10,7 +9,7 @@ import { ConfigAlert } from '../components/ConfigAlert';
 import { appConfig } from '../config/appConfig';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-interface Container {
+interface Project {
   id: string;
   displayName: string;
   description: string;
@@ -20,14 +19,14 @@ interface Container {
 
 const Index = () => {
   const { isAuthenticated, getAccessToken } = useAuth();
-  const [containers, setContainers] = useState<Container[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const fetchContainers = async () => {
+    const fetchProjects = async () => {
       try {
         setLoading(true);
         setError(null);
@@ -42,14 +41,14 @@ const Index = () => {
           return;
         }
 
-        const containersData = await sharePointService.listContainers(token);
-        setContainers(containersData);
+        const projectsData = await sharePointService.listContainers(token);
+        setProjects(projectsData);
       } catch (error: any) {
-        console.error('Error fetching containers:', error);
-        setError(error.message || "Failed to fetch containers. This may be due to insufficient permissions or API limitations.");
+        console.error('Error fetching projects:', error);
+        setError(error.message || "Failed to fetch projects. This may be due to insufficient permissions or API limitations.");
         toast({
           title: "Error",
-          description: "Failed to fetch containers. Please check console for details.",
+          description: "Failed to fetch projects. Please check console for details.",
           variant: "destructive",
         });
       } finally {
@@ -57,7 +56,7 @@ const Index = () => {
       }
     };
 
-    fetchContainers();
+    fetchProjects();
   }, [isAuthenticated, getAccessToken]);
 
   if (!isAuthenticated) {
@@ -88,7 +87,7 @@ const Index = () => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Folder className="text-blue-500" />
-              <CardTitle>Your Containers</CardTitle>
+              <CardTitle>Your Projects</CardTitle>
             </div>
             <CardDescription>
               Access your project containers to manage files and collaborate
@@ -103,33 +102,33 @@ const Index = () => {
               </div>
             ) : error ? (
               <div className="text-red-500">
-                <p>There was an error loading containers.</p>
+                <p>There was an error loading projects.</p>
               </div>
-            ) : containers.length > 0 ? (
+            ) : projects.length > 0 ? (
               <ul className="space-y-2">
-                {containers.map((container) => (
-                  <li key={container.id} className="border-b pb-2">
+                {projects.map((project) => (
+                  <li key={project.id} className="border-b pb-2">
                     <Link 
-                      to={`/files/${container.id}`}
+                      to={`/files/${project.id}`}
                       className="hover:text-blue-600 font-medium"
                     >
-                      {container.displayName}
+                      {project.displayName}
                     </Link>
-                    {container.description && (
-                      <p className="text-sm text-gray-500">{container.description}</p>
+                    {project.description && (
+                      <p className="text-sm text-gray-500">{project.description}</p>
                     )}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-500">No containers found. Create your first container to get started.</p>
+              <p className="text-gray-500">No projects found. Create your first project to get started.</p>
             )}
             <div className="mt-4">
               <Link 
-                to="/containers" 
+                to="/projects" 
                 className="text-blue-600 hover:underline text-sm"
               >
-                View all containers →
+                View all projects →
               </Link>
             </div>
           </CardContent>
@@ -148,9 +147,9 @@ const Index = () => {
           <CardContent>
             <ol className="list-decimal list-inside space-y-3 text-gray-700">
               <li>Make sure you have the correct permissions in your Microsoft tenant</li>
-              <li>Create a new container or browse existing ones</li>
-              <li>Upload files to your containers</li>
-              <li>Browse and preview files in containers</li>
+              <li>Create a new project or browse existing ones</li>
+              <li>Upload files to your projects</li>
+              <li>Browse and preview files in projects</li>
             </ol>
             <div className="mt-6 p-4 bg-gray-100 rounded-md text-sm">
               <p className="font-semibold">Need help?</p>

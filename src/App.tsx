@@ -1,16 +1,20 @@
-
+import { 
+  BrowserRouter as Router, 
+  Routes, 
+  Route, 
+  Navigate 
+} from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ConfigProvider } from "./context/ConfigContext";
 import { SidebarProvider } from "./components/ui/sidebar";
 import Layout from "./components/Layout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
-import Containers from "./pages/Containers";
+import Projects from "./pages/Projects";
 import Files from "./pages/Files";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./context/AuthContext";
@@ -30,9 +34,9 @@ const App = () => {
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                  <Route path="/containers" element={<ProtectedRoute><Containers /></ProtectedRoute>} />
+                  <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
                   <Route path="/files/:containerId" element={<ProtectedRoute><Files /></ProtectedRoute>} />
-                  <Route path="/files" element={<ProtectedRoute><Navigate to="/containers" replace /></ProtectedRoute>} />
+                  <Route path="/files" element={<ProtectedRoute><Navigate to="/projects" replace /></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </SidebarProvider>
@@ -44,7 +48,6 @@ const App = () => {
   );
 };
 
-// Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
   
