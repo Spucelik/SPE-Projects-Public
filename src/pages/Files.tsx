@@ -28,7 +28,6 @@ import { useFilePreview } from '@/hooks/useFilePreview';
 import { useAuth } from '@/context/AuthContext';
 import { sharePointService } from '@/services/sharePointService';
 import { toast } from '@/hooks/use-toast';
-import { ProjectDashboard } from '@/components/dashboard/ProjectDashboard';
 
 const Files = () => {
   const { containerId } = useParams<{ containerId: string }>();
@@ -85,7 +84,6 @@ const Files = () => {
         return;
       }
       
-      // Upload files sequentially to avoid overwhelming the API
       for (const file of files) {
         try {
           await sharePointService.uploadFile(
@@ -115,7 +113,6 @@ const Files = () => {
         }
       }
       
-      // Refresh the file list
       refreshFiles();
       event.target.value = '';
     } catch (error) {
@@ -158,11 +155,9 @@ const Files = () => {
         description: `Folder "${newFolderName}" created successfully`,
       });
       
-      // Reset form and close dialog
       setNewFolderName('');
       setIsFolderDialogOpen(false);
       
-      // Refresh the file list
       refreshFiles();
     } catch (error) {
       console.error('Error creating folder:', error);
