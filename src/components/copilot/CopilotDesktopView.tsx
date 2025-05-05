@@ -132,7 +132,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           <span>Copilot Chat</span>
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-[400px] sm:w-[540px] flex flex-col h-full p-0" side="right">
+      <SheetContent className="w-[400px] sm:w-[540px] flex flex-col h-full p-0 border-l shadow-lg" side="right">
         <div className="flex-shrink-0 border-b px-6 py-4">
           <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
           {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
