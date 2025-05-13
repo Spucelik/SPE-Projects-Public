@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare, RefreshCw } from 'lucide-react';
 import { ChatEmbedded, ChatEmbeddedAPI, IChatEmbeddedApiAuthProvider } from '@microsoft/sharepointembedded-copilotchat-react';
+import { cn } from '@/lib/utils';
 
 interface CopilotDesktopViewProps {
   isOpen: boolean;
@@ -124,6 +125,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     onApiReady(api);
   };
   
+  // Custom sheet component with transparent overlay
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -132,49 +134,61 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           <span>Copilot Chat</span>
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-[400px] sm:w-[540px] flex flex-col h-full p-0 border-l shadow-lg" side="right">
-        <div className="flex-shrink-0 border-b px-6 py-4">
-          <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
-          {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
-          <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
-        </div>
-        <div className="flex-1 min-h-0 relative">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
-            </div>
-          ) : error || chatLoadFailed ? (
-            <div className="flex flex-col items-center justify-center h-full p-6">
-              <p className="text-destructive mb-4">
-                {error || "Unable to load the chat. Please try again."}
-              </p>
-              {onResetChat && (
-                <Button onClick={onResetChat} variant="outline" className="gap-2">
-                  <RefreshCw size={16} />
-                  <span>Reset Chat</span>
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="h-full" key={chatKey}>
-              {authProvider ? (
-                <ChatEmbedded
-                  containerId={validContainerId}
-                  authProvider={authProvider}
-                  onApiReady={handleApiReady}
-                  style={{ height: '100%', width: '100%' }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full p-6 text-center">
-                  <p className="text-muted-foreground">
-                    Authentication setup in progress. Please wait or reload the page.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </SheetContent>
+      
+      {/* Apply custom styling to prevent darkening of the background */}
+      <div className={cn(
+        "fixed inset-0 z-49 pointer-events-none",
+        isOpen ? "pointer-events-auto" : "hidden"
+      )}>
+        <SheetContent 
+          className="w-[400px] sm:w-[540px] flex flex-col h-full p-0 border-l shadow-lg z-50 pointer-events-auto" 
+          side="right"
+          // Override the overlay with empty div to prevent darkening
+          forceMount
+        >
+          <div className="flex-shrink-0 border-b px-6 py-4">
+            <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
+            {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
+            <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
+          </div>
+          <div className="flex-1 min-h-0 relative">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : error || chatLoadFailed ? (
+              <div className="flex flex-col items-center justify-center h-full p-6">
+                <p className="text-destructive mb-4">
+                  {error || "Unable to load the chat. Please try again."}
+                </p>
+                {onResetChat && (
+                  <Button onClick={onResetChat} variant="outline" className="gap-2">
+                    <RefreshCw size={16} />
+                    <span>Reset Chat</span>
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="h-full" key={chatKey}>
+                {authProvider ? (
+                  <ChatEmbedded
+                    containerId={validContainerId}
+                    authProvider={authProvider}
+                    onApiReady={handleApiReady}
+                    style={{ height: '100%', width: '100%' }}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full p-6 text-center">
+                    <p className="text-muted-foreground">
+                      Authentication setup in progress. Please wait or reload the page.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </div>
     </Sheet>
   );
 };
