@@ -125,7 +125,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     onApiReady(api);
   };
   
-  // Custom sheet component with transparent overlay
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -135,16 +134,13 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         </Button>
       </SheetTrigger>
       
-      {/* Apply custom styling to prevent darkening of the background */}
       <div className={cn(
-        "fixed inset-0 z-49 pointer-events-none",
-        isOpen ? "pointer-events-auto" : "hidden"
+        "fixed inset-0 z-49 bg-transparent",
+        isOpen ? "block" : "hidden"
       )}>
         <SheetContent 
-          className="w-[400px] sm:w-[540px] flex flex-col h-full p-0 border-l shadow-lg z-50 pointer-events-auto" 
+          className="w-[400px] sm:w-[540px] flex flex-col h-full p-0 border-l shadow-lg z-50" 
           side="right"
-          // Override the overlay with empty div to prevent darkening
-          forceMount
         >
           <div className="flex-shrink-0 border-b px-6 py-4">
             <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
