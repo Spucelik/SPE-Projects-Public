@@ -1,8 +1,8 @@
+
 import React, { useState, useCallback } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
 import CopilotDesktopView from './CopilotDesktopView';
-import CopilotMobileView from './CopilotMobileView';
 import { toast } from '@/hooks/use-toast';
 import { appConfig } from '@/config/appConfig';
 import { useAuth } from '@/context/AuthContext';
@@ -18,9 +18,9 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const { getSharePointToken, isAuthenticated } = useAuth();
   const [chatKey, setChatKey] = useState(0);
   
-  // Early return if on login page or not authenticated
-  if (window.location.pathname === '/login' || !isAuthenticated) {
-    console.log('CopilotChatContainer not rendering: on login page or not authenticated');
+  // Early return if on login page, not authenticated, or on mobile
+  if (window.location.pathname === '/login' || !isAuthenticated || isMobile) {
+    console.log('CopilotChatContainer not rendering: on login page, not authenticated, or on mobile device');
     return null;
   }
   
@@ -131,16 +131,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     }, 500);
   }, []);
 
-  return isMobile ? (
-    <CopilotMobileView
-      isOpen={isOpen}
-      setIsOpen={setIsOpen}
-      siteName={safeSiteName}
-      isLoading={isLoading}
-      error={error}
-      openExternalChat={null}
-    />
-  ) : (
+  return (
     <CopilotDesktopView
       isOpen={isOpen}
       setIsOpen={setIsOpen}

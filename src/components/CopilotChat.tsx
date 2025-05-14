@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import CopilotChatContainer from './copilot/CopilotChatContainer';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '../context/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CopilotChatProps {
   containerId: string;
@@ -11,11 +12,12 @@ interface CopilotChatProps {
 
 const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => {
   const { isAuthenticated } = useAuth();
+  const isMobile = useIsMobile();
   const [errorShown, setErrorShown] = useState(false);
   
-  // IMPORTANT: Don't even attempt to render on login page or when not authenticated
-  if (window.location.pathname === '/login' || !isAuthenticated) {
-    console.log('Copilot not rendering: on login page or not authenticated');
+  // IMPORTANT: Don't even attempt to render on login page, when not authenticated, or on mobile
+  if (window.location.pathname === '/login' || !isAuthenticated || isMobile) {
+    console.log('Copilot not rendering: on login page, not authenticated, or on mobile device');
     return null;
   }
   
