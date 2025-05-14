@@ -73,7 +73,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         window.removeEventListener('error', errorHandler);
       };
     }
-  }, [isOpen]);
+  }, [isOpen, onError]);
   
   // Use effect to initialize the chat when it's ready
   useEffect(() => {
@@ -82,6 +82,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         try {
           console.log('Initializing chat with config:', chatConfig);
           await chatApi.openChat(chatConfig);
+          console.log('Chat initialized successfully');
         } catch (err) {
           console.error('Failed to initialize chat:', err);
           onError('Failed to initialize chat');
@@ -90,7 +91,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     };
     
     initializeChat();
-  }, [chatApi, isOpen, chatConfig]);
+  }, [chatApi, isOpen, chatConfig, onError]);
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -130,7 +131,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               )}
             </div>
           ) : (
-            <div className="h-full w-full" key={chatKey} id="copilot-chat-container">
+            <div className="h-full w-full min-h-[600px]" key={chatKey} id="copilot-chat-container">
               {authProvider ? (
                 <ChatEmbedded
                   containerId={containerId}
@@ -141,7 +142,8 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                     width: '100%',
                     display: 'flex',
                     minHeight: '600px',
-                    border: 'none'
+                    border: 'none',
+                    overflow: 'hidden'
                   }}
                 />
               ) : (

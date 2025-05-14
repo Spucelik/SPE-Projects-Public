@@ -29,14 +29,16 @@ const CopilotMobileView: React.FC<CopilotMobileViewProps> = ({
           <span>Copilot Chat</span>
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="flex flex-col h-96">
-        <DrawerTitle className="text-lg font-semibold px-6 py-4 border-b">
-          SharePoint Embedded Copilot
-        </DrawerTitle>
-        <div className="flex-shrink-0 px-6">
+      <DrawerContent className="flex flex-col h-[80vh] max-h-[90vh]">
+        <div className="p-4 border-b">
+          <DrawerTitle className="text-lg font-semibold">
+            SharePoint Embedded Copilot
+          </DrawerTitle>
+        </div>
+        <div className="flex-shrink-0 px-6 py-2">
           {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
         </div>
-        <div className="flex-1 min-h-0 p-6">
+        <div className="flex-1 min-h-0 p-6 overflow-auto">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>

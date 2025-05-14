@@ -137,6 +137,19 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     locale: "en",
   };
 
+  // Log critical information for debugging
+  useEffect(() => {
+    if (isOpen) {
+      console.log('Copilot debug info:', {
+        containerId: normalizedContainerId,
+        siteName,
+        sharePointHostname,
+        isAuthProviderSet: !!authProvider,
+        chatApiInitialized: !!chatApiRef.current
+      });
+    }
+  }, [isOpen, normalizedContainerId, siteName, sharePointHostname, authProvider]);
+
   return isMobile ? (
     <CopilotMobileView
       isOpen={isOpen}
