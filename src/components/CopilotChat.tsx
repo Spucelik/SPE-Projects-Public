@@ -14,13 +14,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
   const [errorShown, setErrorShown] = useState(false);
   
   useEffect(() => {
-    // If we're on /login route, silently skip showing errors
-    if (window.location.pathname === '/login') {
-      return;
-    }
-    
-    if (!isAuthenticated) {
-      // Don't show any errors if user is not authenticated - this is expected
+    // Skip validation if on login route or not authenticated
+    if (window.location.pathname === '/login' || !isAuthenticated) {
       return;
     }
     
@@ -47,10 +42,9 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
     console.log('CopilotChat component mounted with container ID:', containerId);
   }, [containerId, isAuthenticated, errorShown]);
   
-  // Early return if not authenticated with no visible indication
-  // Also early return if on login route to avoid any interference with login process
-  if (!isAuthenticated || window.location.pathname === '/login') {
-    console.log('Copilot not rendering: not authenticated or on login route');
+  // Early return if not authenticated or on login route
+  if (!isAuthenticated) {
+    console.log('Copilot not rendering: not authenticated');
     return null;
   }
   
