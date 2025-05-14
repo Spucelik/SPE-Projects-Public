@@ -140,7 +140,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       ]
     },
     instruction: "You are a helpful assistant that helps users find and summarize information related to their files and documents. Make sure you include references to the documents data comes from when possible.",
-    locale: "en",
+    locale: "en-US", // Be explicit about locale
   }), [safeSiteName]);
 
   // Reset chat when there's an issue
@@ -155,6 +155,13 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       setIsOpen(true);
     }, 800); // Slightly longer delay to ensure proper cleanup
   }, []);
+
+  // Add effect to detect when chat should be refreshed
+  useEffect(() => {
+    if (isOpen && chatKey > 1) {
+      console.log('Chat reopened after reset with new key:', chatKey);
+    }
+  }, [isOpen, chatKey]);
 
   return isMobile ? (
     <CopilotMobileView

@@ -60,12 +60,13 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     } else {
       // Reset initialization flag when closing
       setChatInitialized(false);
+      setInitializing(false);
     }
   }, [isOpen, chatKey]);
   
   // Handle chat error - memoized to prevent recreation
-  const handleChatError = useCallback(() => {
-    console.error('ChatEmbedded component error');
+  const handleChatError = useCallback((err?: any) => {
+    console.error('ChatEmbedded component error:', err);
     setChatLoadFailed(true);
     onError('Failed to load the chat component');
   }, [onError]);
@@ -79,7 +80,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           event.message.includes("Cannot read properties of undefined (reading 'name')")
         )) {
           console.error('Caught chat error:', event.message);
-          handleChatError();
+          handleChatError(event);
         }
       };
       
@@ -121,24 +122,24 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     }
     
     const initChat = async () => {
-      // Set flags to prevent concurrent initialization
-      initAttemptedRef.current = true;
-      setInitializing(true);
-      
-      console.log('Initializing chat with config:', JSON.stringify({
-        header: chatConfig.header || 'SharePoint Embedded',
-        hasTheme: !!chatConfig.theme,
-        hasZeroQueryPrompts: !!chatConfig.zeroQueryPrompts,
-        hasInstruction: !!chatConfig.instruction
-      }));
-      
       try {
+        // Set flags to prevent concurrent initialization
+        initAttemptedRef.current = true;
+        setInitializing(true);
+        
+        console.log('Initializing chat with config:', JSON.stringify({
+          header: chatConfig.header || 'SharePoint Embedded',
+          hasTheme: !!chatConfig.theme,
+          hasZeroQueryPrompts: !!chatConfig.zeroQueryPrompts,
+          hasInstruction: !!chatConfig.instruction
+        }));
+        
         await chatApiInstance.openChat(chatConfig);
         console.log('Chat initialized successfully');
         setChatInitialized(true);
       } catch (chatError) {
         console.error('Error opening chat with config:', chatError);
-        handleChatError();
+        handleChatError(chatError);
       } finally {
         setInitializing(false);
       }
@@ -149,11 +150,24 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
       initChat();
     }, 500);
     
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [chatApiInstance, isOpen, chatConfig, chatLoadFailed, handleChatError, chatInitialized, initializing, isAuthenticated]);
   
   // Determine if chat can be rendered
-  const canRenderChat = isAuthenticated && !chatLoadFailed && !!containerId && !initializing;
+  const canRenderChat = isAuthenticated && !chatLoadFailed && !!containerId;
+
+  // Function to force remounting of chat component
+  const forceRefreshChat = useCallback(() => {
+    if (onResetChat) {
+      console.log('Force refreshing chat component');
+      setChatApiInstance(null);
+      setChatInitialized(false);
+      initAttemptedRef.current = false;
+      onResetChat();
+    }
+  }, [onResetChat]);
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -171,9 +185,19 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         <div className="flex flex-col h-dvh max-h-screen">
           <SheetTitle className="sr-only">SharePoint Embedded Copilot</SheetTitle>
           <div className="flex-shrink-0 border-b px-6 py-4">
-            <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
-            <p className="text-sm text-muted-foreground">Connected to: {siteName || 'SharePoint Site'}</p>
-            <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
+                <p className="text-sm text-muted-foreground">Connected to: {siteName || 'SharePoint Site'}</p>
+                <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
+              </div>
+              {onResetChat && isAuthenticated && (
+                <Button onClick={forceRefreshChat} size="sm" variant="ghost" className="gap-1">
+                  <RefreshCw size={14} />
+                  <span className="sr-only md:not-sr-only md:inline-block">Refresh</span>
+                </Button>
+              )}
+            </div>
           </div>
           
           <div className="flex-1 overflow-hidden relative">
@@ -192,7 +216,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                     : (error || "Unable to load the chat. Please try again.")}
                 </p>
                 {onResetChat && isAuthenticated && (
-                  <Button onClick={onResetChat} variant="outline" className="gap-2">
+                  <Button onClick={forceRefreshChat} variant="outline" className="gap-2">
                     <RefreshCw size={16} />
                     <span>Reset Chat</span>
                   </Button>
@@ -202,7 +226,13 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               <div 
                 ref={chatContainerRef}
                 className="h-full w-full flex-1"
-                style={{ height: 'calc(100vh - 120px)', minHeight: "600px", position: "relative" }}
+                style={{ 
+                  height: 'calc(100vh - 120px)', 
+                  minHeight: "600px", 
+                  position: "relative",
+                  display: "flex",
+                  flexDirection: "column"
+                }}
                 data-testid="copilot-chat-container"
               >
                 <ChatEmbedded
@@ -218,7 +248,8 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                     top: 0,
                     left: 0,
                     right: 0,
-                    bottom: 0
+                    bottom: 0,
+                    zIndex: 10
                   }}
                 />
               </div>
@@ -228,7 +259,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   Unable to render chat component. Missing required data.
                 </p>
                 {onResetChat && (
-                  <Button onClick={onResetChat} variant="outline" className="gap-2">
+                  <Button onClick={forceRefreshChat} variant="outline" className="gap-2">
                     <RefreshCw size={16} />
                     <span>Try Again</span>
                   </Button>
