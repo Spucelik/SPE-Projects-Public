@@ -112,14 +112,23 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     }
   }), []);
   
-  // Create prompts for the chat
+  // Create prompts for the chat - ensuring all objects have required properties
   const zeroQueryPrompts = React.useMemo(() => ({
     headerText: `Chat with content in ${safeSiteName}`,
     promptSuggestionList: [
-      { suggestionText: 'Show me recent files' },
-      { suggestionText: 'What documents do I have access to?' },
-      { suggestionText: 'Summarize the key points in my documents' },
-      { suggestionText: 'What are the latest updates to my files?' }
+      { 
+        suggestionText: 'Show me recent files'
+        // No icons specified - the error was likely related to accessing icon properties
+      },
+      { 
+        suggestionText: 'What documents do I have access to?'
+      },
+      { 
+        suggestionText: 'Summarize the key points in my documents'
+      },
+      { 
+        suggestionText: 'What are the latest updates to my files?'
+      }
     ]
   }), [safeSiteName]);
   
@@ -132,27 +141,17 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     locale: "en-US",
   }), [safeSiteName, chatTheme, zeroQueryPrompts]);
   
-  // Auto-open chat when API is ready
-  useEffect(() => {
-    if (!chatApi) {
-      console.log('Chat API not ready yet');
-      return;
-    }
-    
-    const openChat = async () => {
-      try {
-        console.log('Opening chat with config:', chatConfig);
-        await chatApi.openChat(chatConfig);
-        console.log('Chat opened successfully');
-      } catch (err) {
-        console.error('Error opening chat:', err);
-        handleError('Failed to open the chat. Please try again.');
-      }
-    };
-    
-    openChat();
-  }, [chatApi, chatConfig, handleError]);
-
+  // Reset chat when there's an issue
+  const handleResetChat = useCallback(() => {
+    console.log('Resetting Copilot chat');
+    setChatKey(prev => prev + 1);
+    setChatApi(null);
+    setIsOpen(false);
+    setTimeout(() => {
+      setIsOpen(true);
+    }, 500);
+  }, []);
+  
   // Handles API ready event from ChatEmbedded component
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
     if (!api) {
@@ -164,17 +163,6 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     console.log('Copilot chat API is ready');
     setChatApi(api);
   }, [handleError]);
-
-  // Reset chat when there's an issue
-  const handleResetChat = useCallback(() => {
-    console.log('Resetting Copilot chat');
-    setChatKey(prev => prev + 1);
-    setChatApi(null);
-    setIsOpen(false);
-    setTimeout(() => {
-      setIsOpen(true);
-    }, 500);
-  }, []);
 
   return (
     <CopilotDesktopView

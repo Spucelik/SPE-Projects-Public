@@ -44,14 +44,37 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     return null;
   }
   
-  // Open the chat when the button is clicked
+  // Open the chat when the sheet is opened and we have a valid chat API
   useEffect(() => {
     if (isOpen && chatApi) {
+      console.log('Sheet opened, attempting to open chat...');
+      
       const openChatOnSheetOpen = async () => {
         try {
-          console.log('Sheet opened, opening chat...');
-          await chatApi.openChat(chatConfig);
-          console.log('Chat opened after sheet open');
+          // Ensure we have required config fields to avoid the undefined error
+          if (!chatConfig) {
+            console.error('Chat config is undefined or missing required fields');
+            onError('Invalid chat configuration');
+            return;
+          }
+          
+          // Add a small delay to ensure the container is ready
+          setTimeout(async () => {
+            try {
+              console.log('Opening chat with config:', JSON.stringify({
+                header: chatConfig.header,
+                locale: chatConfig.locale,
+                hasTheme: !!chatConfig.theme,
+                hasZeroQueryPrompts: !!chatConfig.zeroQueryPrompts
+              }));
+              
+              await chatApi.openChat(chatConfig);
+              console.log('Chat opened successfully after sheet open');
+            } catch (innerErr) {
+              console.error('Error in delayed chat open:', innerErr);
+              onError('Failed to load chat interface. Try resetting the chat.');
+            }
+          }, 300);
         } catch (err) {
           console.error('Error opening chat on sheet open:', err);
           onError('Failed to load chat interface. Try resetting the chat.');
