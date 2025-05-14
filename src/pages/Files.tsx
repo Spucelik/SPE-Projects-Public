@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { AlertCircle, FolderPlus, Upload } from 'lucide-react';
+import { AlertCircle, FolderPlus, Upload, MessageSquare } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { 
@@ -22,6 +21,7 @@ import FileList from '@/components/files/FileList';
 import FolderNavigation from '@/components/files/FolderNavigation';
 import FilePreviewDialog from '@/components/files/FilePreviewDialog';
 import FileUploadProgress from '@/components/files/FileUploadProgress';
+import CopilotChat from '@/components/CopilotChat';
 import { useFiles } from '@/hooks/useFiles';
 import { useContainerDetails } from '@/hooks/useContainerDetails';
 import { useFilePreview } from '@/hooks/useFilePreview';
@@ -37,6 +37,7 @@ const Files = () => {
   const [newFolderName, setNewFolderName] = useState('');
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   
   const {
     files,
@@ -223,6 +224,18 @@ const Files = () => {
               />
             </label>
           </Button>
+          
+          {/* Copilot Chat Button */}
+          {containerId && (
+            <Button 
+              variant="outline" 
+              className="gap-2"
+              onClick={() => setIsCopilotOpen(true)}
+            >
+              <MessageSquare size={16} />
+              <span>Copilot</span>
+            </Button>
+          )}
         </div>
       </div>
       
@@ -296,6 +309,23 @@ const Files = () => {
           </SheetFooter>
         </SheetContent>
       </Sheet>
+      
+      {/* Copilot Chat Side Panel */}
+      {containerId && (
+        <Sheet open={isCopilotOpen} onOpenChange={setIsCopilotOpen}>
+          <SheetContent className="w-[400px] sm:w-[540px] p-0 border-l shadow-lg">
+            <SheetHeader className="px-6 py-4 border-b">
+              <SheetTitle>SharePoint AI Copilot</SheetTitle>
+              <SheetDescription>
+                Ask questions about your files and content
+              </SheetDescription>
+            </SheetHeader>
+            <div className="h-[calc(100vh-120px)]">
+              <CopilotChat containerId={containerId} />
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   );
 };
