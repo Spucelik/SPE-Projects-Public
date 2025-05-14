@@ -20,18 +20,16 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const [chatKey, setChatKey] = useState(0);
   const chatApiRef = useRef<ChatEmbeddedAPI | null>(null);
   
-  // Early return if user is not authenticated
-  if (!isAuthenticated) {
-    console.log('CopilotChatContainer: User not authenticated, not rendering');
-    return null;
-  }
-  
   // Validate and normalize containerId
   const normalizedContainerId = containerId && typeof containerId === 'string' 
     ? (containerId.startsWith('b!') ? containerId : `b!${containerId}`)
     : '';
   
-  console.log('CopilotChatContainer rendering with containerId:', normalizedContainerId || 'MISSING');
+  // Early return if user is not authenticated
+  if (!isAuthenticated) {
+    console.log('CopilotChatContainer: User not authenticated, not rendering');
+    return null;
+  }
   
   // Don't proceed if we don't have a valid container ID
   if (!normalizedContainerId) {
@@ -50,6 +48,10 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     siteName,
     sharePointHostname,
   } = useCopilotSite(normalizedContainerId);
+  
+  console.log('CopilotChatContainer rendering with containerId:', normalizedContainerId || 'MISSING');
+  console.log('SharePoint hostname:', sharePointHostname || appConfig.sharePointHostname);
+  console.log('Site name:', siteName || 'SharePoint Site');
   
   const safeSharePointHostname = sharePointHostname || appConfig.sharePointHostname;
   const safeSiteName = siteName || 'SharePoint Site';
@@ -109,8 +111,13 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   // Handles API ready event from ChatEmbedded component
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
     console.log('Copilot chat API is ready');
+    if (!api) {
+      console.error('Chat API is undefined');
+      handleError('Chat API initialization failed');
+      return;
+    }
     chatApiRef.current = api;
-  }, []);
+  }, [handleError]);
   
   // Create chat configuration with proper null checks for all properties
   const chatConfig: ChatLaunchConfig = {

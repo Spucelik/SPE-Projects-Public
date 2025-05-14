@@ -6,9 +6,10 @@ import { useAuth } from '../context/AuthContext';
 
 interface CopilotChatProps {
   containerId: string;
+  className?: string; // Added className prop for better positioning
 }
 
-const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
+const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => {
   const { isAuthenticated } = useAuth();
   
   useEffect(() => {
@@ -48,7 +49,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   }
   
   return (
-    <div className="copilot-wrapper w-full" data-testid="copilot-chat-wrapper">
+    <div className={`copilot-wrapper ${className || ''}`} data-testid="copilot-chat-wrapper">
       <CopilotChatContainer containerId={containerId} />
     </div>
   );

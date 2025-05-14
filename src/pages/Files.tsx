@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -201,7 +200,7 @@ const Files = () => {
           )}
         </div>
         
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button 
             variant="outline" 
             className="gap-2"
@@ -226,7 +225,10 @@ const Files = () => {
           </Button>
           
           {containerId && (
-            <CopilotChat containerId={containerId} />
+            <CopilotChat 
+              containerId={containerId} 
+              className="w-full md:w-auto"
+            />
           )}
         </div>
       </div>

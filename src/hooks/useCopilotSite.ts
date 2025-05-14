@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -8,7 +9,7 @@ export const useCopilotSite = (containerId: string) => {
   const [error, setError] = useState<string | null>(null);
   const [siteUrl, setSiteUrl] = useState<string | null>(null);
   const [siteName, setSiteName] = useState<string | null>(null);
-  const { getAccessToken } = useAuth();
+  const { getAccessToken, isAuthenticated } = useAuth();
 
   // Normalize container ID to handle different formats
   const normalizedContainerId = useMemo(() => {
@@ -27,8 +28,10 @@ export const useCopilotSite = (containerId: string) => {
   }, [containerId]);
 
   useEffect(() => {
-    if (!normalizedContainerId) {
-      console.warn('No valid containerId available for fetching site info');
+    if (!normalizedContainerId || !isAuthenticated) {
+      console.warn('No valid containerId available for fetching site info or user not authenticated');
+      setSiteName('SharePoint Site');
+      setSiteUrl(appConfig.sharePointHostname.replace(/\/+$/, ''));
       return;
     }
     
@@ -47,7 +50,6 @@ export const useCopilotSite = (containerId: string) => {
         
         console.log('Fetching container details for:', normalizedContainerId);
         const containerDetails = await sharePointService.getContainerDetails(token, normalizedContainerId);
-        console.log('Container details retrieved:', containerDetails);
         
         // Set fallback values and handle missing data
         if (!containerDetails) {
@@ -61,6 +63,7 @@ export const useCopilotSite = (containerId: string) => {
         // Handle name specifically - ensure it's never undefined
         const name = containerDetails.name || 'SharePoint Site';
         setSiteName(name);
+        console.log('Container name retrieved:', name);
         
         if (!containerDetails.webUrl) {
           console.error('Container webUrl is undefined');
@@ -72,6 +75,7 @@ export const useCopilotSite = (containerId: string) => {
         // Store the site URL without any trailing slashes
         const normalizedUrl = containerDetails.webUrl.replace(/\/+$/, '');
         setSiteUrl(normalizedUrl);
+        console.log('Container webUrl retrieved:', normalizedUrl);
       } catch (err) {
         console.error('Error fetching site info:', err);
         setError('Failed to load site information');
@@ -85,7 +89,7 @@ export const useCopilotSite = (containerId: string) => {
     };
     
     fetchSiteInfo();
-  }, [normalizedContainerId, getAccessToken]);
+  }, [normalizedContainerId, getAccessToken, isAuthenticated]);
 
   // Get the base SharePoint hostname (without any paths or trailing slashes)
   // This is used for authentication and CSP compatibility

@@ -133,7 +133,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
       
       return () => clearTimeout(timer);
     }
-  }, [chatApiInstance, isOpen, chatConfig, chatLoadFailed, canRenderChat]);
+  }, [chatApiInstance, isOpen, chatConfig, chatLoadFailed, canRenderChat, onApiReady]);
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -183,6 +183,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 data-testid="copilot-chat-container"
               >
                 <ChatEmbedded
+                  key={chatKey} // Re-render component when key changes
                   containerId={containerId}
                   authProvider={authProvider}
                   onApiReady={handleApiReady}
