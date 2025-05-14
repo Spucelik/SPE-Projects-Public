@@ -38,37 +38,62 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   const [chatLoadFailed, setChatLoadFailed] = useState(false);
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
   
   useEffect(() => {
     if (isOpen) {
       setChatLoadFailed(false);
+      setIframeLoaded(false);
     }
   }, [isOpen, chatKey]);
   
-  // Separate the chat opening logic to handle security errors
+  // Handle iframe load
   useEffect(() => {
-    const openChat = async () => {
-      if (!chatApi || !isOpen) {
-        return;
+    if (!isOpen || !chatContainerRef.current) return;
+    
+    // Find iframes when they are created by the ChatEmbedded component
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          const iframes = chatContainerRef.current?.querySelectorAll('iframe');
+          if (iframes && iframes.length > 0) {
+            setIframeLoaded(true);
+            observer.disconnect();
+            break;
+          }
+        }
       }
-
+    });
+    
+    observer.observe(chatContainerRef.current, { 
+      childList: true, 
+      subtree: true 
+    });
+    
+    return () => observer.disconnect();
+  }, [isOpen]);
+  
+  // Separate the chat opening logic with added security error handling
+  useEffect(() => {
+    if (!chatApi || !isOpen || !iframeLoaded) {
+      return;
+    }
+    
+    // Wait for iframe to be fully loaded and initialized before opening chat
+    const timer = setTimeout(async () => {
       try {
         console.log('Opening Copilot chat...');
         await chatApi.openChat();
+        console.log('Copilot chat opened successfully');
       } catch (err) {
         console.error('Failed to open chat:', err);
         setChatLoadFailed(true);
         onError('Failed to open chat. This might be due to browser security restrictions.');
       }
-    };
-
-    // Use a timeout to ensure DOM is fully rendered before trying to access the chat API
-    const timer = setTimeout(() => {
-      openChat();
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(timer);
-  }, [chatApi, isOpen, onError]);
+  }, [chatApi, isOpen, onError, iframeLoaded]);
   
   const formatContainerId = (rawId: string): string => {
     if (rawId.startsWith('b!')) {
@@ -102,10 +127,11 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         chatKey,
         chatLoadFailed,
         chatConfig,
-        chatApiReady: !!chatApi
+        chatApiReady: !!chatApi,
+        iframeLoaded
       });
     }
-  }, [isOpen, containerId, validContainerId, authProvider, chatKey, chatLoadFailed, chatConfig, chatApi]);
+  }, [isOpen, containerId, validContainerId, authProvider, chatKey, chatLoadFailed, chatConfig, chatApi, iframeLoaded]);
 
   const handleChatApiError = () => {
     setChatLoadFailed(true);
@@ -171,13 +197,15 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           ) : (
             <div className="h-full overflow-hidden" key={chatKey}>
               {authProvider ? (
-                <div className="w-full h-full isolate">
-                  <ChatEmbedded
-                    containerId={validContainerId}
-                    authProvider={authProvider}
-                    onApiReady={handleApiReady}
-                    style={{ height: '100%', width: '100%' }}
-                  />
+                <div className="w-full h-full isolate overflow-hidden">
+                  <div className="sandbox-container" style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+                    <ChatEmbedded
+                      containerId={validContainerId}
+                      authProvider={authProvider}
+                      onApiReady={handleApiReady}
+                      style={{ height: '100%', width: '100%' }}
+                    />
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full p-6 text-center">

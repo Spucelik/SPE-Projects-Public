@@ -13,7 +13,11 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   }
   
   console.log('CopilotChat rendering with containerId:', containerId);
-  return <CopilotChatContainer containerId={containerId} />;
+  return (
+    <div className="copilot-wrapper">
+      <CopilotChatContainer containerId={containerId} />
+    </div>
+  );
 };
 
 export default CopilotChat;
