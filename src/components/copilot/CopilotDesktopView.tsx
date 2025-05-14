@@ -76,13 +76,17 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   const handleApiReady = (api: ChatEmbeddedAPI) => {
     console.log('Chat API is ready');
     setChatApiInstance(api);
-    onApiReady(api);
+    
+    // Make sure to only call onApiReady if the API is valid
+    if (api) {
+      onApiReady(api);
+    }
   };
   
   // Open chat when API is available and the sheet is open
   useEffect(() => {
     const initChat = async () => {
-      if (chatApiInstance && isOpen && !chatLoadFailed) {
+      if (chatApiInstance && isOpen && !chatLoadFailed && chatConfig) {
         try {
           console.log('Initializing chat with config:', JSON.stringify(chatConfig, null, 2));
           await chatApiInstance.openChat(chatConfig);
@@ -148,7 +152,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 style={{ height: 'calc(100vh - 120px)', minHeight: "600px", position: "relative" }}
                 data-testid="copilot-chat-container"
               >
-                {authProvider && (
+                {authProvider && containerId && (
                   <ChatEmbedded
                     containerId={containerId}
                     authProvider={authProvider}

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -40,10 +41,15 @@ export const useCopilotSite = (containerId: string) => {
         const containerDetails = await sharePointService.getContainerDetails(token, normalizedContainerId);
         console.log('Container details retrieved:', containerDetails);
         
+        if (!containerDetails || !containerDetails.webUrl) {
+          setError('Failed to retrieve container details');
+          return;
+        }
+        
         // Store the site URL without any trailing slashes
         const normalizedUrl = containerDetails.webUrl.replace(/\/+$/, '');
         setSiteUrl(normalizedUrl);
-        setSiteName(containerDetails.name);
+        setSiteName(containerDetails.name || 'Unknown Site');
       } catch (err) {
         console.error('Error fetching site info:', err);
         setError('Failed to load site information');

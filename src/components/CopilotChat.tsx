@@ -29,6 +29,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     };
   }, [containerId]);
   
+  // Early return if no containerId is provided
   if (!containerId) {
     return (
       <div className="text-red-500 p-4 border border-red-300 rounded-md">

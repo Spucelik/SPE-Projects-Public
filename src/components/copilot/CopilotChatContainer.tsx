@@ -90,7 +90,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     chatApiRef.current = api;
   }, []);
   
-  // Create chat configuration
+  // Create chat configuration with proper null checks
   const chatConfig: ChatLaunchConfig = {
     header: siteName ? `SharePoint Embedded - ${siteName}` : 'SharePoint Embedded',
     theme: appConfig.copilotTheme || {
