@@ -41,8 +41,17 @@ export const useCopilotSite = (containerId: string) => {
         const containerDetails = await sharePointService.getContainerDetails(token, normalizedContainerId);
         console.log('Container details retrieved:', containerDetails);
         
-        if (!containerDetails || !containerDetails.webUrl) {
-          setError('Failed to retrieve container details');
+        if (!containerDetails) {
+          setError('Container details are undefined');
+          setSiteUrl(appConfig.sharePointHostname.replace(/\/+$/, ''));
+          setSiteName('Unknown Site');
+          return;
+        }
+        
+        if (!containerDetails.webUrl) {
+          setError('Container webUrl is undefined');
+          setSiteUrl(appConfig.sharePointHostname.replace(/\/+$/, ''));
+          setSiteName(containerDetails.name || 'Unknown Site');
           return;
         }
         

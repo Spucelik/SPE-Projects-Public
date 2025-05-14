@@ -72,15 +72,19 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     }
   }, [isOpen, onError]);
   
-  // Handle API Ready event and initialize chat
+  // Handle API Ready event and initialize chat - added null check for api
   const handleApiReady = (api: ChatEmbeddedAPI) => {
     console.log('Chat API is ready');
+    if (!api) {
+      console.error('Chat API is undefined');
+      handleChatError();
+      return;
+    }
+    
     setChatApiInstance(api);
     
     // Make sure to only call onApiReady if the API is valid
-    if (api) {
-      onApiReady(api);
-    }
+    onApiReady(api);
   };
   
   // Open chat when API is available and the sheet is open
@@ -88,7 +92,16 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     const initChat = async () => {
       if (chatApiInstance && isOpen && !chatLoadFailed && chatConfig) {
         try {
-          console.log('Initializing chat with config:', JSON.stringify(chatConfig, null, 2));
+          console.log('Initializing chat with config:', JSON.stringify({
+            ...chatConfig,
+            header: chatConfig.header || 'SharePoint Embedded',
+            theme: chatConfig.theme ? 'Theme provided' : 'No theme',
+            zeroQueryPrompts: chatConfig.zeroQueryPrompts ? {
+              headerText: chatConfig.zeroQueryPrompts.headerText || '',
+              promptSuggestionCount: chatConfig.zeroQueryPrompts.promptSuggestionList?.length || 0
+            } : 'No zero query prompts'
+          }, null, 2));
+          
           await chatApiInstance.openChat(chatConfig);
           console.log('Chat initialized successfully');
         } catch (err) {
@@ -107,6 +120,10 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     }
   }, [chatApiInstance, isOpen, chatConfig, chatLoadFailed]);
   
+  // Safeguard against missing props
+  const safeContainerId = containerId || '';
+  const safeSiteName = siteName || 'Unknown Site';
+  
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -124,7 +141,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           <SheetTitle className="sr-only">SharePoint Embedded Copilot</SheetTitle>
           <div className="flex-shrink-0 border-b px-6 py-4">
             <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
-            {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
+            {safeSiteName && <p className="text-sm text-muted-foreground">Connected to: {safeSiteName}</p>}
             <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
           </div>
           
@@ -152,9 +169,9 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 style={{ height: 'calc(100vh - 120px)', minHeight: "600px", position: "relative" }}
                 data-testid="copilot-chat-container"
               >
-                {authProvider && containerId && (
+                {authProvider && safeContainerId ? (
                   <ChatEmbedded
-                    containerId={containerId}
+                    containerId={safeContainerId}
                     authProvider={authProvider}
                     onApiReady={handleApiReady}
                     style={{ 
@@ -168,12 +185,12 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                       bottom: 0
                     }}
                   />
-                )}
-                
-                {!authProvider && (
+                ) : (
                   <div className="flex items-center justify-center h-full p-6 text-center">
                     <p className="text-muted-foreground">
-                      Authentication setup in progress. Please wait or reload the page.
+                      {!authProvider ? 'Authentication setup in progress. Please wait or reload the page.' : 
+                       !safeContainerId ? 'No container ID provided. Cannot load chat.' : 
+                       'Missing required configuration'}
                     </p>
                   </div>
                 )}

@@ -37,10 +37,12 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   
   useEffect(() => {
     if (isOpen) {
-      console.log('Copilot chat opened with hostname:', sharePointHostname);
+      console.log('Copilot chat opened with hostname:', sharePointHostname || 'undefined');
+      console.log('Copilot chat opened with siteName:', siteName || 'undefined');
+      console.log('Copilot chat opened with siteUrl:', siteUrl || 'undefined');
       console.log('Chat API reference:', chatApiRef.current ? 'Available' : 'Not available');
     }
-  }, [isOpen, sharePointHostname]);
+  }, [isOpen, sharePointHostname, siteName, siteUrl]);
   
   const handleError = useCallback((errorMessage: string) => {
     console.error('Copilot chat error:', errorMessage);
@@ -90,7 +92,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     chatApiRef.current = api;
   }, []);
   
-  // Create chat configuration with proper null checks
+  // Create chat configuration with proper null checks for all properties
   const chatConfig: ChatLaunchConfig = {
     header: siteName ? `SharePoint Embedded - ${siteName}` : 'SharePoint Embedded',
     theme: appConfig.copilotTheme || {
@@ -138,7 +140,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     <CopilotMobileView
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      siteName={siteName}
+      siteName={siteName || 'Unknown Site'}
       isLoading={isLoading}
       error={error}
       openExternalChat={null}
@@ -147,7 +149,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     <CopilotDesktopView
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      siteName={siteName}
+      siteName={siteName || 'Unknown Site'}
       isLoading={isLoading}
       error={error}
       containerId={normalizedContainerId}
