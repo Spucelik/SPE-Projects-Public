@@ -13,12 +13,13 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
   const { isAuthenticated } = useAuth();
   const [errorShown, setErrorShown] = useState(false);
   
+  // IMPORTANT: Don't even attempt to render on login page or when not authenticated
+  if (window.location.pathname === '/login' || !isAuthenticated) {
+    console.log('Copilot not rendering: on login page or not authenticated');
+    return null;
+  }
+  
   useEffect(() => {
-    // Skip validation if on login route or not authenticated
-    if (window.location.pathname === '/login' || !isAuthenticated) {
-      return;
-    }
-    
     if (!containerId || typeof containerId !== 'string') {
       const errorMsg = 'CopilotChat: No valid containerId provided';
       console.error(errorMsg);
@@ -40,13 +41,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
     
     // Log the container ID to help with debugging
     console.log('CopilotChat component mounted with container ID:', containerId);
-  }, [containerId, isAuthenticated, errorShown]);
-  
-  // Early return if not authenticated or on login route
-  if (!isAuthenticated) {
-    console.log('Copilot not rendering: not authenticated');
-    return null;
-  }
+  }, [containerId, errorShown]);
   
   // Early return if no containerId is provided
   if (!containerId || typeof containerId !== 'string') {

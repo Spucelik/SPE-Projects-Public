@@ -1,7 +1,7 @@
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare, RefreshCw } from 'lucide-react';
 import { ChatEmbedded, ChatEmbeddedAPI, IChatEmbeddedApiAuthProvider, ChatLaunchConfig } from '@microsoft/sharepointembedded-copilotchat-react';
 
@@ -37,39 +37,24 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   isAuthenticated = true,
 }) => {
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
   
-  // Early return if not authenticated
-  if (!isAuthenticated) {
+  // Early return if not authenticated or on login page
+  if (!isAuthenticated || window.location.pathname === '/login') {
+    console.log('CopilotDesktopView: Not rendering because not authenticated or on login page');
     return null;
   }
   
-  // Handle API Ready callback
+  // Handle API Ready callback - safely handle undefined API
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
-    console.log('Chat API ready', api);
-    setChatApi(api);
     if (api) {
+      console.log('Chat API ready');
+      setChatApi(api);
       onApiReady(api);
+    } else {
+      console.error('Chat API is undefined or null');
+      onError('Chat API initialization failed');
     }
-  }, [onApiReady]);
-  
-  // Initialize chat when API is available
-  useEffect(() => {
-    const initChat = async () => {
-      if (chatApi && isOpen) {
-        console.log('Initializing chat with config:', chatConfig);
-        try {
-          await chatApi.openChat(chatConfig);
-          console.log('Chat initialized successfully');
-        } catch (error) {
-          console.error('Error opening chat:', error);
-          onError('Failed to initialize chat');
-        }
-      }
-    };
-    
-    initChat();
-  }, [chatApi, isOpen, chatConfig, onError]);
+  }, [onApiReady, onError]);
   
   // Reset chat when requested
   const handleResetChat = () => {
@@ -130,9 +115,8 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   </Button>
                 )}
               </div>
-            ) : isOpen && containerId ? (
+            ) : isOpen && containerId && chatConfig ? (
               <div 
-                ref={chatContainerRef}
                 className="h-full w-full"
                 style={{ 
                   height: 'calc(100vh - 120px)',

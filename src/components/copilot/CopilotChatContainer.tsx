@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
 import CopilotDesktopView from './CopilotDesktopView';
@@ -18,7 +18,12 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const [isOpen, setIsOpen] = useState(true); // Start with chat open by default
   const { getSharePointToken, isAuthenticated } = useAuth();
   const [chatKey, setChatKey] = useState(0);
-  const chatApiRef = useRef<ChatEmbeddedAPI | null>(null);
+  
+  // Early return if on login page or not authenticated
+  if (window.location.pathname === '/login' || !isAuthenticated) {
+    console.log('CopilotChatContainer not rendering: on login page or not authenticated');
+    return null;
+  }
   
   // Validate and normalize containerId
   const normalizedContainerId = containerId && typeof containerId === 'string' 
@@ -94,10 +99,9 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     }
     
     console.log('Copilot chat API is ready');
-    chatApiRef.current = api;
   }, [handleError]);
   
-  // Create chat configuration
+  // Create chat configuration - simplify to avoid potential undefined issues
   const chatConfig = React.useMemo((): ChatLaunchConfig => ({
     header: `SharePoint Embedded - ${safeSiteName}`,
     theme: {
@@ -111,30 +115,22 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       headerText: `Chat with content in ${safeSiteName}`,
       promptSuggestionList: [
         { suggestionText: 'Show me recent files' },
-        { suggestionText: "Summarize the main topics in my documents" },
-        { suggestionText: "What kind of files do I have?" },
-        { suggestionText: "Help me find documents related to planning" }
+        { suggestionText: "What documents do I have access to?" }
       ]
     },
-    instruction: "You are a helpful assistant that helps users find and summarize information related to their files and documents. Make sure you include references to the documents data comes from when possible.",
+    instruction: "You are a helpful assistant that helps users find and summarize information related to their files and documents.",
     locale: "en-US",
   }), [safeSiteName]);
 
   // Reset chat when there's an issue
   const handleResetChat = useCallback(() => {
     console.log('Resetting Copilot chat');
-    chatApiRef.current = null;
     setChatKey(prev => prev + 1);
     setIsOpen(false);
     setTimeout(() => {
       setIsOpen(true);
     }, 500);
   }, []);
-
-  // Early return if user is not authenticated
-  if (!isAuthenticated) {
-    return null;
-  }
 
   return isMobile ? (
     <CopilotMobileView
