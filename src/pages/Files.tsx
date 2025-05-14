@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -21,7 +22,6 @@ import FileList from '@/components/files/FileList';
 import FolderNavigation from '@/components/files/FolderNavigation';
 import FilePreviewDialog from '@/components/files/FilePreviewDialog';
 import FileUploadProgress from '@/components/files/FileUploadProgress';
-import CopilotChat from '@/components/CopilotChat';
 import { useFiles } from '@/hooks/useFiles';
 import { useContainerDetails } from '@/hooks/useContainerDetails';
 import { useFilePreview } from '@/hooks/useFilePreview';
@@ -223,13 +223,6 @@ const Files = () => {
               />
             </label>
           </Button>
-          
-          {containerId && (
-            <CopilotChat 
-              containerId={containerId} 
-              className="w-full md:w-auto"
-            />
-          )}
         </div>
       </div>
       
