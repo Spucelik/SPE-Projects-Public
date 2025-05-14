@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare, RefreshCw } from 'lucide-react';
@@ -37,6 +37,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
 }) => {
   const [chatLoadFailed, setChatLoadFailed] = useState(false);
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     if (isOpen) {
@@ -44,6 +45,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     }
   }, [isOpen, chatKey]);
   
+  // Separate the chat opening logic to handle security errors
   useEffect(() => {
     const openChat = async () => {
       if (!chatApi || !isOpen) {
@@ -55,11 +57,17 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         await chatApi.openChat();
       } catch (err) {
         console.error('Failed to open chat:', err);
-        onError('Failed to open chat. Please try again.');
+        setChatLoadFailed(true);
+        onError('Failed to open chat. This might be due to browser security restrictions.');
       }
     };
 
-    openChat();
+    // Use a timeout to ensure DOM is fully rendered before trying to access the chat API
+    const timer = setTimeout(() => {
+      openChat();
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [chatApi, isOpen, onError]);
   
   const formatContainerId = (rawId: string): string => {
@@ -143,7 +151,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
           <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
         </div>
-        <div className="flex-1 min-h-0 relative">
+        <div className="flex-1 min-h-0 relative" ref={chatContainerRef}>
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
@@ -161,14 +169,16 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               )}
             </div>
           ) : (
-            <div className="h-full" key={chatKey}>
+            <div className="h-full overflow-hidden" key={chatKey}>
               {authProvider ? (
-                <ChatEmbedded
-                  containerId={validContainerId}
-                  authProvider={authProvider}
-                  onApiReady={handleApiReady}
-                  style={{ height: '100%', width: '100%' }}
-                />
+                <div className="w-full h-full isolate">
+                  <ChatEmbedded
+                    containerId={validContainerId}
+                    authProvider={authProvider}
+                    onApiReady={handleApiReady}
+                    style={{ height: '100%', width: '100%' }}
+                  />
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-full p-6 text-center">
                   <p className="text-muted-foreground">
