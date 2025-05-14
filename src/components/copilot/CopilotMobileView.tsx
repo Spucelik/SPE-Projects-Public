@@ -7,7 +7,7 @@ import {
   CustomDrawerTrigger, 
   CustomDrawerTitle 
 } from '@/components/ui/custom-drawer';
-import { MessageSquare, ExternalLink } from 'lucide-react';
+import { MessageSquare, ExternalLink, Monitor } from 'lucide-react';
 
 interface CopilotMobileViewProps {
   isOpen: boolean;
@@ -59,8 +59,12 @@ const CopilotMobileView: React.FC<CopilotMobileViewProps> = ({
               <p>Could not load Copilot Chat: {error}</p>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full space-y-4">
-              <p className="text-center">For the best experience, use Copilot in the desktop view.</p>
+            <div className="flex flex-col items-center justify-center h-full space-y-6">
+              <div className="text-center space-y-2">
+                <Monitor size={48} className="mx-auto text-primary opacity-70" />
+                <h3 className="text-xl font-medium mt-4">Desktop View Recommended</h3>
+                <p className="text-center text-muted-foreground">For the best experience with Copilot Chat, please use a desktop device or switch to desktop view on your browser.</p>
+              </div>
               {openExternalChat && (
                 <Button onClick={openExternalChat} className="gap-2">
                   <ExternalLink size={16} />
