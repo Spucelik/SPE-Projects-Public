@@ -253,7 +253,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                     zIndex: 10,
                     backgroundColor: 'transparent'
                   }}
-                  allowTransparency={true}
                 />
               </div>
             ) : (

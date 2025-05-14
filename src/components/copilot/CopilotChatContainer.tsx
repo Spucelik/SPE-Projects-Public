@@ -110,7 +110,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   // Create chat configuration with proper null checks for all properties
   const chatConfig = React.useMemo(() => ({
     header: `SharePoint Embedded - ${safeSiteName}`,
-    theme: appConfig.copilotTheme || {
+    theme: {
       useDarkMode: false,
       customTheme: {
         themePrimary: '#4854EE',
@@ -144,7 +144,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     chatApiRef.current = null;
     setChatKey(prev => prev + 1);
     
-    // Close and reopen the chat panel
+    // Close and reopen the chat panel after a delay
     setIsOpen(false);
     setTimeout(() => {
       setIsOpen(true);
@@ -162,6 +162,18 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   if (!isAuthenticated) {
     return null;
   }
+
+  // After login, automatically open the chat
+  useEffect(() => {
+    if (isAuthenticated && window.location.pathname !== '/login' && chatKey === 0) {
+      // Delay opening chat after authentication to allow page to fully load
+      const timer = setTimeout(() => {
+        setIsOpen(true);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, chatKey]);
 
   return isMobile ? (
     <CopilotMobileView

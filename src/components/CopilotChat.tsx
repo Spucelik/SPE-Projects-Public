@@ -42,6 +42,9 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
     
     // Reset error shown flag when containerId changes and is valid
     setErrorShown(false);
+    
+    // Log the container ID to help with debugging
+    console.log('CopilotChat component mounted with container ID:', containerId);
   }, [containerId, isAuthenticated, errorShown]);
   
   // Early return if not authenticated with no visible indication
