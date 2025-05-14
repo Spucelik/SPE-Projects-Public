@@ -1,7 +1,12 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from '@/components/ui/drawer';
+import { 
+  CustomDrawer, 
+  CustomDrawerContent, 
+  CustomDrawerTrigger, 
+  CustomDrawerTitle 
+} from '@/components/ui/custom-drawer';
 import { MessageSquare, ExternalLink } from 'lucide-react';
 
 interface CopilotMobileViewProps {
@@ -22,18 +27,24 @@ const CopilotMobileView: React.FC<CopilotMobileViewProps> = ({
   openExternalChat,
 }) => {
   return (
-    <Drawer open={isOpen} onOpenChange={setIsOpen}>
-      <DrawerTrigger asChild>
+    <CustomDrawer open={isOpen} onOpenChange={setIsOpen}>
+      <CustomDrawerTrigger asChild>
         <Button variant="outline" className="gap-2 flex items-center">
           <MessageSquare size={16} />
           <span>Copilot Chat</span>
         </Button>
-      </DrawerTrigger>
-      <DrawerContent className="flex flex-col h-[80vh] max-h-[90vh]">
+      </CustomDrawerTrigger>
+      <CustomDrawerContent 
+        className="flex flex-col h-[80vh] max-h-[90vh]" 
+        style={{
+          WebkitUserSelect: 'none',
+          userSelect: 'none'
+        }}
+      >
         <div className="p-4 border-b">
-          <DrawerTitle className="text-lg font-semibold">
+          <CustomDrawerTitle className="text-lg font-semibold">
             SharePoint Embedded Copilot
-          </DrawerTitle>
+          </CustomDrawerTitle>
         </div>
         <div className="flex-shrink-0 px-6 py-2">
           {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
@@ -59,8 +70,8 @@ const CopilotMobileView: React.FC<CopilotMobileViewProps> = ({
             </div>
           )}
         </div>
-      </DrawerContent>
-    </Drawer>
+      </CustomDrawerContent>
+    </CustomDrawer>
   );
 };
 

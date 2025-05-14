@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { MessageSquare, RefreshCw } from 'lucide-react';
 import { ChatEmbedded, ChatEmbeddedAPI, IChatEmbeddedApiAuthProvider, ChatLaunchConfig } from '@microsoft/sharepointembedded-copilotchat-react';
 
@@ -82,7 +82,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           <div className="flex-shrink-0 border-b px-6 py-4">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
+                <SheetTitle className="text-lg font-semibold">SharePoint Embedded Copilot</SheetTitle>
                 <p className="text-sm text-muted-foreground">Connected to: {siteName || 'SharePoint Site'}</p>
                 <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
               </div>
@@ -120,7 +120,9 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 className="h-full w-full"
                 style={{ 
                   height: 'calc(100vh - 120px)',
-                  position: "relative"
+                  position: "relative",
+                  WebkitUserSelect: 'none',
+                  userSelect: 'none'
                 }}
                 data-testid="copilot-chat-container"
               >
@@ -138,7 +140,9 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    zIndex: 10
+                    zIndex: 10,
+                    WebkitUserSelect: 'none',
+                    userSelect: 'none'
                   }}
                 />
               </div>

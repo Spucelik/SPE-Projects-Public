@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
@@ -15,7 +14,7 @@ interface CopilotChatContainerProps {
 
 const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId }) => {
   const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = useState(true); // Start with chat open by default
+  const [isOpen, setIsOpen] = useState(false); // Start with chat closed by default
   const { getSharePointToken, isAuthenticated } = useAuth();
   const [chatKey, setChatKey] = useState(0);
   
