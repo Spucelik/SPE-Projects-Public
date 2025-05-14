@@ -40,8 +40,9 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     );
   }
   
+  // Ensure CopilotChatContainer is rendered with explicit sizing
   return (
-    <div className="copilot-wrapper h-full w-full flex" style={{ minHeight: '500px', position: 'relative' }}>
+    <div className="copilot-wrapper h-full w-full" style={{ minHeight: '500px' }}>
       <CopilotChatContainer containerId={containerId} />
     </div>
   );

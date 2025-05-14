@@ -41,7 +41,10 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   useEffect(() => {
     if (isOpen) {
       setChatLoadFailed(false);
-      console.log('Copilot chat sheet opened, container:', chatContainerRef.current);
+      console.log('Copilot chat sheet opened, container dimensions:', 
+        chatContainerRef.current ? 
+        `width: ${chatContainerRef.current.offsetWidth}px, height: ${chatContainerRef.current.offsetHeight}px` : 
+        'container ref not available');
     }
   }, [isOpen, chatKey]);
   
@@ -89,7 +92,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
             <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
           </div>
           
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 h-full overflow-hidden">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
@@ -108,16 +111,9 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               </div>
             ) : (
               <div 
-                className="flex-1" 
-                key={chatKey} 
-                id="copilot-chat-container"
                 ref={chatContainerRef}
+                className="h-[600px] w-full relative bg-white"
                 data-testid="copilot-chat-container"
-                style={{
-                  height: '100%',
-                  minHeight: '500px',
-                  position: 'relative'
-                }}
               >
                 {authProvider ? (
                   <ChatEmbedded
@@ -125,14 +121,14 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                     authProvider={authProvider}
                     onApiReady={onApiReady}
                     style={{ 
+                      height: '100%',
+                      width: '100%',
+                      border: 'none',
                       position: 'absolute',
                       top: 0,
                       left: 0,
                       right: 0,
-                      bottom: 0,
-                      height: '100%',
-                      width: '100%',
-                      border: 'none'
+                      bottom: 0
                     }}
                   />
                 ) : (
