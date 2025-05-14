@@ -20,7 +20,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const [chatKey, setChatKey] = useState(0);
   const chatApiRef = useRef<ChatEmbeddedAPI | null>(null);
   
-  // Parse containerId to ensure consistent format
+  // Ensure containerId is properly formatted
   const normalizedContainerId = containerId.startsWith('b!') 
     ? containerId 
     : `b!${containerId}`;
@@ -44,19 +44,18 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     });
   };
   
-  const getContainerName = () => {
-    return siteName || 'SharePoint Container';
-  };
-  
-  // Create auth provider for Copilot chat using SharePoint-specific token
+  // Create auth provider for Copilot chat
   const createAuthProvider = useCallback((): IChatEmbeddedApiAuthProvider | null => {
-    if (!sharePointHostname) return null;
+    if (!sharePointHostname) {
+      console.error('No SharePoint hostname available for auth provider');
+      return null;
+    }
     
     return {
       hostname: sharePointHostname,
       getToken: async () => {
         try {
-          // Get a SharePoint specific token for the hostname
+          console.log('Getting SharePoint token for hostname:', sharePointHostname);
           const token = await getSharePointToken(sharePointHostname);
           console.log('SharePoint auth token retrieved for Copilot chat', token ? 'successfully' : 'failed');
           return token || '';
@@ -89,7 +88,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     }, 500);
   };
 
-  // Simplified chat configuration object
+  // Chat configuration object
   const chatConfig = {
     theme: appConfig.copilotTheme
   };

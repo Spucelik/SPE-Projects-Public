@@ -47,11 +47,17 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     }
   }, [isOpen, chatKey]);
   
-  // Handle iframe load
+  // Handle API ready event
+  const handleApiReady = (api: ChatEmbeddedAPI) => {
+    console.log('Copilot chat API is ready');
+    setChatApi(api);
+    onApiReady(api);
+  };
+  
+  // Setup iframe detection
   useEffect(() => {
     if (!isOpen || !chatContainerRef.current) return;
     
-    // Find iframes when they are created by the ChatEmbedded component
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
@@ -73,13 +79,12 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     return () => observer.disconnect();
   }, [isOpen]);
   
-  // Separate the chat opening logic with added security error handling
+  // Handle chat opening
   useEffect(() => {
     if (!chatApi || !isOpen || !iframeLoaded) {
       return;
     }
     
-    // Wait for iframe to be fully loaded and initialized before opening chat
     const timer = setTimeout(async () => {
       try {
         console.log('Opening Copilot chat...');
@@ -95,52 +100,10 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     return () => clearTimeout(timer);
   }, [chatApi, isOpen, onError, iframeLoaded]);
   
-  const formatContainerId = (rawId: string): string => {
-    if (rawId.startsWith('b!')) {
-      console.log('Using b! prefixed ID:', rawId);
-      return rawId;
-    }
-    
-    if (rawId.includes('/files/')) {
-      const parts = rawId.split('/files/');
-      if (parts.length > 1) {
-        const extractedId = parts[1];
-        console.log('Extracted ID from URL path:', extractedId);
-        if (extractedId.startsWith('b!')) {
-          return extractedId;
-        }
-      }
-    }
-    
-    console.log('Using original ID format:', rawId);
-    return rawId;
-  };
-
-  const validContainerId = formatContainerId(containerId);
-  
-  useEffect(() => {
-    if (isOpen) {
-      console.log('CopilotDesktopView - Details:', {
-        original: containerId,
-        formatted: validContainerId,
-        authProvider,
-        chatKey,
-        chatLoadFailed,
-        chatConfig,
-        chatApiReady: !!chatApi,
-        iframeLoaded
-      });
-    }
-  }, [isOpen, containerId, validContainerId, authProvider, chatKey, chatLoadFailed, chatConfig, chatApi, iframeLoaded]);
-
+  // Error handling for chat component
   const handleChatApiError = () => {
     setChatLoadFailed(true);
     onError("The chat component failed to load. Please try resetting the chat.");
-  };
-  
-  const handleChatError = (event: Event) => {
-    console.error('ChatEmbedded component error:', event);
-    handleChatApiError();
   };
   
   useEffect(() => {
@@ -153,11 +116,25 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     }
   }, [isOpen]);
 
-  const handleApiReady = (api: ChatEmbeddedAPI) => {
-    console.log('Copilot chat API is ready');
-    setChatApi(api);
-    onApiReady(api);
+  const handleChatError = (event: Event) => {
+    console.error('ChatEmbedded component error:', event);
+    handleChatApiError();
   };
+  
+  // Logging for debugging
+  useEffect(() => {
+    if (isOpen) {
+      console.log('CopilotDesktopView - Details:', {
+        containerId,
+        authProvider: !!authProvider,
+        chatKey,
+        chatLoadFailed,
+        chatConfig: !!chatConfig,
+        chatApiReady: !!chatApi,
+        iframeLoaded
+      });
+    }
+  }, [isOpen, containerId, authProvider, chatKey, chatLoadFailed, chatConfig, chatApi, iframeLoaded]);
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -197,15 +174,13 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           ) : (
             <div className="h-full overflow-hidden" key={chatKey}>
               {authProvider ? (
-                <div className="w-full h-full isolate overflow-hidden">
-                  <div className="sandbox-container" style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-                    <ChatEmbedded
-                      containerId={validContainerId}
-                      authProvider={authProvider}
-                      onApiReady={handleApiReady}
-                      style={{ height: '100%', width: '100%' }}
-                    />
-                  </div>
+                <div className="w-full h-full">
+                  <ChatEmbedded
+                    containerId={containerId}
+                    authProvider={authProvider}
+                    onApiReady={handleApiReady}
+                    style={{ height: '100%', width: '100%' }}
+                  />
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full p-6 text-center">
