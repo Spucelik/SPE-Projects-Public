@@ -14,7 +14,7 @@ interface CopilotDesktopViewProps {
   error: string | null;
   containerId: string;
   onError: (errorMessage: string) => void;
-  chatConfig: any;
+  chatConfig: ChatLaunchConfig;
   authProvider: IChatEmbeddedApiAuthProvider | null;
   onApiReady: (api: ChatEmbeddedAPI) => void;
   chatKey: number;
@@ -38,6 +38,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   const [chatLoadFailed, setChatLoadFailed] = useState(false);
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
   
+  // Reset the load failure state when the sheet is opened or chat key changes
   useEffect(() => {
     if (isOpen) {
       setChatLoadFailed(false);
@@ -51,47 +52,28 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     onApiReady(api);
   };
   
-  // Handle chat opening with improved error handling
-  useEffect(() => {
-    if (!chatApi || !isOpen) {
-      return;
-    }
-    
-    const timer = setTimeout(async () => {
-      try {
-        console.log('Opening Copilot chat with API and config:', chatConfig);
-        await chatApi.openChat(chatConfig);
-        console.log('Copilot chat opened successfully');
-      } catch (err) {
-        console.error('Failed to open chat:', err);
-        setChatLoadFailed(true);
-        onError('Failed to open chat. This might be due to browser security restrictions.');
-      }
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, [chatApi, isOpen, onError, chatConfig]);
-  
-  // Error handling for chat component
-  const handleChatApiError = () => {
+  // Handle chat error
+  const handleChatError = () => {
+    console.error('ChatEmbedded component error');
     setChatLoadFailed(true);
-    onError("The chat component failed to load. Please try resetting the chat.");
+    onError('Failed to load the chat component');
   };
   
+  // Set up global error handler for the chat component
   useEffect(() => {
     if (isOpen) {
-      window.addEventListener('error', handleChatError);
+      const errorHandler = (event: ErrorEvent) => {
+        if (event.message && event.message.includes('ChatEmbedded')) {
+          handleChatError();
+        }
+      };
       
+      window.addEventListener('error', errorHandler);
       return () => {
-        window.removeEventListener('error', handleChatError);
+        window.removeEventListener('error', errorHandler);
       };
     }
   }, [isOpen]);
-
-  const handleChatError = (event: Event) => {
-    console.error('ChatEmbedded component error:', event);
-    handleChatApiError();
-  };
   
   // Logging for debugging
   useEffect(() => {
@@ -125,6 +107,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
           <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
         </div>
+        
         <div className="flex-1 min-h-0 relative">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
@@ -143,22 +126,20 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               )}
             </div>
           ) : (
-            <div className="h-full w-full overflow-hidden" key={chatKey}>
+            <div className="h-full w-full" key={chatKey}>
               {authProvider ? (
-                <div className="w-full h-full flex">
-                  <ChatEmbedded
-                    containerId={containerId}
-                    authProvider={authProvider}
-                    onApiReady={handleApiReady}
-                    style={{ 
-                      height: '100%', 
-                      width: '100%',
-                      display: 'block',
-                      minHeight: '400px',
-                      border: 'none'
-                    }}
-                  />
-                </div>
+                <ChatEmbedded
+                  containerId={containerId}
+                  authProvider={authProvider}
+                  onApiReady={handleApiReady}
+                  style={{ 
+                    height: '100%', 
+                    width: '100%',
+                    display: 'block',
+                    minHeight: '500px',
+                    border: 'none'
+                  }}
+                />
               ) : (
                 <div className="flex items-center justify-center h-full p-6 text-center">
                   <p className="text-muted-foreground">
