@@ -36,6 +36,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
 }) => {
   const [chatLoadFailed, setChatLoadFailed] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const [chatApiInstance, setChatApiInstance] = useState<ChatEmbeddedAPI | null>(null);
   
   // Reset the load failure state when the sheet is opened or chat key changes
   useEffect(() => {
@@ -71,6 +72,37 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     }
   }, [isOpen, onError]);
   
+  // Handle API Ready event and initialize chat
+  const handleApiReady = (api: ChatEmbeddedAPI) => {
+    console.log('Chat API is ready');
+    setChatApiInstance(api);
+    onApiReady(api);
+  };
+  
+  // Open chat when API is available and the sheet is open
+  useEffect(() => {
+    const initChat = async () => {
+      if (chatApiInstance && isOpen && !chatLoadFailed) {
+        try {
+          console.log('Initializing chat with config:', JSON.stringify(chatConfig, null, 2));
+          await chatApiInstance.openChat(chatConfig);
+          console.log('Chat initialized successfully');
+        } catch (err) {
+          console.error('Failed to open chat:', err);
+          handleChatError();
+        }
+      }
+    };
+    
+    if (isOpen && chatApiInstance) {
+      const timer = setTimeout(() => {
+        initChat();
+      }, 300); // Small delay to ensure DOM is ready
+      
+      return () => clearTimeout(timer);
+    }
+  }, [chatApiInstance, isOpen, chatConfig, chatLoadFailed]);
+  
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -92,7 +124,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
             <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
           </div>
           
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden relative">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
@@ -112,15 +144,15 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
             ) : (
               <div 
                 ref={chatContainerRef}
-                className="h-full w-full relative bg-white"
-                style={{ height: 'calc(100vh - 120px)', minHeight: "600px" }}
+                className="h-full w-full flex-1"
+                style={{ height: 'calc(100vh - 120px)', minHeight: "600px", position: "relative" }}
                 data-testid="copilot-chat-container"
               >
-                {authProvider ? (
+                {authProvider && (
                   <ChatEmbedded
                     containerId={containerId}
                     authProvider={authProvider}
-                    onApiReady={onApiReady}
+                    onApiReady={handleApiReady}
                     style={{ 
                       height: '100%',
                       width: '100%',
@@ -132,7 +164,9 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                       bottom: 0
                     }}
                   />
-                ) : (
+                )}
+                
+                {!authProvider && (
                   <div className="flex items-center justify-center h-full p-6 text-center">
                     <p className="text-muted-foreground">
                       Authentication setup in progress. Please wait or reload the page.

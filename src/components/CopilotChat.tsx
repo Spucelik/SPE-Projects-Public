@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import CopilotChatContainer from './copilot/CopilotChatContainer';
 import { toast } from '@/hooks/use-toast';
 
@@ -8,13 +8,10 @@ interface CopilotChatProps {
 }
 
 const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
-  const [containerError, setContainerError] = useState<string | null>(null);
-  
   useEffect(() => {
     if (!containerId) {
       const errorMsg = 'CopilotChat: No containerId provided';
       console.error(errorMsg);
-      setContainerError(errorMsg);
       toast({
         title: "Copilot Error",
         description: "No container ID provided. Copilot chat cannot load.",
@@ -41,7 +38,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   }
   
   return (
-    <div className="copilot-wrapper w-full">
+    <div className="copilot-wrapper w-full" data-testid="copilot-chat-wrapper">
       <CopilotChatContainer containerId={containerId} />
     </div>
   );
