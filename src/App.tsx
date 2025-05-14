@@ -1,3 +1,4 @@
+
 import { 
   BrowserRouter as Router, 
   Routes, 
@@ -29,16 +30,18 @@ const App = () => {
           <AuthProvider>
             <ConfigProvider>
               <SidebarProvider>
-                <Toaster />
-                <Sonner />
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                  <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
-                  <Route path="/files/:containerId" element={<ProtectedRoute><Files /></ProtectedRoute>} />
-                  <Route path="/files" element={<ProtectedRoute><Navigate to="/projects" replace /></ProtectedRoute>} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                <>
+                  <Toaster />
+                  <Sonner />
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                    <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+                    <Route path="/files/:containerId" element={<ProtectedRoute><Files /></ProtectedRoute>} />
+                    <Route path="/files" element={<ProtectedRoute><Navigate to="/projects" replace /></ProtectedRoute>} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </>
               </SidebarProvider>
             </ConfigProvider>
           </AuthProvider>
