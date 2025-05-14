@@ -20,9 +20,8 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const [chatKey, setChatKey] = useState(0);
   const chatApiRef = useRef<ChatEmbeddedAPI | null>(null);
   
-  // Early return if user is not authenticated - this prevents any processing
+  // Early return if user is not authenticated 
   if (!isAuthenticated) {
-    console.log('CopilotChatContainer: User not authenticated, not rendering');
     return null;
   }
   
@@ -33,7 +32,6 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   
   // Don't proceed if we don't have a valid container ID
   if (!normalizedContainerId) {
-    console.error('No valid containerId provided to CopilotChatContainer');
     return (
       <div className="text-red-500 p-4 border border-red-300 rounded-md">
         Error: No valid containerId provided for Copilot Chat
@@ -52,22 +50,6 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   // Ensure we have valid hostnames and site names
   const safeSharePointHostname = sharePointHostname || appConfig.sharePointHostname;
   const safeSiteName = siteName || 'SharePoint Site';
-  
-  useEffect(() => {
-    // Only log when actually opening the chat to avoid spamming logs
-    if (isOpen && chatKey > 0) {
-      console.log('Copilot chat opened with hostname:', safeSharePointHostname);
-      console.log('Copilot chat opened with siteName:', safeSiteName);
-      console.log('Copilot chat opened with siteUrl:', siteUrl || 'Not available');
-      console.log('Chat API reference:', chatApiRef.current ? 'Available' : 'Not available');
-    }
-    
-    // When the chat is closed, clear the API reference
-    if (!isOpen && chatApiRef.current) {
-      console.log('Chat closed, clearing API reference');
-      chatApiRef.current = null;
-    }
-  }, [isOpen, safeSharePointHostname, safeSiteName, siteUrl, chatKey]);
   
   const handleError = useCallback((errorMessage: string) => {
     console.error('Copilot chat error:', errorMessage);
@@ -109,8 +91,9 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     };
   }, [safeSharePointHostname, getSharePointToken, handleError, isAuthenticated]);
   
-  // Auth provider instance
-  const authProvider = createAuthProvider();
+  // Auth provider instance - memoize to prevent re-creation
+  const authProvider = React.useMemo(() => createAuthProvider(), 
+    [createAuthProvider]);
   
   // Handles API ready event from ChatEmbedded component with deduplication
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
@@ -130,7 +113,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   }, [handleError]);
   
   // Create chat configuration with proper null checks for all properties
-  const chatConfig: ChatLaunchConfig = {
+  const chatConfig = React.useMemo(() => ({
     header: `SharePoint Embedded - ${safeSiteName}`,
     theme: appConfig.copilotTheme || {
       useDarkMode: false,
@@ -158,7 +141,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     },
     instruction: "You are a helpful assistant that helps users find and summarize information related to their files and documents. Make sure you include references to the documents data comes from when possible.",
     locale: "en",
-  };
+  }), [safeSiteName]);
 
   // Reset chat when there's an issue
   const handleResetChat = useCallback(() => {

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { MessageSquare, RefreshCw } from 'lucide-react';
@@ -41,10 +41,10 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   const [chatApiInstance, setChatApiInstance] = useState<ChatEmbeddedAPI | null>(null);
   const [initializing, setInitializing] = useState(false);
   const [chatInitialized, setChatInitialized] = useState(false);
+  const initAttemptedRef = useRef(false);
   
   // Early return if not authenticated - don't even try to render the component
   if (!isAuthenticated) {
-    console.log('CopilotDesktopView: User not authenticated, not rendering');
     return null;
   }
   
@@ -52,20 +52,23 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   useEffect(() => {
     if (isOpen) {
       setChatLoadFailed(false);
-      setChatInitialized(false);
+      initAttemptedRef.current = false;
       console.log('Copilot chat sheet opened, container dimensions:', 
         chatContainerRef.current ? 
         `width: ${chatContainerRef.current.offsetWidth}px, height: ${chatContainerRef.current.offsetHeight}px` : 
         'container ref not available');
+    } else {
+      // Reset initialization flag when closing
+      setChatInitialized(false);
     }
   }, [isOpen, chatKey]);
   
-  // Handle chat error
-  const handleChatError = () => {
+  // Handle chat error - memoized to prevent recreation
+  const handleChatError = useCallback(() => {
     console.error('ChatEmbedded component error');
     setChatLoadFailed(true);
     onError('Failed to load the chat component');
-  };
+  }, [onError]);
   
   // Set up global error handler for the chat component
   useEffect(() => {
@@ -85,10 +88,10 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         window.removeEventListener('error', errorHandler);
       };
     }
-  }, [isOpen, onError]);
+  }, [isOpen, handleChatError]);
   
-  // Handle API Ready event and initialize chat - added null check for api
-  const handleApiReady = (api: ChatEmbeddedAPI | null) => {
+  // Handle API Ready event - memoized to prevent recreation
+  const handleApiReady = useCallback((api: ChatEmbeddedAPI | null) => {
     console.log('Chat API ready callback triggered');
     
     // Early return if API is null or undefined
@@ -103,55 +106,54 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     
     // Make sure to only call onApiReady if the API is valid
     onApiReady(api);
-  };
+  }, [handleChatError, onApiReady]);
   
-  // Only try to render chat component if authenticated and has valid data
-  const canRenderChat = isAuthenticated && !chatLoadFailed && !!containerId && !initializing;
-  
-  // Open chat when API is available and the sheet is open
+  // Initialize chat - this is the main source of the infinite loop if not managed carefully
   useEffect(() => {
+    // Skip if conditions aren't right
+    if (!isOpen || !chatApiInstance || chatInitialized || initializing || chatLoadFailed || !isAuthenticated) {
+      return;
+    }
+
+    // Use ref to prevent double initialization attempts
+    if (initAttemptedRef.current) {
+      return;
+    }
+    
     const initChat = async () => {
-      if (!isOpen || chatLoadFailed || !canRenderChat || !chatApiInstance || !chatConfig || chatInitialized) {
-        console.log('Skipping chat initialization - conditions not met or already initialized');
-        return;
-      }
+      // Set flags to prevent concurrent initialization
+      initAttemptedRef.current = true;
+      setInitializing(true);
+      
+      console.log('Initializing chat with config:', JSON.stringify({
+        header: chatConfig.header || 'SharePoint Embedded',
+        hasTheme: !!chatConfig.theme,
+        hasZeroQueryPrompts: !!chatConfig.zeroQueryPrompts,
+        hasInstruction: !!chatConfig.instruction
+      }));
       
       try {
-        setInitializing(true);
-        console.log('Initializing chat with config:', JSON.stringify({
-          header: chatConfig.header || 'SharePoint Embedded',
-          theme: chatConfig.theme ? 'Theme provided' : 'No theme',
-          zeroQueryPrompts: chatConfig.zeroQueryPrompts ? {
-            headerText: chatConfig.zeroQueryPrompts.headerText || '',
-            promptSuggestionCount: chatConfig.zeroQueryPrompts.promptSuggestionList?.length || 0
-          } : 'No zero query prompts',
-          instruction: chatConfig.instruction ? 'Instruction provided' : 'No instruction'
-        }, null, 2));
-        
-        try {
-          await chatApiInstance.openChat(chatConfig);
-          console.log('Chat initialized successfully');
-          setChatInitialized(true);
-        } catch (chatError) {
-          console.error('Error opening chat with config:', chatError);
-          handleChatError();
-        }
-      } catch (err) {
-        console.error('Failed to open chat:', err);
+        await chatApiInstance.openChat(chatConfig);
+        console.log('Chat initialized successfully');
+        setChatInitialized(true);
+      } catch (chatError) {
+        console.error('Error opening chat with config:', chatError);
         handleChatError();
       } finally {
         setInitializing(false);
       }
     };
     
-    if (isOpen && chatApiInstance && !chatInitialized) {
-      const timer = setTimeout(() => {
-        initChat();
-      }, 300); // Small delay to ensure DOM is ready
-      
-      return () => clearTimeout(timer);
-    }
-  }, [chatApiInstance, isOpen, chatConfig, chatLoadFailed, canRenderChat, onApiReady, chatInitialized]);
+    // Use setTimeout to avoid immediate execution and potential race conditions
+    const timer = setTimeout(() => {
+      initChat();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [chatApiInstance, isOpen, chatConfig, chatLoadFailed, handleChatError, chatInitialized, initializing, isAuthenticated]);
+  
+  // Determine if chat can be rendered
+  const canRenderChat = isAuthenticated && !chatLoadFailed && !!containerId && !initializing;
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -196,7 +198,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   </Button>
                 )}
               </div>
-            ) : canRenderChat ? (
+            ) : canRenderChat && isOpen ? (
               <div 
                 ref={chatContainerRef}
                 className="h-full w-full flex-1"
@@ -204,7 +206,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 data-testid="copilot-chat-container"
               >
                 <ChatEmbedded
-                  key={`${chatKey}-${containerId}`} // More unique key to force re-render
+                  key={`chat-${chatKey}-${containerId}`} // More unique key to force re-render
                   containerId={containerId}
                   authProvider={authProvider}
                   onApiReady={handleApiReady}

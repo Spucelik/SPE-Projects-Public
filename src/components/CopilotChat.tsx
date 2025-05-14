@@ -37,19 +37,10 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
     
     // Reset error shown flag when containerId changes and is valid
     setErrorShown(false);
-    
-    // Log when component mounts with valid containerId
-    console.log('CopilotChat component mounted with containerId:', containerId);
-    
-    // Add a cleanup function to ensure memory is properly released
-    return () => {
-      console.log('CopilotChat component unmounting');
-    };
   }, [containerId, isAuthenticated, errorShown]);
   
   // Early return if not authenticated with no visible indication
   if (!isAuthenticated) {
-    console.log('CopilotChat: User not authenticated, not rendering chat');
     return null;
   }
   
