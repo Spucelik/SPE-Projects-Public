@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { FilePlus, Folder, FileText, MoreHorizontal, Trash2, ExternalLink, Share } from 'lucide-react';
+import { FilePlus, Folder, FileText, MoreHorizontal, Trash2, ExternalLink, Share, Pencil } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,6 +56,21 @@ const FileList: React.FC<FileListProps> = ({
   const handleShareClick = (file: FileItem) => {
     setShareFile(file);
     setIsShareDialogOpen(true);
+  };
+  
+  // Helper function to determine if a file is an Office document
+  const isOfficeDocument = (fileName: string): boolean => {
+    const officeExtensions = ['.docx', '.xlsx', '.pptx', '.doc', '.xls', '.ppt'];
+    const lowerFileName = fileName.toLowerCase();
+    return officeExtensions.some(ext => lowerFileName.endsWith(ext));
+  };
+  
+  // Function to handle edit button click
+  const handleEditClick = (item: FileItem) => {
+    // Open the file in the respective Office app for editing
+    if (item.webUrl) {
+      window.open(item.webUrl, '_blank');
+    }
   };
 
   if (loading) {
@@ -133,6 +149,15 @@ const FileList: React.FC<FileListProps> = ({
                       }}>
                         <ExternalLink className="mr-2 h-4 w-4" />
                         View File
+                      </DropdownMenuItem>
+                    )}
+                    {!item.isFolder && isOfficeDocument(item.name) && (
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditClick(item);
+                      }}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit in Office
                       </DropdownMenuItem>
                     )}
                     {!item.isFolder && (
