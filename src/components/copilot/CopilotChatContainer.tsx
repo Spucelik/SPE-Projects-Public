@@ -54,13 +54,20 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const safeSiteName = siteName || 'SharePoint Site';
   
   useEffect(() => {
-    if (isOpen) {
+    // Only log when actually opening the chat to avoid spamming logs
+    if (isOpen && chatKey > 0) {
       console.log('Copilot chat opened with hostname:', safeSharePointHostname);
       console.log('Copilot chat opened with siteName:', safeSiteName);
       console.log('Copilot chat opened with siteUrl:', siteUrl || 'Not available');
       console.log('Chat API reference:', chatApiRef.current ? 'Available' : 'Not available');
     }
-  }, [isOpen, safeSharePointHostname, safeSiteName, siteUrl]);
+    
+    // When the chat is closed, clear the API reference
+    if (!isOpen && chatApiRef.current) {
+      console.log('Chat closed, clearing API reference');
+      chatApiRef.current = null;
+    }
+  }, [isOpen, safeSharePointHostname, safeSiteName, siteUrl, chatKey]);
   
   const handleError = useCallback((errorMessage: string) => {
     console.error('Copilot chat error:', errorMessage);
@@ -105,15 +112,21 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   // Auth provider instance
   const authProvider = createAuthProvider();
   
-  // Handles API ready event from ChatEmbedded component
+  // Handles API ready event from ChatEmbedded component with deduplication
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
-    console.log('Copilot chat API is ready');
     if (!api) {
       console.error('Chat API is undefined');
       handleError('Chat API initialization failed');
       return;
     }
-    chatApiRef.current = api;
+    
+    // Only set if different to avoid re-renders
+    if (chatApiRef.current !== api) {
+      console.log('Copilot chat API is ready - new instance');
+      chatApiRef.current = api;
+    } else {
+      console.log('Copilot chat API is ready - same instance, skipping update');
+    }
   }, [handleError]);
   
   // Create chat configuration with proper null checks for all properties
@@ -157,7 +170,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     setIsOpen(false);
     setTimeout(() => {
       setIsOpen(true);
-    }, 500);
+    }, 800); // Slightly longer delay to ensure proper cleanup
   }, []);
 
   return isMobile ? (

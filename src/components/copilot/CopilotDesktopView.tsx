@@ -40,6 +40,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [chatApiInstance, setChatApiInstance] = useState<ChatEmbeddedAPI | null>(null);
   const [initializing, setInitializing] = useState(false);
+  const [chatInitialized, setChatInitialized] = useState(false);
   
   // Early return if not authenticated - don't even try to render the component
   if (!isAuthenticated) {
@@ -51,6 +52,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   useEffect(() => {
     if (isOpen) {
       setChatLoadFailed(false);
+      setChatInitialized(false);
       console.log('Copilot chat sheet opened, container dimensions:', 
         chatContainerRef.current ? 
         `width: ${chatContainerRef.current.offsetWidth}px, height: ${chatContainerRef.current.offsetHeight}px` : 
@@ -109,8 +111,8 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   // Open chat when API is available and the sheet is open
   useEffect(() => {
     const initChat = async () => {
-      if (!isOpen || chatLoadFailed || !canRenderChat || !chatApiInstance || !chatConfig) {
-        console.log('Skipping chat initialization - conditions not met');
+      if (!isOpen || chatLoadFailed || !canRenderChat || !chatApiInstance || !chatConfig || chatInitialized) {
+        console.log('Skipping chat initialization - conditions not met or already initialized');
         return;
       }
       
@@ -129,6 +131,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         try {
           await chatApiInstance.openChat(chatConfig);
           console.log('Chat initialized successfully');
+          setChatInitialized(true);
         } catch (chatError) {
           console.error('Error opening chat with config:', chatError);
           handleChatError();
@@ -141,14 +144,14 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
       }
     };
     
-    if (isOpen && chatApiInstance) {
+    if (isOpen && chatApiInstance && !chatInitialized) {
       const timer = setTimeout(() => {
         initChat();
       }, 300); // Small delay to ensure DOM is ready
       
       return () => clearTimeout(timer);
     }
-  }, [chatApiInstance, isOpen, chatConfig, chatLoadFailed, canRenderChat, onApiReady]);
+  }, [chatApiInstance, isOpen, chatConfig, chatLoadFailed, canRenderChat, onApiReady, chatInitialized]);
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -201,7 +204,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 data-testid="copilot-chat-container"
               >
                 <ChatEmbedded
-                  key={chatKey} // Re-render component when key changes
+                  key={`${chatKey}-${containerId}`} // More unique key to force re-render
                   containerId={containerId}
                   authProvider={authProvider}
                   onApiReady={handleApiReady}

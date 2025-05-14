@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -9,6 +10,7 @@ export const useCopilotSite = (containerId: string) => {
   const [siteUrl, setSiteUrl] = useState<string | null>(null);
   const [siteName, setSiteName] = useState<string | null>(null);
   const { getAccessToken, isAuthenticated } = useAuth();
+  const [fetchAttempted, setFetchAttempted] = useState(false);
 
   // Skip all processing if not authenticated
   const shouldProcess = isAuthenticated && !!containerId;
@@ -40,6 +42,12 @@ export const useCopilotSite = (containerId: string) => {
       return;
     }
     
+    // Avoid refetching unnecessarily
+    if (fetchAttempted && siteName !== 'SharePoint Site' && siteUrl) {
+      console.log('Already fetched site info successfully, skipping');
+      return;
+    }
+    
     const fetchSiteInfo = async () => {
       try {
         setIsLoading(true);
@@ -53,6 +61,7 @@ export const useCopilotSite = (containerId: string) => {
         
         console.log('Fetching container details for:', normalizedContainerId);
         const containerDetails = await sharePointService.getContainerDetails(token, normalizedContainerId);
+        setFetchAttempted(true);
         
         // Set fallback values and handle missing data
         if (!containerDetails) {
@@ -85,7 +94,7 @@ export const useCopilotSite = (containerId: string) => {
     };
     
     fetchSiteInfo();
-  }, [normalizedContainerId, getAccessToken, isAuthenticated, shouldProcess]);
+  }, [normalizedContainerId, getAccessToken, isAuthenticated, shouldProcess, fetchAttempted, siteName, siteUrl]);
 
   // Get the base SharePoint hostname (without any paths or trailing slashes)
   // This is used for authentication and CSP compatibility
@@ -118,5 +127,6 @@ export const useCopilotSite = (containerId: string) => {
     siteUrl,
     siteName,
     sharePointHostname,
+    fetchAttempted
   };
 };
