@@ -1,217 +1,178 @@
+
 import React, { useState } from 'react';
-import { Eye, Edit, File, Folder, FileText, ImageIcon, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { FilePlus, Folder, FileText, MoreHorizontal, Trash2, ExternalLink, Share } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import { format } from 'date-fns';
 import { FileItem } from '@/services/sharePointService';
+import EmptyState from './EmptyState';
+import ShareDialog from './ShareDialog';
 
 interface FileListProps {
   files: FileItem[];
-  loading?: boolean;
-  onFolderClick: (folder: FileItem) => void;
-  onFileClick: (file: FileItem) => void;
-  onViewFile: (file: FileItem) => void;
-  onDeleteFile: (file: FileItem) => Promise<void>;
+  loading: boolean;
+  onFolderClick: (item: FileItem) => void;
+  onFileClick: (item: FileItem) => void;
+  onViewFile?: (item: FileItem) => void;
+  onDeleteFile?: (item: FileItem) => void;
   containerId: string;
 }
 
 const FileList: React.FC<FileListProps> = ({
   files,
-  loading = false,
+  loading,
   onFolderClick,
   onFileClick,
   onViewFile,
   onDeleteFile,
-  containerId,
+  containerId
 }) => {
-  const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const getFileIcon = (fileName: string) => {
-    if (fileName.match(/\.(jpg|jpeg|png|gif|bmp|svg)$/i)) {
-      return <ImageIcon className="h-5 w-5 text-blue-500" />;
-    } else if (fileName.match(/\.(pdf)$/i)) {
-      return <FileText className="h-5 w-5 text-red-500" />;
-    } else if (fileName.match(/\.(docx|doc)$/i)) {
-      return <FileText className="h-5 w-5 text-blue-600" />;
-    } else if (fileName.match(/\.(xlsx|xls)$/i)) {
-      return <FileText className="h-5 w-5 text-green-600" />;
-    } else if (fileName.match(/\.(pptx|ppt)$/i)) {
-      return <FileText className="h-5 w-5 text-orange-500" />;
+  const [shareFile, setShareFile] = useState<FileItem | null>(null);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMM dd, yyyy');
+    } catch (e) {
+      return 'Unknown Date';
     }
-    return <File className="h-5 w-5 text-gray-500" />;
   };
 
-  const getFileSize = (bytes: number) => {
+  const formatSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+  const handleShareClick = (file: FileItem) => {
+    setShareFile(file);
+    setIsShareDialogOpen(true);
   };
 
-  const handleDelete = async () => {
-    if (!fileToDelete) return;
-    
-    try {
-      setIsDeleting(true);
-      await onDeleteFile(fileToDelete);
-      setFileToDelete(null);
-    } catch (error) {
-      console.error('Error deleting file:', error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="w-full space-y-2">
+        {[...Array(5)].map((_, index) => (
+          <div key={index} className="flex items-center space-x-4 p-2">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <div className="space-y-2 w-full">
+              <Skeleton className="h-4 w-[250px]" />
+              <Skeleton className="h-4 w-[200px]" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (files.length === 0) {
+    return <EmptyState />;
+  }
 
   return (
     <>
-      <div className="border rounded-lg overflow-hidden h-full bg-white">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Size</TableHead>
-              <TableHead>Last Modified</TableHead>
-              <TableHead>Actions</TableHead>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead className="hidden md:table-cell">Modified</TableHead>
+            <TableHead className="hidden md:table-cell">Size</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {files.map((item) => (
+            <TableRow key={item.id} className="hover:bg-muted/50 group">
+              <TableCell className="font-medium cursor-pointer" onClick={() => {
+                if (item.isFolder) {
+                  onFolderClick(item);
+                } else {
+                  onFileClick(item);
+                }
+              }}>
+                <div className="flex items-center gap-2">
+                  {item.isFolder ? (
+                    <Folder className="h-4 w-4 text-blue-500" />
+                  ) : (
+                    <FileText className="h-4 w-4 text-gray-500" />
+                  )}
+                  <span className="truncate max-w-[180px] md:max-w-md lg:max-w-lg">
+                    {item.name}
+                  </span>
+                </div>
+              </TableCell>
+              <TableCell className="hidden md:table-cell text-muted-foreground">
+                {formatDate(item.lastModifiedDateTime)}
+              </TableCell>
+              <TableCell className="hidden md:table-cell text-muted-foreground">
+                {item.isFolder ? '-' : formatSize(item.size)}
+              </TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100">
+                      <span className="sr-only">Open menu</span>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {!item.isFolder && onViewFile && (
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation();
+                        onViewFile(item);
+                      }}>
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        View File
+                      </DropdownMenuItem>
+                    )}
+                    {!item.isFolder && (
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation();
+                        handleShareClick(item);
+                      }}>
+                        <Share className="mr-2 h-4 w-4" />
+                        Share
+                      </DropdownMenuItem>
+                    )}
+                    {onDeleteFile && (
+                      <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteFile(item);
+                        }}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
-                    <span className="text-gray-500">Loading files...</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : files.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
-                  <div className="text-gray-500">No files or folders found</div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              files.map((file) => (
-                <TableRow key={file.id}>
-                  <TableCell>
-                    {file.isFolder ? (
-                      <button
-                        onClick={() => onFolderClick(file)}
-                        className="flex items-center text-left hover:text-blue-600"
-                      >
-                        <Folder className="h-5 w-5 text-yellow-500 mr-2" />
-                        <span className="font-medium">{file.name}</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => onFileClick(file)}
-                        className="flex items-center text-left hover:text-blue-600"
-                      >
-                        {getFileIcon(file.name)}
-                        <span className="ml-2">{file.name}</span>
-                      </button>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {file.isFolder ? (
-                      <span className="text-sm text-gray-500">
-                        {file.folder?.childCount} {file.folder?.childCount === 1 ? 'item' : 'items'}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-gray-500">{getFileSize(file.size)}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-gray-500">
-                      {formatDate(file.lastModifiedDateTime)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {!file.isFolder && (
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onViewFile(file)}
-                          className="text-xs"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          View
-                        </Button>
-                        
-                        {file.name.match(/\.(docx|xlsx|pptx|doc|xls|ppt)$/i) && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(file.webUrl, '_blank')}
-                            className="text-xs"
-                          >
-                            <Edit className="h-3 w-3 mr-1" />
-                            Edit
-                          </Button>
-                        )}
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setFileToDelete(file)}
-                          className="text-xs text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <AlertDialog open={!!fileToDelete} onOpenChange={(open) => !open && setFileToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete file?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Once you delete this file, it will be available in the recycle bin for 93 days.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          ))}
+        </TableBody>
+      </Table>
+      
+      {/* Share Dialog */}
+      <ShareDialog
+        isOpen={isShareDialogOpen}
+        onOpenChange={setIsShareDialogOpen}
+        file={shareFile}
+        containerId={containerId}
+        onShareComplete={() => {
+          // Optional callback when sharing is complete
+        }}
+      />
     </>
   );
 };

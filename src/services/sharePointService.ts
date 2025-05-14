@@ -1,4 +1,3 @@
-
 // Define our own FileItem interface
 export interface FileItem {
   id: string;
@@ -330,6 +329,51 @@ class SharePointService {
       console.error('Error deleting file:', errorText);
       throw new Error(`Failed to delete file: ${response.status} ${response.statusText} - ${errorText}`);
     }
+  }
+
+  // Share a file with other users
+  async shareFile(
+    token: string,
+    driveId: string, 
+    fileId: string,
+    recipients: string[],
+    role: 'read' | 'write',
+    message?: string
+  ): Promise<void> {
+    const url = `${appConfig.endpoints.graphBaseUrl}/drives/${driveId}/items/${fileId}/invite`;
+    
+    // Convert role to SharePoint permission
+    const sharePointRole = role === 'read' ? 'read' : 'write';
+    
+    // Format recipients
+    const formattedRecipients = recipients.map(email => ({ email }));
+    
+    const body = {
+      requireSignIn: false,
+      sendInvitation: true,
+      roles: [sharePointRole],
+      recipients: formattedRecipients,
+      message: message || ''
+    };
+    
+    console.log('Sharing file with:', { url, body });
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error sharing file:', errorText);
+      throw new Error(`Failed to share file: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    
+    return await response.json();
   }
 }
 
