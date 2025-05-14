@@ -150,6 +150,11 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     }
   }, [isOpen, normalizedContainerId, siteName, sharePointHostname, authProvider]);
 
+  // Log container ID on mount
+  useEffect(() => {
+    console.log('CopilotChatContainer mounted with containerId:', normalizedContainerId);
+  }, [normalizedContainerId]);
+
   return isMobile ? (
     <CopilotMobileView
       isOpen={isOpen}

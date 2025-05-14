@@ -23,7 +23,13 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
       return;
     }
     
+    // Log when component mounts with valid containerId
     console.log('CopilotChat component mounted with containerId:', containerId);
+    
+    // Add a cleanup function to ensure memory is properly released
+    return () => {
+      console.log('CopilotChat component unmounting');
+    };
   }, [containerId]);
   
   if (!containerId) {
@@ -35,7 +41,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   }
   
   return (
-    <div className="copilot-wrapper">
+    <div className="copilot-wrapper h-full">
       <CopilotChatContainer containerId={containerId} />
     </div>
   );

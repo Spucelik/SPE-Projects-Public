@@ -1,10 +1,9 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { MessageSquare, RefreshCw } from 'lucide-react';
 import { ChatEmbedded, ChatEmbeddedAPI, IChatEmbeddedApiAuthProvider, ChatLaunchConfig } from '@microsoft/sharepointembedded-copilotchat-react';
-import { cn } from '@/lib/utils';
 
 interface CopilotDesktopViewProps {
   isOpen: boolean;
@@ -37,6 +36,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
 }) => {
   const [chatLoadFailed, setChatLoadFailed] = useState(false);
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   
   // Reset the load failure state when the sheet is opened or chat key changes
   useEffect(() => {
@@ -90,7 +90,13 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
       }
     };
     
-    initializeChat();
+    if (chatApi && isOpen) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        initializeChat();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
   }, [chatApi, isOpen, chatConfig, onError]);
   
   return (
@@ -131,7 +137,13 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               )}
             </div>
           ) : (
-            <div className="h-full w-full min-h-[600px]" key={chatKey} id="copilot-chat-container">
+            <div 
+              className="h-full w-full" 
+              key={chatKey} 
+              id="copilot-chat-container"
+              ref={chatContainerRef}
+              style={{ height: 'calc(100vh - 130px)' }}
+            >
               {authProvider ? (
                 <ChatEmbedded
                   containerId={containerId}
@@ -141,7 +153,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                     height: '100%', 
                     width: '100%',
                     display: 'flex',
-                    minHeight: '600px',
                     border: 'none',
                     overflow: 'hidden'
                   }}
