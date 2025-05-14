@@ -50,9 +50,14 @@ const DrawerContent = React.forwardRef<
       <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
       {/* Make sure every drawer has at least a visually hidden title for screen readers */}
       {!React.Children.toArray(children).some(
-        (child) =>
+        child =>
           React.isValidElement(child) &&
-          child.type === DrawerTitle
+          (child.type === DrawerTitle || 
+           (React.isValidElement(child.props?.children) && 
+            child.props.children.type === DrawerTitle) ||
+           (Array.isArray(child.props?.children) && 
+            child.props.children.some(c => 
+              React.isValidElement(c) && c.type === DrawerTitle)))
       ) && (
         <VisuallyHidden>
           <DrawerPrimitive.Title>Drawer</DrawerPrimitive.Title>

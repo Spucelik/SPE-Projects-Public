@@ -43,11 +43,14 @@ const AlertDialogContent = React.forwardRef<
     >
       {/* Make sure every alert dialog has at least a visually hidden title for screen readers */}
       {!React.Children.toArray(children).some(
-        (child) =>
+        child =>
           React.isValidElement(child) &&
           (child.type === AlertDialogTitle || 
-           (React.isValidElement(child.props.children) && 
-            child.props.children.type === AlertDialogTitle))
+           (React.isValidElement(child.props?.children) && 
+            child.props.children.type === AlertDialogTitle) ||
+           (Array.isArray(child.props?.children) && 
+            child.props.children.some(c => 
+              React.isValidElement(c) && c.type === AlertDialogTitle)))
       ) && (
         <VisuallyHidden>
           <AlertDialogPrimitive.Title>Alert</AlertDialogPrimitive.Title>

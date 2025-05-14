@@ -3,7 +3,6 @@ import React from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, X } from 'lucide-react';
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 interface FilePreviewDialogProps {
   isOpen: boolean;

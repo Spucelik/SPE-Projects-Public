@@ -3,6 +3,7 @@ import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
 import * as React from "react"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 
 import { cn } from "@/lib/utils"
 
@@ -63,6 +64,21 @@ const SheetContent = React.forwardRef<
       className={cn(sheetVariants({ side }), className)}
       {...props}
     >
+      {/* Make sure every sheet has at least a visually hidden title for screen readers */}
+      {!React.Children.toArray(children).some(
+        child =>
+          React.isValidElement(child) &&
+          (child.type === SheetTitle || 
+           (React.isValidElement(child.props?.children) && 
+            child.props.children.type === SheetTitle) ||
+           (Array.isArray(child.props?.children) && 
+            child.props.children.some(c => 
+              React.isValidElement(c) && c.type === SheetTitle)))
+      ) && (
+        <VisuallyHidden>
+          <SheetPrimitive.Title>Sheet</SheetPrimitive.Title>
+        </VisuallyHidden>
+      )}
       {children}
       <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
         <X className="h-4 w-4" />

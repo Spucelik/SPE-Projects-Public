@@ -45,11 +45,14 @@ const DialogContent = React.forwardRef<
     >
       {/* Make sure every dialog has at least a visually hidden title for screen readers */}
       {!React.Children.toArray(children).some(
-        (child) =>
+        child =>
           React.isValidElement(child) &&
           (child.type === DialogTitle || 
-           (React.isValidElement(child.props.children) && 
-            child.props.children.type === DialogTitle))
+           (React.isValidElement(child.props?.children) && 
+            child.props.children.type === DialogTitle) ||
+           (Array.isArray(child.props?.children) && 
+            child.props.children.some(c => 
+              React.isValidElement(c) && c.type === DialogTitle)))
       ) && (
         <VisuallyHidden>
           <DialogPrimitive.Title>Dialog</DialogPrimitive.Title>
