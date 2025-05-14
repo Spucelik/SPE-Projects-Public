@@ -40,9 +40,8 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
     );
   }
   
-  // Ensure CopilotChatContainer is rendered with explicit sizing
   return (
-    <div className="copilot-wrapper flex items-center">
+    <div className="copilot-wrapper w-full">
       <CopilotChatContainer containerId={containerId} />
     </div>
   );

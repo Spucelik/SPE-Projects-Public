@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
@@ -42,11 +43,8 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       console.log('Chat API reference:', chatApiRef.current ? 'Available' : 'Not available');
       
       if (chatInitializedRef.current && chatApiRef.current) {
-        // Instead of using refreshChat which doesn't exist, try reinitializing
-        console.log('Attempting to refresh already initialized chat');
-        // Reset initialization flag and key to trigger a fresh initialization
-        chatInitializedRef.current = false;
-        setChatKey(prev => prev + 1);
+        // Instead of refreshing the chat, we'll do nothing as the chat should already be initialized
+        console.log('Chat already initialized');
       }
     }
   }, [isOpen, sharePointHostname]);
@@ -97,9 +95,6 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
     console.log('Copilot chat API is ready');
     chatApiRef.current = api;
-    
-    // Force a re-render to ensure initialization can proceed
-    setChatKey(prevKey => prevKey + 1);
   }, []);
   
   // Create chat configuration
@@ -135,34 +130,35 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   
   // Initialize chat when API is ready and chat is open
   useEffect(() => {
-    const initChat = async () => {
-      if (chatApiRef.current && isOpen && sharePointHostname) {
+    if (!isOpen || !chatApiRef.current || !sharePointHostname) {
+      return; // Do nothing if chat is closed or API not ready
+    }
+    
+    // Only initialize if not already initialized
+    if (!chatInitializedRef.current) {
+      const initChat = async () => {
         try {
           console.log('Initializing chat with config:', JSON.stringify(chatConfig, null, 2));
-          await chatApiRef.current.openChat(chatConfig);
+          await chatApiRef.current?.openChat(chatConfig);
           console.log('Chat initialized successfully');
           chatInitializedRef.current = true;
         } catch (err) {
           console.error('Failed to initialize chat:', err);
           chatInitializedRef.current = false; // Reset flag to allow retrying
           handleError('Failed to initialize chat: ' + (err instanceof Error ? err.message : String(err)));
-          
-          // Reset the chat key to force a refresh on next open
-          setChatKey(prev => prev + 1);
         }
-      }
-    };
-    
-    if (isOpen && chatApiRef.current && !chatInitializedRef.current) {
+      };
+      
       console.log('Preparing to initialize chat...');
       // Use a short delay to ensure DOM is fully ready
       const timer = setTimeout(() => {
         console.log('Delayed chat initialization starting...');
         initChat();
       }, 500);
+      
       return () => clearTimeout(timer);
     }
-  }, [isOpen, sharePointHostname, chatKey, handleError, chatConfig]);
+  }, [isOpen, sharePointHostname, handleError, chatConfig]);
 
   // Reset chat when there's an issue
   const handleResetChat = useCallback(() => {
@@ -176,18 +172,6 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       setIsOpen(true);
     }, 500);
   }, []);
-
-  // Open the chat immediately for testing
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!isOpen) {
-        console.log('Auto-opening Copilot chat for testing');
-        setIsOpen(true);
-      }
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, [isOpen]);
 
   return isMobile ? (
     <CopilotMobileView

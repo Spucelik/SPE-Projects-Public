@@ -74,7 +74,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" className="gap-2 flex items-center">
+        <Button variant="outline" className="gap-2 flex items-center justify-center">
           <MessageSquare size={16} />
           <span>Copilot Chat</span>
         </Button>
@@ -84,7 +84,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         className="w-[400px] sm:w-[540px] p-0 border-l shadow-lg"
         side="right"
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-dvh max-h-screen">
           <SheetTitle className="sr-only">SharePoint Embedded Copilot</SheetTitle>
           <div className="flex-shrink-0 border-b px-6 py-4">
             <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
@@ -92,7 +92,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
             <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
           </div>
           
-          <div className="flex-1 h-full overflow-hidden">
+          <div className="flex-1 overflow-hidden">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
@@ -113,7 +113,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               <div 
                 ref={chatContainerRef}
                 className="h-full w-full relative bg-white"
-                style={{ minHeight: "600px" }}
+                style={{ height: 'calc(100vh - 120px)', minHeight: "600px" }}
                 data-testid="copilot-chat-container"
               >
                 {authProvider ? (
