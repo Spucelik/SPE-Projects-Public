@@ -78,62 +78,73 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
       </SheetTrigger>
       
       <SheetContent 
-        className="w-[400px] sm:w-[540px] flex flex-col h-full p-0 border-l shadow-lg"
+        className="w-[400px] sm:w-[540px] p-0 border-l shadow-lg"
         side="right"
       >
-        <SheetTitle className="sr-only">SharePoint Embedded Copilot</SheetTitle>
-        <div className="flex-shrink-0 border-b px-6 py-4">
-          <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
-          {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
-          <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
-        </div>
-        
-        <div className="flex-1 min-h-0 relative">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
-            </div>
-          ) : error || chatLoadFailed ? (
-            <div className="flex flex-col items-center justify-center h-full p-6">
-              <p className="text-destructive mb-4">
-                {error || "Unable to load the chat. Please try again."}
-              </p>
-              {onResetChat && (
-                <Button onClick={onResetChat} variant="outline" className="gap-2">
-                  <RefreshCw size={16} />
-                  <span>Reset Chat</span>
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div 
-              className="h-full w-full overflow-hidden" 
-              key={chatKey} 
-              id="copilot-chat-container"
-              ref={chatContainerRef}
-              data-testid="copilot-chat-container"
-            >
-              {authProvider ? (
-                <ChatEmbedded
-                  containerId={containerId}
-                  authProvider={authProvider}
-                  onApiReady={onApiReady}
-                  style={{ 
-                    height: '100vh', 
-                    width: '100%',
-                    border: 'none',
-                    overflow: 'hidden'
-                  }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full p-6 text-center">
-                  <p className="text-muted-foreground">
-                    Authentication setup in progress. Please wait or reload the page.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+        <div className="flex flex-col h-full">
+          <SheetTitle className="sr-only">SharePoint Embedded Copilot</SheetTitle>
+          <div className="flex-shrink-0 border-b px-6 py-4">
+            <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
+            {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
+            <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
+          </div>
+          
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : error || chatLoadFailed ? (
+              <div className="flex flex-col items-center justify-center h-full p-6">
+                <p className="text-destructive mb-4">
+                  {error || "Unable to load the chat. Please try again."}
+                </p>
+                {onResetChat && (
+                  <Button onClick={onResetChat} variant="outline" className="gap-2">
+                    <RefreshCw size={16} />
+                    <span>Reset Chat</span>
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div 
+                className="flex-1" 
+                key={chatKey} 
+                id="copilot-chat-container"
+                ref={chatContainerRef}
+                data-testid="copilot-chat-container"
+                style={{
+                  height: '100%',
+                  minHeight: '500px',
+                  position: 'relative'
+                }}
+              >
+                {authProvider ? (
+                  <ChatEmbedded
+                    containerId={containerId}
+                    authProvider={authProvider}
+                    onApiReady={onApiReady}
+                    style={{ 
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: '100%',
+                      width: '100%',
+                      border: 'none'
+                    }}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full p-6 text-center">
+                    <p className="text-muted-foreground">
+                      Authentication setup in progress. Please wait or reload the page.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </SheetContent>
     </Sheet>

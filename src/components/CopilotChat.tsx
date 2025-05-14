@@ -41,7 +41,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   }
   
   return (
-    <div className="copilot-wrapper h-full w-full flex" style={{ minHeight: '400px' }}>
+    <div className="copilot-wrapper h-full w-full flex" style={{ minHeight: '500px', position: 'relative' }}>
       <CopilotChatContainer containerId={containerId} />
     </div>
   );

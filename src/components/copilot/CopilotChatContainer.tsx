@@ -19,6 +19,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const { getSharePointToken } = useAuth();
   const [chatKey, setChatKey] = useState(0);
   const chatApiRef = useRef<ChatEmbeddedAPI | null>(null);
+  const chatInitializedRef = useRef<boolean>(false);
   
   // Ensure containerId is properly formatted
   const normalizedContainerId = containerId.startsWith('b!') 
@@ -38,6 +39,8 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   useEffect(() => {
     if (isOpen && sharePointHostname) {
       console.log('Copilot chat opened with hostname:', sharePointHostname);
+      // Reset initialization flag whenever chat is reopened
+      chatInitializedRef.current = false;
     }
   }, [isOpen, sharePointHostname]);
   
@@ -96,46 +99,11 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     } catch (e) {
       console.error('Could not log API methods:', e);
     }
+    
+    // Force a re-render to ensure initialization can proceed
+    setChatKey(prevKey => prevKey + 1);
   }, []);
   
-  // Initialize chat when API is ready and chat is open
-  useEffect(() => {
-    const initChat = async () => {
-      if (chatApiRef.current && isOpen && sharePointHostname) {
-        try {
-          console.log('Initializing chat with config:', chatConfig);
-          await chatApiRef.current.openChat(chatConfig);
-          console.log('Chat initialized successfully');
-        } catch (err) {
-          console.error('Failed to initialize chat:', err);
-          handleError('Failed to initialize chat: ' + (err instanceof Error ? err.message : String(err)));
-        }
-      }
-    };
-    
-    if (isOpen && chatApiRef.current) {
-      console.log('Preparing to initialize chat...');
-      // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        console.log('Delayed chat initialization starting...');
-        initChat();
-      }, 500); // Increased delay to ensure DOM is fully ready
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, sharePointHostname, handleError]);
-  
-  // Reset chat when there's an issue
-  const handleResetChat = useCallback(() => {
-    console.log('Resetting Copilot chat');
-    setChatKey(prev => prev + 1);
-    
-    // Close and reopen the chat panel
-    setIsOpen(false);
-    setTimeout(() => {
-      setIsOpen(true);
-    }, 500);
-  }, []);
-
   // Create chat configuration
   const chatConfig: ChatLaunchConfig = {
     header: siteName ? `SharePoint Embedded - ${siteName}` : 'SharePoint Embedded',
@@ -166,6 +134,53 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     instruction: "You are a helpful assistant that helps users find and summarize information related to their files and documents. Make sure you include references to the documents data comes from when possible.",
     locale: "en",
   };
+  
+  // Initialize chat when API is ready and chat is open
+  useEffect(() => {
+    const initChat = async () => {
+      // Only proceed if not already initialized for this session
+      if (chatInitializedRef.current) {
+        console.log('Chat already initialized, skipping...');
+        return;
+      }
+      
+      if (chatApiRef.current && isOpen && sharePointHostname) {
+        try {
+          console.log('Initializing chat with config:', chatConfig);
+          chatInitializedRef.current = true;
+          await chatApiRef.current.openChat(chatConfig);
+          console.log('Chat initialized successfully');
+        } catch (err) {
+          console.error('Failed to initialize chat:', err);
+          chatInitializedRef.current = false; // Reset flag to allow retrying
+          handleError('Failed to initialize chat: ' + (err instanceof Error ? err.message : String(err)));
+        }
+      }
+    };
+    
+    if (isOpen && chatApiRef.current && !chatInitializedRef.current) {
+      console.log('Preparing to initialize chat...');
+      // Use a slightly longer delay to ensure DOM is fully ready
+      const timer = setTimeout(() => {
+        console.log('Delayed chat initialization starting...');
+        initChat();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, sharePointHostname, chatKey, handleError, chatConfig]);
+
+  // Reset chat when there's an issue
+  const handleResetChat = useCallback(() => {
+    console.log('Resetting Copilot chat');
+    chatInitializedRef.current = false; // Reset initialization flag
+    setChatKey(prev => prev + 1);
+    
+    // Close and reopen the chat panel
+    setIsOpen(false);
+    setTimeout(() => {
+      setIsOpen(true);
+    }, 500);
+  }, []);
 
   // Log critical information for debugging
   useEffect(() => {
@@ -175,10 +190,12 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
         siteName,
         sharePointHostname,
         isAuthProviderSet: !!authProvider,
-        chatApiInitialized: !!chatApiRef.current
+        chatApiInitialized: !!chatApiRef.current,
+        chatOpen: isOpen,
+        chatKey
       });
     }
-  }, [isOpen, normalizedContainerId, siteName, sharePointHostname, authProvider]);
+  }, [isOpen, normalizedContainerId, siteName, sharePointHostname, authProvider, chatKey]);
 
   // Log container ID on mount
   useEffect(() => {
