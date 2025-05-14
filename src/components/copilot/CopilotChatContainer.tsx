@@ -16,9 +16,15 @@ interface CopilotChatContainerProps {
 const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId }) => {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
-  const { getSharePointToken } = useAuth();
+  const { getSharePointToken, isAuthenticated } = useAuth();
   const [chatKey, setChatKey] = useState(0);
   const chatApiRef = useRef<ChatEmbeddedAPI | null>(null);
+  
+  // Early return if user is not authenticated
+  if (!isAuthenticated) {
+    console.log('CopilotChatContainer: User not authenticated, not rendering');
+    return null;
+  }
   
   // Validate and normalize containerId
   const normalizedContainerId = containerId && typeof containerId === 'string' 
@@ -26,6 +32,16 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     : '';
   
   console.log('CopilotChatContainer rendering with containerId:', normalizedContainerId || 'MISSING');
+  
+  // Don't proceed if we don't have a valid container ID
+  if (!normalizedContainerId) {
+    console.error('No valid containerId provided to CopilotChatContainer');
+    return (
+      <div className="text-red-500 p-4 border border-red-300 rounded-md">
+        Error: No valid containerId provided for Copilot Chat
+      </div>
+    );
+  }
   
   const {
     isLoading,
@@ -62,6 +78,12 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       hostname: safeSharePointHostname,
       getToken: async () => {
         try {
+          // Early return if user is not authenticated
+          if (!isAuthenticated) {
+            console.error('User not authenticated, cannot get token');
+            return '';
+          }
+          
           console.log('Getting SharePoint token for hostname:', safeSharePointHostname);
           const token = await getSharePointToken(safeSharePointHostname);
           console.log('SharePoint auth token retrieved:', token ? 'successfully' : 'failed');
@@ -79,7 +101,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
         }
       }
     };
-  }, [safeSharePointHostname, getSharePointToken, handleError]);
+  }, [safeSharePointHostname, getSharePointToken, handleError, isAuthenticated]);
   
   // Auth provider instance
   const authProvider = createAuthProvider();
@@ -134,16 +156,6 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     }, 500);
   }, []);
 
-  // Validate containerId before rendering chat components
-  if (!normalizedContainerId) {
-    console.error('No valid containerId provided to CopilotChatContainer');
-    return (
-      <div className="text-red-500 p-4 border border-red-300 rounded-md">
-        Error: No valid containerId provided for Copilot Chat
-      </div>
-    );
-  }
-
   return isMobile ? (
     <CopilotMobileView
       isOpen={isOpen}
@@ -167,6 +179,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       onApiReady={handleApiReady}
       chatKey={chatKey}
       onResetChat={handleResetChat}
+      isAuthenticated={isAuthenticated}
     />
   );
 };

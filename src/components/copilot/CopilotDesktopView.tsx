@@ -18,6 +18,7 @@ interface CopilotDesktopViewProps {
   onApiReady: (api: ChatEmbeddedAPI) => void;
   chatKey: number;
   onResetChat?: () => void;
+  isAuthenticated?: boolean;
 }
 
 const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
@@ -33,10 +34,17 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   onApiReady,
   chatKey,
   onResetChat,
+  isAuthenticated = true,
 }) => {
   const [chatLoadFailed, setChatLoadFailed] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [chatApiInstance, setChatApiInstance] = useState<ChatEmbeddedAPI | null>(null);
+  
+  // Early return if not authenticated
+  if (!isAuthenticated) {
+    console.log('CopilotDesktopView: User not authenticated, not rendering');
+    return null;
+  }
   
   // Reset the load failure state when the sheet is opened or chat key changes
   useEffect(() => {
@@ -87,10 +95,13 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     onApiReady(api);
   };
   
+  // Only try to render chat component if authenticated and has valid data
+  const canRenderChat = isAuthenticated && !chatLoadFailed && !!containerId;
+  
   // Open chat when API is available and the sheet is open
   useEffect(() => {
     const initChat = async () => {
-      if (chatApiInstance && isOpen && !chatLoadFailed && chatConfig) {
+      if (chatApiInstance && isOpen && !chatLoadFailed && chatConfig && canRenderChat) {
         try {
           console.log('Initializing chat with config:', JSON.stringify({
             header: chatConfig.header || 'SharePoint Embedded',
@@ -122,7 +133,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
       
       return () => clearTimeout(timer);
     }
-  }, [chatApiInstance, isOpen, chatConfig, chatLoadFailed]);
+  }, [chatApiInstance, isOpen, chatConfig, chatLoadFailed, canRenderChat]);
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -150,19 +161,21 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
               </div>
-            ) : error || chatLoadFailed ? (
+            ) : error || chatLoadFailed || !isAuthenticated ? (
               <div className="flex flex-col items-center justify-center h-full p-6">
                 <p className="text-destructive mb-4">
-                  {error || "Unable to load the chat. Please try again."}
+                  {!isAuthenticated 
+                    ? "Please log in to use Copilot Chat" 
+                    : (error || "Unable to load the chat. Please try again.")}
                 </p>
-                {onResetChat && (
+                {onResetChat && isAuthenticated && (
                   <Button onClick={onResetChat} variant="outline" className="gap-2">
                     <RefreshCw size={16} />
                     <span>Reset Chat</span>
                   </Button>
                 )}
               </div>
-            ) : (
+            ) : canRenderChat ? (
               <div 
                 ref={chatContainerRef}
                 className="h-full w-full flex-1"
@@ -184,6 +197,12 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                     bottom: 0
                   }}
                 />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full p-6">
+                <p className="text-amber-600 mb-4">
+                  Unable to render chat component. Missing required data.
+                </p>
               </div>
             )}
           </div>
