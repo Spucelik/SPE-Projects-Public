@@ -74,7 +74,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2 flex items-center">
           <MessageSquare size={16} />
           <span>Copilot Chat</span>
         </Button>
@@ -112,7 +112,8 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
             ) : (
               <div 
                 ref={chatContainerRef}
-                className="h-[600px] w-full relative bg-white"
+                className="h-full w-full relative bg-white"
+                style={{ minHeight: "600px" }}
                 data-testid="copilot-chat-container"
               >
                 {authProvider ? (

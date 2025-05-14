@@ -24,7 +24,7 @@ const CopilotMobileView: React.FC<CopilotMobileViewProps> = ({
   return (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2 flex items-center">
           <MessageSquare size={16} />
           <span>Copilot Chat</span>
         </Button>
