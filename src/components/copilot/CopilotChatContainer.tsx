@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
@@ -43,13 +42,11 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       console.log('Chat API reference:', chatApiRef.current ? 'Available' : 'Not available');
       
       if (chatInitializedRef.current && chatApiRef.current) {
-        // Force a refresh if already initialized
-        try {
-          console.log('Attempting to refresh already initialized chat');
-          chatApiRef.current.refreshChat();
-        } catch (e) {
-          console.error('Error refreshing chat:', e);
-        }
+        // Instead of using refreshChat which doesn't exist, try reinitializing
+        console.log('Attempting to refresh already initialized chat');
+        // Reset initialization flag and key to trigger a fresh initialization
+        chatInitializedRef.current = false;
+        setChatKey(prev => prev + 1);
       }
     }
   }, [isOpen, sharePointHostname]);
