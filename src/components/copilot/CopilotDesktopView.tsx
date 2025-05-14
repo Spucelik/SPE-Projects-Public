@@ -35,7 +35,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   onResetChat,
 }) => {
   const [chatLoadFailed, setChatLoadFailed] = useState(false);
-  const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   
   // Reset the load failure state when the sheet is opened or chat key changes
@@ -44,13 +43,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
       setChatLoadFailed(false);
     }
   }, [isOpen, chatKey]);
-  
-  // Handle API ready event
-  const handleApiReady = (api: ChatEmbeddedAPI) => {
-    console.log('Copilot chat API is ready');
-    setChatApi(api);
-    onApiReady(api);
-  };
   
   // Handle chat error
   const handleChatError = () => {
@@ -74,30 +66,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
       };
     }
   }, [isOpen, onError]);
-  
-  // Use effect to initialize the chat when it's ready
-  useEffect(() => {
-    const initializeChat = async () => {
-      if (chatApi && isOpen && chatConfig) {
-        try {
-          console.log('Initializing chat with config:', chatConfig);
-          await chatApi.openChat(chatConfig);
-          console.log('Chat initialized successfully');
-        } catch (err) {
-          console.error('Failed to initialize chat:', err);
-          onError('Failed to initialize chat');
-        }
-      }
-    };
-    
-    if (chatApi && isOpen) {
-      // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        initializeChat();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [chatApi, isOpen, chatConfig, onError]);
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -142,13 +110,14 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               key={chatKey} 
               id="copilot-chat-container"
               ref={chatContainerRef}
+              data-testid="copilot-chat-container"
               style={{ height: 'calc(100vh - 130px)' }}
             >
               {authProvider ? (
                 <ChatEmbedded
                   containerId={containerId}
                   authProvider={authProvider}
-                  onApiReady={handleApiReady}
+                  onApiReady={onApiReady}
                   style={{ 
                     height: '100%', 
                     width: '100%',
