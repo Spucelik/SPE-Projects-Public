@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { MessageSquare, RefreshCw } from 'lucide-react';
@@ -19,6 +19,7 @@ interface CopilotDesktopViewProps {
   chatKey: number;
   onResetChat?: () => void;
   isAuthenticated?: boolean;
+  chatApi: ChatEmbeddedAPI | null;
 }
 
 const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
@@ -35,32 +36,18 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   chatKey,
   onResetChat,
   isAuthenticated = true,
+  chatApi
 }) => {
-  const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
-  
   // Early return if not authenticated or on login page
   if (!isAuthenticated || window.location.pathname === '/login') {
     console.log('CopilotDesktopView: Not rendering because not authenticated or on login page');
     return null;
   }
   
-  // Handle API Ready callback - safely handle undefined API
-  const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
-    if (api) {
-      console.log('Chat API ready');
-      setChatApi(api);
-      onApiReady(api);
-    } else {
-      console.error('Chat API is undefined or null');
-      onError('Chat API initialization failed');
-    }
-  }, [onApiReady, onError]);
-  
   // Reset chat when requested
   const handleResetChat = () => {
     if (onResetChat) {
       console.log('Force refreshing chat component');
-      setChatApi(null);
       onResetChat();
     }
   };
@@ -130,7 +117,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   key={`chat-${chatKey}`}
                   containerId={containerId}
                   authProvider={authProvider}
-                  onApiReady={handleApiReady}
+                  onApiReady={onApiReady}
                   style={{ 
                     height: '100%',
                     width: '100%',

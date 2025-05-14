@@ -1,12 +1,16 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
 import CopilotDesktopView from './CopilotDesktopView';
 import { toast } from '@/hooks/use-toast';
 import { appConfig } from '@/config/appConfig';
 import { useAuth } from '@/context/AuthContext';
-import { IChatEmbeddedApiAuthProvider, ChatEmbeddedAPI, ChatLaunchConfig } from '@microsoft/sharepointembedded-copilotchat-react';
+import { 
+  IChatEmbeddedApiAuthProvider, 
+  ChatEmbeddedAPI, 
+  ChatLaunchConfig 
+} from '@microsoft/sharepointembedded-copilotchat-react';
 
 interface CopilotChatContainerProps {
   containerId: string;
@@ -14,8 +18,9 @@ interface CopilotChatContainerProps {
 
 const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId }) => {
   const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = useState(false); // Start with chat closed by default
+  const [isOpen, setIsOpen] = useState(false);
   const { getSharePointToken, isAuthenticated } = useAuth();
+  const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
   const [chatKey, setChatKey] = useState(0);
   
   // Early return if on login page, not authenticated, or on mobile
@@ -89,6 +94,55 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     };
   }, [safeSharePointHostname, getSharePointToken, handleError, isAuthenticated]);
   
+  // Create chat theme config
+  const chatTheme = React.useMemo(() => ({
+    useDarkMode: false,
+    customTheme: {
+      themePrimary: '#4854EE',
+      themeSecondary: '#4854EE',
+      themeDark: '#4854EE',
+      themeDarker: '#4854EE',
+      themeTertiary: '#4854EE',
+      themeLight: '#dddeef',
+      themeDarkAlt: '#4854EE',
+      themeLighter: '#dddeef',
+      themeLighterAlt: '#dddeef',
+      themeDarkAltTransparent: '#4854EE',
+      themeLighterTransparent: '#dddeef',
+      themeLighterAltTransparent: '#dddeef',
+      themeMedium: '#4854EE',
+      neutralSecondary: '#4854EE',
+      neutralSecondaryAlt: '#4854EE',
+      neutralTertiary: '#4854EE',
+      neutralTertiaryAlt: '#4854EE',
+      neutralQuaternary: '#4854EE',
+      neutralQuaternaryAlt: '#4854EE',
+      neutralPrimaryAlt: '#4854EE',
+      neutralDark: '#4854EE',
+      themeBackground: 'white',
+    }
+  }), []);
+  
+  // Create prompts for the chat
+  const zeroQueryPrompts = React.useMemo(() => ({
+    headerText: `Chat with content in ${safeSiteName}`,
+    promptSuggestionList: [
+      { suggestionText: 'Show me recent files' },
+      { suggestionText: 'What documents do I have access to?' },
+      { suggestionText: 'Summarize the key points in my documents' },
+      { suggestionText: 'What are the latest updates to my files?' }
+    ]
+  }), [safeSiteName]);
+  
+  // Create chat configuration
+  const chatConfig = React.useMemo((): ChatLaunchConfig => ({
+    header: `SharePoint Embedded - ${safeSiteName}`,
+    theme: chatTheme,
+    zeroQueryPrompts: zeroQueryPrompts,
+    instruction: "You are a helpful assistant that helps users find and summarize information related to their files and documents.",
+    locale: "en-US",
+  }), [safeSiteName, chatTheme, zeroQueryPrompts]);
+  
   // Handles API ready event from ChatEmbedded component
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
     if (!api) {
@@ -98,33 +152,28 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     }
     
     console.log('Copilot chat API is ready');
-  }, [handleError]);
-  
-  // Create chat configuration - simplify to avoid potential undefined issues
-  const chatConfig = React.useMemo((): ChatLaunchConfig => ({
-    header: `SharePoint Embedded - ${safeSiteName}`,
-    theme: {
-      useDarkMode: false,
-      customTheme: {
-        themePrimary: '#4854EE',
-        themeBackground: 'white'
+    setChatApi(api);
+    
+    // Open the chat with configuration when API is ready
+    const openChat = async () => {
+      try {
+        console.log('Opening chat with config:', chatConfig);
+        await api.openChat(chatConfig);
+        console.log('Chat opened successfully');
+      } catch (err) {
+        console.error('Error opening chat:', err);
+        handleError('Failed to open the chat. Please try again.');
       }
-    },
-    zeroQueryPrompts: {
-      headerText: `Chat with content in ${safeSiteName}`,
-      promptSuggestionList: [
-        { suggestionText: 'Show me recent files' },
-        { suggestionText: "What documents do I have access to?" }
-      ]
-    },
-    instruction: "You are a helpful assistant that helps users find and summarize information related to their files and documents.",
-    locale: "en-US",
-  }), [safeSiteName]);
+    };
+    
+    openChat();
+  }, [handleError, chatConfig]);
 
   // Reset chat when there's an issue
   const handleResetChat = useCallback(() => {
     console.log('Resetting Copilot chat');
     setChatKey(prev => prev + 1);
+    setChatApi(null);
     setIsOpen(false);
     setTimeout(() => {
       setIsOpen(true);
@@ -146,6 +195,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       chatKey={chatKey}
       onResetChat={handleResetChat}
       isAuthenticated={isAuthenticated}
+      chatApi={chatApi}
     />
   );
 };
