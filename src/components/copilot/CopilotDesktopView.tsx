@@ -234,9 +234,10 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   flexDirection: "column"
                 }}
                 data-testid="copilot-chat-container"
+                id="copilot-chat-embedded-container"
               >
                 <ChatEmbedded
-                  key={`chat-${chatKey}-${containerId}`} // More unique key to force re-render
+                  key={`chat-${chatKey}-${containerId}`}
                   containerId={containerId}
                   authProvider={authProvider}
                   onApiReady={handleApiReady}
@@ -249,8 +250,10 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    zIndex: 10
+                    zIndex: 10,
+                    backgroundColor: 'transparent'
                   }}
+                  allowTransparency={true}
                 />
               </div>
             ) : (

@@ -20,11 +20,6 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const [chatKey, setChatKey] = useState(0);
   const chatApiRef = useRef<ChatEmbeddedAPI | null>(null);
   
-  // Early return if user is not authenticated 
-  if (!isAuthenticated) {
-    return null;
-  }
-  
   // Validate and normalize containerId
   const normalizedContainerId = containerId && typeof containerId === 'string' 
     ? (containerId.startsWith('b!') ? containerId : `b!${containerId}`)
@@ -162,6 +157,11 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       console.log('Chat reopened after reset with new key:', chatKey);
     }
   }, [isOpen, chatKey]);
+
+  // Early return if user is not authenticated 
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return isMobile ? (
     <CopilotMobileView
