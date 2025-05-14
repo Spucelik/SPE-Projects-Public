@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import CopilotChatContainer from './copilot/CopilotChatContainer';
 
 interface CopilotChatProps {
@@ -7,12 +7,20 @@ interface CopilotChatProps {
 }
 
 const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
+  useEffect(() => {
+    if (!containerId) {
+      console.error('CopilotChat: No containerId provided');
+      return;
+    }
+    
+    console.log('CopilotChat component mounted with containerId:', containerId);
+  }, [containerId]);
+  
   if (!containerId) {
     console.error('CopilotChat: No containerId provided');
     return null;
   }
   
-  console.log('CopilotChat rendering with containerId:', containerId);
   return (
     <div className="copilot-wrapper">
       <CopilotChatContainer containerId={containerId} />

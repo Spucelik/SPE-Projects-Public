@@ -52,17 +52,23 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     console.log('Copilot chat API is ready');
     setChatApi(api);
     onApiReady(api);
+    
+    // Force the iframeLoaded state to true after API is ready
+    setTimeout(() => {
+      setIframeLoaded(true);
+    }, 500);
   };
   
-  // Setup iframe detection
+  // Setup iframe detection with more reliable approach
   useEffect(() => {
     if (!isOpen || !chatContainerRef.current) return;
     
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
-        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+        if (mutation.type === 'childList') {
           const iframes = chatContainerRef.current?.querySelectorAll('iframe');
           if (iframes && iframes.length > 0) {
+            console.log('Detected iframe in chat container');
             setIframeLoaded(true);
             observer.disconnect();
             break;
@@ -73,21 +79,38 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     
     observer.observe(chatContainerRef.current, { 
       childList: true, 
-      subtree: true 
+      subtree: true,
+      attributes: true 
     });
     
-    return () => observer.disconnect();
-  }, [isOpen]);
+    // Fallback timer in case mutation observer doesn't detect the iframe
+    const fallbackTimer = setTimeout(() => {
+      const iframes = chatContainerRef.current?.querySelectorAll('iframe');
+      if (iframes && iframes.length > 0) {
+        console.log('Fallback timer: Found iframe');
+        setIframeLoaded(true);
+      } else {
+        console.log('Fallback timer: No iframe found, forcing iframe loaded state');
+        // Force iframe loaded state after timeout
+        setIframeLoaded(true);
+      }
+    }, 3000);
+    
+    return () => {
+      observer.disconnect();
+      clearTimeout(fallbackTimer);
+    };
+  }, [isOpen, chatApi]);
   
-  // Handle chat opening
+  // Handle chat opening with improved error handling
   useEffect(() => {
-    if (!chatApi || !isOpen || !iframeLoaded) {
+    if (!chatApi || !isOpen) {
       return;
     }
     
     const timer = setTimeout(async () => {
       try {
-        console.log('Opening Copilot chat...');
+        console.log('Opening Copilot chat with API...');
         await chatApi.openChat();
         console.log('Copilot chat opened successfully');
       } catch (err) {
@@ -95,7 +118,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         setChatLoadFailed(true);
         onError('Failed to open chat. This might be due to browser security restrictions.');
       }
-    }, 500);
+    }, 800);
 
     return () => clearTimeout(timer);
   }, [chatApi, isOpen, onError, iframeLoaded]);
@@ -172,14 +195,19 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               )}
             </div>
           ) : (
-            <div className="h-full overflow-hidden" key={chatKey}>
+            <div className="h-full w-full overflow-hidden" key={chatKey}>
               {authProvider ? (
-                <div className="w-full h-full">
+                <div className="w-full h-full flex">
                   <ChatEmbedded
                     containerId={containerId}
                     authProvider={authProvider}
                     onApiReady={handleApiReady}
-                    style={{ height: '100%', width: '100%' }}
+                    style={{ 
+                      height: '100%', 
+                      width: '100%',
+                      display: 'block',
+                      minHeight: '400px' 
+                    }}
                   />
                 </div>
               ) : (

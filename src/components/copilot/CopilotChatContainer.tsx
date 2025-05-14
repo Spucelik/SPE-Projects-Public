@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
 import CopilotDesktopView from './CopilotDesktopView';
@@ -35,6 +35,18 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     sharePointHostname,
   } = useCopilotSite(normalizedContainerId);
   
+  // Log visibility of the component to help with debugging
+  useEffect(() => {
+    console.log('CopilotChatContainer render state:', {
+      isOpen,
+      isLoading,
+      error: error || 'none',
+      sharePointHostname: sharePointHostname || 'unknown',
+      containerId: normalizedContainerId,
+      hasChatApi: !!chatApiRef.current
+    });
+  }, [isOpen, isLoading, error, sharePointHostname, normalizedContainerId]);
+  
   const handleError = (errorMessage: string) => {
     console.error('Copilot chat error:', errorMessage);
     toast({
@@ -44,7 +56,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     });
   };
   
-  // Create auth provider for Copilot chat
+  // Create auth provider for Copilot chat with better error handling
   const createAuthProvider = useCallback((): IChatEmbeddedApiAuthProvider | null => {
     if (!sharePointHostname) {
       console.error('No SharePoint hostname available for auth provider');
@@ -58,7 +70,13 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
           console.log('Getting SharePoint token for hostname:', sharePointHostname);
           const token = await getSharePointToken(sharePointHostname);
           console.log('SharePoint auth token retrieved for Copilot chat', token ? 'successfully' : 'failed');
-          return token || '';
+          
+          if (!token) {
+            handleError('Failed to get authentication token for SharePoint.');
+            return '';
+          }
+          
+          return token;
         } catch (err) {
           console.error('Error getting token for Copilot chat:', err);
           handleError('Failed to authenticate with SharePoint. Please try again.');
