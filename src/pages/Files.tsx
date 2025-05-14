@@ -275,6 +275,7 @@ const Files = () => {
         previewLoading={previewLoading}
       />
       
+      {/* Folder creation Sheet */}
       <Sheet open={isFolderDialogOpen} onOpenChange={setIsFolderDialogOpen}>
         <SheetContent>
           <SheetHeader>
@@ -310,7 +311,7 @@ const Files = () => {
         </SheetContent>
       </Sheet>
       
-      {/* Copilot Chat Side Panel */}
+      {/* Copilot Chat Side Panel - This is the only chat panel we need */}
       {containerId && (
         <Sheet open={isCopilotOpen} onOpenChange={setIsCopilotOpen}>
           <SheetContent className="w-[400px] sm:w-[540px] p-0 border-l shadow-lg">

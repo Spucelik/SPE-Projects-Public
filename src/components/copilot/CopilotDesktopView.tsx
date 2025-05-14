@@ -1,8 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
-import { MessageSquare, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { ChatEmbedded, ChatEmbeddedAPI, IChatEmbeddedApiAuthProvider, ChatLaunchConfig } from '@microsoft/sharepointembedded-copilotchat-react';
 
 interface CopilotDesktopViewProps {
@@ -44,12 +43,12 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     return null;
   }
   
-  // Open the chat when the sheet is opened and we have a valid chat API
+  // Open the chat when the component is opened and we have a valid chat API
   useEffect(() => {
     if (isOpen && chatApi) {
-      console.log('Sheet opened, attempting to open chat...');
+      console.log('Component opened, attempting to open chat...');
       
-      const openChatOnSheetOpen = async () => {
+      const openChatOnOpen = async () => {
         try {
           // Ensure we have required config fields to avoid the undefined error
           if (!chatConfig) {
@@ -69,19 +68,19 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               }));
               
               await chatApi.openChat(chatConfig);
-              console.log('Chat opened successfully after sheet open');
+              console.log('Chat opened successfully');
             } catch (innerErr) {
               console.error('Error in delayed chat open:', innerErr);
               onError('Failed to load chat interface. Try resetting the chat.');
             }
           }, 300);
         } catch (err) {
-          console.error('Error opening chat on sheet open:', err);
+          console.error('Error opening chat:', err);
           onError('Failed to load chat interface. Try resetting the chat.');
         }
       };
       
-      openChatOnSheetOpen();
+      openChatOnOpen();
     }
   }, [isOpen, chatApi, chatConfig, onError]);
   
@@ -94,33 +93,20 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   };
   
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button variant="outline" className="gap-2 flex items-center justify-center">
-          <MessageSquare size={16} />
-          <span>Copilot Chat</span>
-        </Button>
-      </SheetTrigger>
-      
-      <SheetContent 
-        className="w-[400px] sm:w-[540px] p-0 border-l shadow-lg"
-        side="right"
-      >
-        <div className="flex flex-col h-dvh max-h-screen">
-          <div className="flex-shrink-0 border-b px-6 py-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <SheetTitle className="text-lg font-semibold">SharePoint Embedded Copilot</SheetTitle>
-                <p className="text-sm text-muted-foreground">Connected to: {siteName || 'SharePoint Site'}</p>
-                <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
-              </div>
-              {onResetChat && isAuthenticated && (
-                <Button onClick={handleResetChat} size="sm" variant="ghost" className="gap-1">
-                  <RefreshCw size={14} />
-                  <span className="sr-only md:not-sr-only md:inline-block">Refresh</span>
-                </Button>
-              )}
+    <div className="flex flex-col h-full">
+      {isOpen && (
+        <>
+          <div className="flex justify-between items-center p-4 border-b">
+            <div>
+              <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
+              <p className="text-sm text-muted-foreground">Connected to: {siteName || 'SharePoint Site'}</p>
             </div>
+            {onResetChat && isAuthenticated && (
+              <Button onClick={handleResetChat} size="sm" variant="ghost" className="gap-1">
+                <RefreshCw size={14} />
+                <span className="sr-only md:not-sr-only md:inline-block">Refresh</span>
+              </Button>
+            )}
           </div>
           
           <div className="flex-1 overflow-hidden relative">
@@ -170,9 +156,9 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               </div>
             )}
           </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+        </>
+      )}
+    </div>
   );
 };
 

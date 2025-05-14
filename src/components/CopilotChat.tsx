@@ -32,16 +32,11 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
       return;
     }
     
-    // Reset error shown flag when containerId changes and is valid
     setErrorShown(false);
-    
-    // Log the container ID to help with debugging
-    console.log('CopilotChat component mounted with container ID:', containerId);
   }, [containerId, errorShown]);
   
   // Early return if no containerId is provided
   if (!containerId || typeof containerId !== 'string') {
-    console.error('CopilotChat: Invalid containerId provided:', containerId);
     return (
       <div className="text-red-500 p-4 border border-red-300 rounded-md">
         Error: No valid containerId provided for Copilot Chat
@@ -49,15 +44,13 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
     );
   }
   
-  // IMPORTANT: Don't render on mobile devices
+  // Don't render on mobile devices
   if (isMobile) {
-    console.log('CopilotChat not rendering: on mobile device');
     return null;
   }
   
   // Don't render if not authenticated
   if (!isAuthenticated) {
-    console.log('CopilotChat not rendering: not authenticated');
     return null;
   }
   
