@@ -41,6 +41,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   useEffect(() => {
     if (isOpen) {
       setChatLoadFailed(false);
+      console.log('Copilot chat sheet opened, container:', chatContainerRef.current);
     }
   }, [isOpen, chatKey]);
   
@@ -106,12 +107,11 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
             </div>
           ) : (
             <div 
-              className="h-full w-full" 
+              className="h-full w-full overflow-hidden" 
               key={chatKey} 
               id="copilot-chat-container"
               ref={chatContainerRef}
               data-testid="copilot-chat-container"
-              style={{ height: 'calc(100vh - 130px)' }}
             >
               {authProvider ? (
                 <ChatEmbedded
@@ -119,9 +119,8 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   authProvider={authProvider}
                   onApiReady={onApiReady}
                   style={{ 
-                    height: '100%', 
+                    height: '100vh', 
                     width: '100%',
-                    display: 'flex',
                     border: 'none',
                     overflow: 'hidden'
                   }}
