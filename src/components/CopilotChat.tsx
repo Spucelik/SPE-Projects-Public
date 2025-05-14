@@ -9,12 +9,12 @@ interface CopilotChatProps {
 
 const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   useEffect(() => {
-    if (!containerId) {
-      const errorMsg = 'CopilotChat: No containerId provided';
+    if (!containerId || typeof containerId !== 'string') {
+      const errorMsg = 'CopilotChat: No valid containerId provided';
       console.error(errorMsg);
       toast({
         title: "Copilot Error",
-        description: "No container ID provided. Copilot chat cannot load.",
+        description: "No valid container ID provided. Copilot chat cannot load.",
         variant: "destructive",
       });
       return;
@@ -30,10 +30,10 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId }) => {
   }, [containerId]);
   
   // Early return if no containerId is provided
-  if (!containerId) {
+  if (!containerId || typeof containerId !== 'string') {
     return (
       <div className="text-red-500 p-4 border border-red-300 rounded-md">
-        Error: No containerId provided for Copilot Chat
+        Error: No valid containerId provided for Copilot Chat
       </div>
     );
   }

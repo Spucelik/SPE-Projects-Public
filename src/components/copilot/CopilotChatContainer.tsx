@@ -20,12 +20,12 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const [chatKey, setChatKey] = useState(0);
   const chatApiRef = useRef<ChatEmbeddedAPI | null>(null);
   
-  // Ensure containerId is properly formatted
-  const normalizedContainerId = containerId.startsWith('b!') 
-    ? containerId 
-    : `b!${containerId}`;
+  // Validate and normalize containerId
+  const normalizedContainerId = containerId && typeof containerId === 'string' 
+    ? (containerId.startsWith('b!') ? containerId : `b!${containerId}`)
+    : '';
   
-  console.log('CopilotChatContainer rendering with containerId:', normalizedContainerId);
+  console.log('CopilotChatContainer rendering with containerId:', normalizedContainerId || 'MISSING');
   
   const {
     isLoading,
@@ -35,14 +35,17 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     sharePointHostname,
   } = useCopilotSite(normalizedContainerId);
   
+  const safeSharePointHostname = sharePointHostname || appConfig.sharePointHostname;
+  const safeSiteName = siteName || 'SharePoint Site';
+  
   useEffect(() => {
     if (isOpen) {
-      console.log('Copilot chat opened with hostname:', sharePointHostname || 'undefined');
-      console.log('Copilot chat opened with siteName:', siteName || 'undefined');
-      console.log('Copilot chat opened with siteUrl:', siteUrl || 'undefined');
+      console.log('Copilot chat opened with hostname:', safeSharePointHostname);
+      console.log('Copilot chat opened with siteName:', safeSiteName);
+      console.log('Copilot chat opened with siteUrl:', siteUrl || 'Not available');
       console.log('Chat API reference:', chatApiRef.current ? 'Available' : 'Not available');
     }
-  }, [isOpen, sharePointHostname, siteName, siteUrl]);
+  }, [isOpen, safeSharePointHostname, safeSiteName, siteUrl]);
   
   const handleError = useCallback((errorMessage: string) => {
     console.error('Copilot chat error:', errorMessage);
@@ -54,18 +57,13 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   }, []);
   
   // Create auth provider for Copilot chat with better error handling
-  const createAuthProvider = useCallback((): IChatEmbeddedApiAuthProvider | null => {
-    if (!sharePointHostname) {
-      console.error('No SharePoint hostname available for auth provider');
-      return null;
-    }
-    
+  const createAuthProvider = useCallback((): IChatEmbeddedApiAuthProvider => {
     return {
-      hostname: sharePointHostname,
+      hostname: safeSharePointHostname,
       getToken: async () => {
         try {
-          console.log('Getting SharePoint token for hostname:', sharePointHostname);
-          const token = await getSharePointToken(sharePointHostname);
+          console.log('Getting SharePoint token for hostname:', safeSharePointHostname);
+          const token = await getSharePointToken(safeSharePointHostname);
           console.log('SharePoint auth token retrieved:', token ? 'successfully' : 'failed');
           
           if (!token) {
@@ -81,7 +79,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
         }
       }
     };
-  }, [sharePointHostname, getSharePointToken, handleError]);
+  }, [safeSharePointHostname, getSharePointToken, handleError]);
   
   // Auth provider instance
   const authProvider = createAuthProvider();
@@ -94,7 +92,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   
   // Create chat configuration with proper null checks for all properties
   const chatConfig: ChatLaunchConfig = {
-    header: siteName ? `SharePoint Embedded - ${siteName}` : 'SharePoint Embedded',
+    header: `SharePoint Embedded - ${safeSiteName}`,
     theme: appConfig.copilotTheme || {
       useDarkMode: false,
       customTheme: {
@@ -103,7 +101,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
       }
     },
     zeroQueryPrompts: {
-      headerText: `Chat with content in ${siteName || 'your files'}`,
+      headerText: `Chat with content in ${safeSiteName}`,
       promptSuggestionList: [
         {
           suggestionText: 'Show me recent files',
@@ -136,11 +134,21 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     }, 500);
   }, []);
 
+  // Validate containerId before rendering chat components
+  if (!normalizedContainerId) {
+    console.error('No valid containerId provided to CopilotChatContainer');
+    return (
+      <div className="text-red-500 p-4 border border-red-300 rounded-md">
+        Error: No valid containerId provided for Copilot Chat
+      </div>
+    );
+  }
+
   return isMobile ? (
     <CopilotMobileView
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      siteName={siteName || 'Unknown Site'}
+      siteName={safeSiteName}
       isLoading={isLoading}
       error={error}
       openExternalChat={null}
@@ -149,7 +157,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     <CopilotDesktopView
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      siteName={siteName || 'Unknown Site'}
+      siteName={safeSiteName}
       isLoading={isLoading}
       error={error}
       containerId={normalizedContainerId}

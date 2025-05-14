@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -13,7 +12,10 @@ export const useCopilotSite = (containerId: string) => {
 
   // Normalize container ID to handle different formats
   const normalizedContainerId = useMemo(() => {
-    if (!containerId) return '';
+    if (!containerId) {
+      console.warn('No containerId provided to useCopilotSite');
+      return '';
+    }
     
     // If it already starts with b!, keep it as is
     if (containerId.startsWith('b!')) {
@@ -25,7 +27,10 @@ export const useCopilotSite = (containerId: string) => {
   }, [containerId]);
 
   useEffect(() => {
-    if (!normalizedContainerId) return;
+    if (!normalizedContainerId) {
+      console.warn('No valid containerId available for fetching site info');
+      return;
+    }
     
     const fetchSiteInfo = async () => {
       try {
@@ -33,7 +38,10 @@ export const useCopilotSite = (containerId: string) => {
         setError(null);
         const token = await getAccessToken();
         if (!token) {
+          console.error('Authentication token not available');
           setError('Authentication token not available');
+          setSiteUrl(appConfig.sharePointHostname.replace(/\/+$/, ''));
+          setSiteName('SharePoint Site');
           return;
         }
         
@@ -41,41 +49,43 @@ export const useCopilotSite = (containerId: string) => {
         const containerDetails = await sharePointService.getContainerDetails(token, normalizedContainerId);
         console.log('Container details retrieved:', containerDetails);
         
+        // Set fallback values and handle missing data
         if (!containerDetails) {
+          console.error('Container details are undefined');
           setError('Container details are undefined');
           setSiteUrl(appConfig.sharePointHostname.replace(/\/+$/, ''));
-          setSiteName('Unknown Site');
+          setSiteName('SharePoint Site');
           return;
         }
         
+        // Handle name specifically - ensure it's never undefined
+        const name = containerDetails.name || 'SharePoint Site';
+        setSiteName(name);
+        
         if (!containerDetails.webUrl) {
+          console.error('Container webUrl is undefined');
           setError('Container webUrl is undefined');
           setSiteUrl(appConfig.sharePointHostname.replace(/\/+$/, ''));
-          setSiteName(containerDetails.name || 'Unknown Site');
           return;
         }
         
         // Store the site URL without any trailing slashes
         const normalizedUrl = containerDetails.webUrl.replace(/\/+$/, '');
         setSiteUrl(normalizedUrl);
-        setSiteName(containerDetails.name || 'Unknown Site');
       } catch (err) {
         console.error('Error fetching site info:', err);
         setError('Failed to load site information');
         
         // Fallback to using the default SharePoint hostname
-        if (!siteUrl) {
-          const fallbackUrl = appConfig.sharePointHostname.replace(/\/+$/, '');
-          console.log('Using fallback SharePoint URL:', fallbackUrl);
-          setSiteUrl(fallbackUrl);
-        }
+        setSiteUrl(appConfig.sharePointHostname.replace(/\/+$/, ''));
+        setSiteName('SharePoint Site');
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchSiteInfo();
-  }, [normalizedContainerId, getAccessToken, siteUrl]);
+  }, [normalizedContainerId, getAccessToken]);
 
   // Get the base SharePoint hostname (without any paths or trailing slashes)
   // This is used for authentication and CSP compatibility
