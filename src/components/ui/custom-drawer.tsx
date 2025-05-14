@@ -2,6 +2,7 @@
 import React from 'react';
 import { Drawer as DrawerPrimitive } from "vaul";
 import { cn } from "@/lib/utils";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 const CustomDrawer = ({
   shouldScaleBackground = false,
@@ -47,11 +48,33 @@ const CustomDrawerContent = React.forwardRef<
       {...props}
     >
       <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+      {/* Make sure every drawer has at least a visually hidden title for screen readers */}
+      {!React.Children.toArray(children).some(
+        (child) =>
+          React.isValidElement(child) &&
+          child.type === CustomDrawerTitle
+      ) && (
+        <VisuallyHidden>
+          <DrawerPrimitive.Title>Drawer</DrawerPrimitive.Title>
+        </VisuallyHidden>
+      )}
       {children}
     </DrawerPrimitive.Content>
   </CustomDrawerPortal>
 ));
 CustomDrawerContent.displayName = "CustomDrawerContent";
+
+const CustomDrawerTitle = React.forwardRef<
+  React.ElementRef<typeof DrawerPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <DrawerPrimitive.Title
+    ref={ref}
+    className={cn("text-lg font-semibold", className)}
+    {...props}
+  />
+));
+CustomDrawerTitle.displayName = "CustomDrawerTitle";
 
 export {
   CustomDrawer,
@@ -60,4 +83,5 @@ export {
   CustomDrawerClose,
   CustomDrawerOverlay,
   CustomDrawerPortal,
+  CustomDrawerTitle,
 };

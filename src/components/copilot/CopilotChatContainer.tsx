@@ -35,26 +35,20 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     sharePointHostname,
   } = useCopilotSite(normalizedContainerId);
   
-  // Log visibility of the component to help with debugging
   useEffect(() => {
-    console.log('CopilotChatContainer render state:', {
-      isOpen,
-      isLoading,
-      error: error || 'none',
-      sharePointHostname: sharePointHostname || 'unknown',
-      containerId: normalizedContainerId,
-      hasChatApi: !!chatApiRef.current
-    });
-  }, [isOpen, isLoading, error, sharePointHostname, normalizedContainerId]);
+    if (isOpen && sharePointHostname) {
+      console.log('Copilot chat opened with hostname:', sharePointHostname);
+    }
+  }, [isOpen, sharePointHostname]);
   
-  const handleError = (errorMessage: string) => {
+  const handleError = useCallback((errorMessage: string) => {
     console.error('Copilot chat error:', errorMessage);
     toast({
       title: "Copilot error",
       description: errorMessage,
       variant: "destructive",
     });
-  };
+  }, []);
   
   // Create auth provider for Copilot chat with better error handling
   const createAuthProvider = useCallback((): IChatEmbeddedApiAuthProvider | null => {
@@ -84,7 +78,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
         }
       }
     };
-  }, [sharePointHostname, getSharePointToken]);
+  }, [sharePointHostname, getSharePointToken, handleError]);
   
   // Auth provider instance
   const authProvider = createAuthProvider();
@@ -93,10 +87,16 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const handleApiReady = (api: ChatEmbeddedAPI) => {
     console.log('Copilot chat API is ready');
     chatApiRef.current = api;
+    
+    // Log the API methods available for debugging
+    console.log('Available API methods:', 
+      Object.keys(api).filter(key => typeof (api as any)[key] === 'function')
+    );
   };
   
   // Reset chat when there's an issue
-  const handleResetChat = () => {
+  const handleResetChat = useCallback(() => {
+    console.log('Resetting Copilot chat');
     setChatKey(prev => prev + 1);
     
     // Close and reopen the chat panel
@@ -104,12 +104,18 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     setTimeout(() => {
       setIsOpen(true);
     }, 500);
-  };
+  }, []);
 
-  // Create an enhanced chat configuration
+  // Create chat configuration
   const chatConfig: ChatLaunchConfig = {
     header: siteName ? `SharePoint Embedded - ${siteName}` : 'SharePoint Embedded',
-    theme: appConfig.copilotTheme,
+    theme: appConfig.copilotTheme || {
+      useDarkMode: false,
+      customTheme: {
+        themePrimary: '#4854EE',
+        themeBackground: 'white',
+      }
+    },
     zeroQueryPrompts: {
       headerText: `Chat with content in ${siteName || 'your files'}`,
       promptSuggestionList: [

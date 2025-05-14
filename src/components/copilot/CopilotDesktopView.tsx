@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { MessageSquare, RefreshCw } from 'lucide-react';
 import { ChatEmbedded, ChatEmbeddedAPI, IChatEmbeddedApiAuthProvider, ChatLaunchConfig } from '@microsoft/sharepointembedded-copilotchat-react';
 import { cn } from '@/lib/utils';
@@ -75,19 +75,22 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     }
   }, [isOpen]);
   
-  // Logging for debugging
+  // Use effect to initialize the chat when it's ready
   useEffect(() => {
-    if (isOpen) {
-      console.log('CopilotDesktopView - Details:', {
-        containerId,
-        authProvider: !!authProvider,
-        chatKey,
-        chatLoadFailed,
-        chatConfig: !!chatConfig,
-        chatApiReady: !!chatApi,
-      });
-    }
-  }, [isOpen, containerId, authProvider, chatKey, chatLoadFailed, chatConfig, chatApi]);
+    const initializeChat = async () => {
+      if (chatApi && isOpen && chatConfig) {
+        try {
+          console.log('Initializing chat with config:', chatConfig);
+          await chatApi.openChat(chatConfig);
+        } catch (err) {
+          console.error('Failed to initialize chat:', err);
+          onError('Failed to initialize chat');
+        }
+      }
+    };
+    
+    initializeChat();
+  }, [chatApi, isOpen, chatConfig]);
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -102,6 +105,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         className="w-[400px] sm:w-[540px] flex flex-col h-full p-0 border-l shadow-lg"
         side="right"
       >
+        <SheetTitle className="sr-only">SharePoint Embedded Copilot</SheetTitle>
         <div className="flex-shrink-0 border-b px-6 py-4">
           <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
           {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
@@ -126,7 +130,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               )}
             </div>
           ) : (
-            <div className="h-full w-full" key={chatKey}>
+            <div className="h-full w-full" key={chatKey} id="copilot-chat-container">
               {authProvider ? (
                 <ChatEmbedded
                   containerId={containerId}
@@ -135,8 +139,8 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   style={{ 
                     height: '100%', 
                     width: '100%',
-                    display: 'block',
-                    minHeight: '500px',
+                    display: 'flex',
+                    minHeight: '600px',
                     border: 'none'
                   }}
                 />
