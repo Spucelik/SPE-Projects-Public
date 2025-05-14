@@ -1,6 +1,5 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
 import CopilotDesktopView from './CopilotDesktopView';
 import { toast } from '@/hooks/use-toast';
@@ -17,17 +16,10 @@ interface CopilotChatContainerProps {
 }
 
 const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId }) => {
-  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const { getSharePointToken, isAuthenticated } = useAuth();
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
   const [chatKey, setChatKey] = useState(0);
-  
-  // Early return if on login page, not authenticated, or on mobile
-  if (window.location.pathname === '/login' || !isAuthenticated || isMobile) {
-    console.log('CopilotChatContainer not rendering: on login page, not authenticated, or on mobile device');
-    return null;
-  }
   
   // Validate and normalize containerId
   const normalizedContainerId = containerId && typeof containerId === 'string' 
@@ -36,6 +28,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   
   // Don't proceed if we don't have a valid container ID
   if (!normalizedContainerId) {
+    console.error('CopilotChatContainer: Invalid containerId provided:', containerId);
     return (
       <div className="text-red-500 p-4 border border-red-300 rounded-md">
         Error: No valid containerId provided for Copilot Chat
@@ -143,6 +136,28 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     locale: "en-US",
   }), [safeSiteName, chatTheme, zeroQueryPrompts]);
   
+  // Auto-open chat when API is ready
+  useEffect(() => {
+    const openChat = async () => {
+      if (!chatApi) {
+        console.log('Chat API not ready yet');
+        return;
+      }
+      
+      try {
+        console.log('Opening chat with config:', chatConfig);
+        await chatApi.openChat(chatConfig);
+        console.log('Chat opened successfully');
+        setIsOpen(true);
+      } catch (err) {
+        console.error('Error opening chat:', err);
+        handleError('Failed to open the chat. Please try again.');
+      }
+    };
+    
+    openChat();
+  }, [chatApi, chatConfig, handleError]);
+
   // Handles API ready event from ChatEmbedded component
   const handleApiReady = useCallback((api: ChatEmbeddedAPI) => {
     if (!api) {
@@ -153,21 +168,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     
     console.log('Copilot chat API is ready');
     setChatApi(api);
-    
-    // Open the chat with configuration when API is ready
-    const openChat = async () => {
-      try {
-        console.log('Opening chat with config:', chatConfig);
-        await api.openChat(chatConfig);
-        console.log('Chat opened successfully');
-      } catch (err) {
-        console.error('Error opening chat:', err);
-        handleError('Failed to open the chat. Please try again.');
-      }
-    };
-    
-    openChat();
-  }, [handleError, chatConfig]);
+  }, [handleError]);
 
   // Reset chat when there's an issue
   const handleResetChat = useCallback(() => {

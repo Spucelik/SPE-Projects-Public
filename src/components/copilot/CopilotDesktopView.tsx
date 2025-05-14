@@ -102,7 +102,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                   </Button>
                 )}
               </div>
-            ) : isOpen && containerId && chatConfig ? (
+            ) : (
               <div 
                 className="h-full w-full"
                 style={{ 
@@ -132,18 +132,6 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                     userSelect: 'none'
                   }}
                 />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full p-6">
-                <p className="text-amber-600 mb-4">
-                  Unable to render chat component. Missing required data.
-                </p>
-                {onResetChat && (
-                  <Button onClick={handleResetChat} variant="outline" className="gap-2">
-                    <RefreshCw size={16} />
-                    <span>Try Again</span>
-                  </Button>
-                )}
               </div>
             )}
           </div>

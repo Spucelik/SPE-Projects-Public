@@ -15,12 +15,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
   const isMobile = useIsMobile();
   const [errorShown, setErrorShown] = useState(false);
   
-  // IMPORTANT: Don't even attempt to render on login page, when not authenticated, or on mobile
-  if (window.location.pathname === '/login' || !isAuthenticated || isMobile) {
-    console.log('Copilot not rendering: on login page, not authenticated, or on mobile device');
-    return null;
-  }
-  
   useEffect(() => {
     if (!containerId || typeof containerId !== 'string') {
       const errorMsg = 'CopilotChat: No valid containerId provided';
@@ -47,11 +41,30 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
   
   // Early return if no containerId is provided
   if (!containerId || typeof containerId !== 'string') {
+    console.error('CopilotChat: Invalid containerId provided:', containerId);
     return (
       <div className="text-red-500 p-4 border border-red-300 rounded-md">
         Error: No valid containerId provided for Copilot Chat
       </div>
     );
+  }
+  
+  // IMPORTANT: Don't render on mobile devices
+  if (isMobile) {
+    console.log('CopilotChat not rendering: on mobile device');
+    return null;
+  }
+  
+  // Don't render on login page
+  if (window.location.pathname === '/login') {
+    console.log('CopilotChat not rendering: on login page');
+    return null;
+  }
+  
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    console.log('CopilotChat not rendering: not authenticated');
+    return null;
   }
   
   return (
