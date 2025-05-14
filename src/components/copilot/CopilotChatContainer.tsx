@@ -20,16 +20,16 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   const [chatKey, setChatKey] = useState(0);
   const chatApiRef = useRef<ChatEmbeddedAPI | null>(null);
   
-  // Validate and normalize containerId
-  const normalizedContainerId = containerId && typeof containerId === 'string' 
-    ? (containerId.startsWith('b!') ? containerId : `b!${containerId}`)
-    : '';
-  
-  // Early return if user is not authenticated
+  // Early return if user is not authenticated - this prevents any processing
   if (!isAuthenticated) {
     console.log('CopilotChatContainer: User not authenticated, not rendering');
     return null;
   }
+  
+  // Validate and normalize containerId
+  const normalizedContainerId = containerId && typeof containerId === 'string' 
+    ? (containerId.startsWith('b!') ? containerId : `b!${containerId}`)
+    : '';
   
   // Don't proceed if we don't have a valid container ID
   if (!normalizedContainerId) {
@@ -49,10 +49,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     sharePointHostname,
   } = useCopilotSite(normalizedContainerId);
   
-  console.log('CopilotChatContainer rendering with containerId:', normalizedContainerId || 'MISSING');
-  console.log('SharePoint hostname:', sharePointHostname || appConfig.sharePointHostname);
-  console.log('Site name:', siteName || 'SharePoint Site');
-  
+  // Ensure we have valid hostnames and site names
   const safeSharePointHostname = sharePointHostname || appConfig.sharePointHostname;
   const safeSiteName = siteName || 'SharePoint Site';
   

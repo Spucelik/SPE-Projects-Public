@@ -6,13 +6,18 @@ import { useAuth } from '../context/AuthContext';
 
 interface CopilotChatProps {
   containerId: string;
-  className?: string; // Added className prop for better positioning
+  className?: string;
 }
 
 const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => {
   const { isAuthenticated } = useAuth();
   
   useEffect(() => {
+    if (!isAuthenticated) {
+      // Don't show any errors if user is not authenticated - this is expected
+      return;
+    }
+    
     if (!containerId || typeof containerId !== 'string') {
       const errorMsg = 'CopilotChat: No valid containerId provided';
       console.error(errorMsg);
@@ -31,9 +36,9 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
     return () => {
       console.log('CopilotChat component unmounting');
     };
-  }, [containerId]);
+  }, [containerId, isAuthenticated]);
   
-  // Early return if not authenticated or no containerId is provided
+  // Early return if not authenticated
   if (!isAuthenticated) {
     console.log('CopilotChat: User not authenticated, not rendering chat');
     return null;

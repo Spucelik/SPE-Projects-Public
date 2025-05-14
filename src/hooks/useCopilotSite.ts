@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -11,10 +10,13 @@ export const useCopilotSite = (containerId: string) => {
   const [siteName, setSiteName] = useState<string | null>(null);
   const { getAccessToken, isAuthenticated } = useAuth();
 
+  // Skip all processing if not authenticated
+  const shouldProcess = isAuthenticated && !!containerId;
+
   // Normalize container ID to handle different formats
   const normalizedContainerId = useMemo(() => {
-    if (!containerId) {
-      console.warn('No containerId provided to useCopilotSite');
+    if (!containerId || !shouldProcess) {
+      console.warn('No containerId provided to useCopilotSite or user not authenticated');
       return '';
     }
     
@@ -25,13 +27,16 @@ export const useCopilotSite = (containerId: string) => {
     
     // Otherwise, add the b! prefix
     return `b!${containerId}`;
-  }, [containerId]);
+  }, [containerId, shouldProcess]);
 
   useEffect(() => {
-    if (!normalizedContainerId || !isAuthenticated) {
-      console.warn('No valid containerId available for fetching site info or user not authenticated');
-      setSiteName('SharePoint Site');
-      setSiteUrl(appConfig.sharePointHostname.replace(/\/+$/, ''));
+    // Set default values immediately for safety
+    setSiteName('SharePoint Site');
+    setSiteUrl(appConfig.sharePointHostname.replace(/\/+$/, ''));
+    
+    // Early return if conditions aren't met
+    if (!shouldProcess || !normalizedContainerId) {
+      console.warn('Skipping site info fetch - not authenticated or no valid containerId');
       return;
     }
     
@@ -43,8 +48,6 @@ export const useCopilotSite = (containerId: string) => {
         if (!token) {
           console.error('Authentication token not available');
           setError('Authentication token not available');
-          setSiteUrl(appConfig.sharePointHostname.replace(/\/+$/, ''));
-          setSiteName('SharePoint Site');
           return;
         }
         
@@ -55,8 +58,6 @@ export const useCopilotSite = (containerId: string) => {
         if (!containerDetails) {
           console.error('Container details are undefined');
           setError('Container details are undefined');
-          setSiteUrl(appConfig.sharePointHostname.replace(/\/+$/, ''));
-          setSiteName('SharePoint Site');
           return;
         }
         
@@ -68,7 +69,6 @@ export const useCopilotSite = (containerId: string) => {
         if (!containerDetails.webUrl) {
           console.error('Container webUrl is undefined');
           setError('Container webUrl is undefined');
-          setSiteUrl(appConfig.sharePointHostname.replace(/\/+$/, ''));
           return;
         }
         
@@ -79,17 +79,13 @@ export const useCopilotSite = (containerId: string) => {
       } catch (err) {
         console.error('Error fetching site info:', err);
         setError('Failed to load site information');
-        
-        // Fallback to using the default SharePoint hostname
-        setSiteUrl(appConfig.sharePointHostname.replace(/\/+$/, ''));
-        setSiteName('SharePoint Site');
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchSiteInfo();
-  }, [normalizedContainerId, getAccessToken, isAuthenticated]);
+  }, [normalizedContainerId, getAccessToken, isAuthenticated, shouldProcess]);
 
   // Get the base SharePoint hostname (without any paths or trailing slashes)
   // This is used for authentication and CSP compatibility

@@ -39,8 +39,9 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   const [chatLoadFailed, setChatLoadFailed] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [chatApiInstance, setChatApiInstance] = useState<ChatEmbeddedAPI | null>(null);
+  const [initializing, setInitializing] = useState(false);
   
-  // Early return if not authenticated
+  // Early return if not authenticated - don't even try to render the component
   if (!isAuthenticated) {
     console.log('CopilotDesktopView: User not authenticated, not rendering');
     return null;
@@ -68,7 +69,11 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   useEffect(() => {
     if (isOpen) {
       const errorHandler = (event: ErrorEvent) => {
-        if (event.message && event.message.includes('ChatEmbedded')) {
+        if (event.message && (
+          event.message.includes('ChatEmbedded') || 
+          event.message.includes("Cannot read properties of undefined (reading 'name')")
+        )) {
+          console.error('Caught chat error:', event.message);
           handleChatError();
         }
       };
@@ -81,14 +86,17 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   }, [isOpen, onError]);
   
   // Handle API Ready event and initialize chat - added null check for api
-  const handleApiReady = (api: ChatEmbeddedAPI) => {
-    console.log('Chat API is ready');
+  const handleApiReady = (api: ChatEmbeddedAPI | null) => {
+    console.log('Chat API ready callback triggered');
+    
+    // Early return if API is null or undefined
     if (!api) {
       console.error('Chat API is undefined');
       handleChatError();
       return;
     }
     
+    console.log('Chat API is ready and valid');
     setChatApiInstance(api);
     
     // Make sure to only call onApiReady if the API is valid
@@ -96,33 +104,40 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   };
   
   // Only try to render chat component if authenticated and has valid data
-  const canRenderChat = isAuthenticated && !chatLoadFailed && !!containerId;
+  const canRenderChat = isAuthenticated && !chatLoadFailed && !!containerId && !initializing;
   
   // Open chat when API is available and the sheet is open
   useEffect(() => {
     const initChat = async () => {
-      if (chatApiInstance && isOpen && !chatLoadFailed && chatConfig && canRenderChat) {
+      if (!isOpen || chatLoadFailed || !canRenderChat || !chatApiInstance || !chatConfig) {
+        console.log('Skipping chat initialization - conditions not met');
+        return;
+      }
+      
+      try {
+        setInitializing(true);
+        console.log('Initializing chat with config:', JSON.stringify({
+          header: chatConfig.header || 'SharePoint Embedded',
+          theme: chatConfig.theme ? 'Theme provided' : 'No theme',
+          zeroQueryPrompts: chatConfig.zeroQueryPrompts ? {
+            headerText: chatConfig.zeroQueryPrompts.headerText || '',
+            promptSuggestionCount: chatConfig.zeroQueryPrompts.promptSuggestionList?.length || 0
+          } : 'No zero query prompts',
+          instruction: chatConfig.instruction ? 'Instruction provided' : 'No instruction'
+        }, null, 2));
+        
         try {
-          console.log('Initializing chat with config:', JSON.stringify({
-            header: chatConfig.header || 'SharePoint Embedded',
-            theme: chatConfig.theme ? 'Theme provided' : 'No theme',
-            zeroQueryPrompts: chatConfig.zeroQueryPrompts ? {
-              headerText: chatConfig.zeroQueryPrompts.headerText || '',
-              promptSuggestionCount: chatConfig.zeroQueryPrompts.promptSuggestionList?.length || 0
-            } : 'No zero query prompts'
-          }, null, 2));
-          
-          try {
-            await chatApiInstance.openChat(chatConfig);
-            console.log('Chat initialized successfully');
-          } catch (chatError) {
-            console.error('Error opening chat with config:', chatError);
-            handleChatError();
-          }
-        } catch (err) {
-          console.error('Failed to open chat:', err);
+          await chatApiInstance.openChat(chatConfig);
+          console.log('Chat initialized successfully');
+        } catch (chatError) {
+          console.error('Error opening chat with config:', chatError);
           handleChatError();
         }
+      } catch (err) {
+        console.error('Failed to open chat:', err);
+        handleChatError();
+      } finally {
+        setInitializing(false);
       }
     };
     
@@ -152,14 +167,17 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           <SheetTitle className="sr-only">SharePoint Embedded Copilot</SheetTitle>
           <div className="flex-shrink-0 border-b px-6 py-4">
             <h2 className="text-lg font-semibold">SharePoint Embedded Copilot</h2>
-            <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>
+            <p className="text-sm text-muted-foreground">Connected to: {siteName || 'SharePoint Site'}</p>
             <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
           </div>
           
           <div className="flex-1 overflow-hidden relative">
-            {isLoading ? (
+            {isLoading || initializing ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
+                <span className="ml-2 text-sm text-muted-foreground">
+                  {initializing ? 'Initializing chat...' : 'Loading...'}
+                </span>
               </div>
             ) : error || chatLoadFailed || !isAuthenticated ? (
               <div className="flex flex-col items-center justify-center h-full p-6">
@@ -204,6 +222,12 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 <p className="text-amber-600 mb-4">
                   Unable to render chat component. Missing required data.
                 </p>
+                {onResetChat && (
+                  <Button onClick={onResetChat} variant="outline" className="gap-2">
+                    <RefreshCw size={16} />
+                    <span>Try Again</span>
+                  </Button>
+                )}
               </div>
             )}
           </div>
