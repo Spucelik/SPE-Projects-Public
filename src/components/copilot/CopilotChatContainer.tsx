@@ -29,11 +29,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   // Don't proceed if we don't have a valid container ID
   if (!normalizedContainerId) {
     console.error('CopilotChatContainer: Invalid containerId provided:', containerId);
-    return (
-      <div className="text-red-500 p-4 border border-red-300 rounded-md">
-        Error: No valid containerId provided for Copilot Chat
-      </div>
-    );
+    return null;
   }
   
   const {
@@ -138,17 +134,16 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
   
   // Auto-open chat when API is ready
   useEffect(() => {
+    if (!chatApi) {
+      console.log('Chat API not ready yet');
+      return;
+    }
+    
     const openChat = async () => {
-      if (!chatApi) {
-        console.log('Chat API not ready yet');
-        return;
-      }
-      
       try {
         console.log('Opening chat with config:', chatConfig);
         await chatApi.openChat(chatConfig);
         console.log('Chat opened successfully');
-        setIsOpen(true);
       } catch (err) {
         console.error('Error opening chat:', err);
         handleError('Failed to open the chat. Please try again.');

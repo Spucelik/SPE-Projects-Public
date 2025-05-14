@@ -55,12 +55,6 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
     return null;
   }
   
-  // Don't render on login page
-  if (window.location.pathname === '/login') {
-    console.log('CopilotChat not rendering: on login page');
-    return null;
-  }
-  
   // Don't render if not authenticated
   if (!isAuthenticated) {
     console.log('CopilotChat not rendering: not authenticated');

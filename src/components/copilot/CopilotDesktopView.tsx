@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { MessageSquare, RefreshCw } from 'lucide-react';
@@ -38,11 +38,29 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   isAuthenticated = true,
   chatApi
 }) => {
-  // Early return if not authenticated or on login page
-  if (!isAuthenticated || window.location.pathname === '/login') {
-    console.log('CopilotDesktopView: Not rendering because not authenticated or on login page');
+  // Early return if not authenticated
+  if (!isAuthenticated) {
+    console.log('CopilotDesktopView: Not rendering because not authenticated');
     return null;
   }
+  
+  // Open the chat when the button is clicked
+  useEffect(() => {
+    if (isOpen && chatApi) {
+      const openChatOnSheetOpen = async () => {
+        try {
+          console.log('Sheet opened, opening chat...');
+          await chatApi.openChat(chatConfig);
+          console.log('Chat opened after sheet open');
+        } catch (err) {
+          console.error('Error opening chat on sheet open:', err);
+          onError('Failed to load chat interface. Try resetting the chat.');
+        }
+      };
+      
+      openChatOnSheetOpen();
+    }
+  }, [isOpen, chatApi, chatConfig, onError]);
   
   // Reset chat when requested
   const handleResetChat = () => {
@@ -88,14 +106,12 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
                 <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
               </div>
-            ) : error || !isAuthenticated ? (
+            ) : error ? (
               <div className="flex flex-col items-center justify-center h-full p-6">
                 <p className="text-destructive mb-4">
-                  {!isAuthenticated 
-                    ? "Please log in to use Copilot Chat" 
-                    : (error || "Unable to load the chat. Please try again.")}
+                  {error || "Unable to load the chat. Please try again."}
                 </p>
-                {onResetChat && isAuthenticated && (
+                {onResetChat && (
                   <Button onClick={handleResetChat} variant="outline" className="gap-2">
                     <RefreshCw size={16} />
                     <span>Reset Chat</span>
@@ -107,9 +123,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 className="h-full w-full"
                 style={{ 
                   height: 'calc(100vh - 120px)',
-                  position: "relative",
-                  WebkitUserSelect: 'none',
-                  userSelect: 'none'
+                  position: "relative"
                 }}
                 data-testid="copilot-chat-container"
               >
@@ -127,9 +141,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    zIndex: 10,
-                    WebkitUserSelect: 'none',
-                    userSelect: 'none'
+                    zIndex: 10
                   }}
                 />
               </div>
