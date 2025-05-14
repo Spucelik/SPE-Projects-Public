@@ -1,9 +1,9 @@
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare, RefreshCw } from 'lucide-react';
-import { ChatEmbedded, ChatEmbeddedAPI, IChatEmbeddedApiAuthProvider } from '@microsoft/sharepointembedded-copilotchat-react';
+import { ChatEmbedded, ChatEmbeddedAPI, IChatEmbeddedApiAuthProvider, ChatLaunchConfig } from '@microsoft/sharepointembedded-copilotchat-react';
 import { cn } from '@/lib/utils';
 
 interface CopilotDesktopViewProps {
@@ -37,13 +37,10 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
 }) => {
   const [chatLoadFailed, setChatLoadFailed] = useState(false);
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  const [iframeLoaded, setIframeLoaded] = useState(false);
   
   useEffect(() => {
     if (isOpen) {
       setChatLoadFailed(false);
-      setIframeLoaded(false);
     }
   }, [isOpen, chatKey]);
   
@@ -52,55 +49,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     console.log('Copilot chat API is ready');
     setChatApi(api);
     onApiReady(api);
-    
-    // Force the iframeLoaded state to true after API is ready
-    setTimeout(() => {
-      setIframeLoaded(true);
-    }, 500);
   };
-  
-  // Setup iframe detection with more reliable approach
-  useEffect(() => {
-    if (!isOpen || !chatContainerRef.current) return;
-    
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type === 'childList') {
-          const iframes = chatContainerRef.current?.querySelectorAll('iframe');
-          if (iframes && iframes.length > 0) {
-            console.log('Detected iframe in chat container');
-            setIframeLoaded(true);
-            observer.disconnect();
-            break;
-          }
-        }
-      }
-    });
-    
-    observer.observe(chatContainerRef.current, { 
-      childList: true, 
-      subtree: true,
-      attributes: true 
-    });
-    
-    // Fallback timer in case mutation observer doesn't detect the iframe
-    const fallbackTimer = setTimeout(() => {
-      const iframes = chatContainerRef.current?.querySelectorAll('iframe');
-      if (iframes && iframes.length > 0) {
-        console.log('Fallback timer: Found iframe');
-        setIframeLoaded(true);
-      } else {
-        console.log('Fallback timer: No iframe found, forcing iframe loaded state');
-        // Force iframe loaded state after timeout
-        setIframeLoaded(true);
-      }
-    }, 3000);
-    
-    return () => {
-      observer.disconnect();
-      clearTimeout(fallbackTimer);
-    };
-  }, [isOpen, chatApi]);
   
   // Handle chat opening with improved error handling
   useEffect(() => {
@@ -110,8 +59,8 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     
     const timer = setTimeout(async () => {
       try {
-        console.log('Opening Copilot chat with API...');
-        await chatApi.openChat();
+        console.log('Opening Copilot chat with API and config:', chatConfig);
+        await chatApi.openChat(chatConfig);
         console.log('Copilot chat opened successfully');
       } catch (err) {
         console.error('Failed to open chat:', err);
@@ -121,7 +70,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [chatApi, isOpen, onError, iframeLoaded]);
+  }, [chatApi, isOpen, onError, chatConfig]);
   
   // Error handling for chat component
   const handleChatApiError = () => {
@@ -154,10 +103,9 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
         chatLoadFailed,
         chatConfig: !!chatConfig,
         chatApiReady: !!chatApi,
-        iframeLoaded
       });
     }
-  }, [isOpen, containerId, authProvider, chatKey, chatLoadFailed, chatConfig, chatApi, iframeLoaded]);
+  }, [isOpen, containerId, authProvider, chatKey, chatLoadFailed, chatConfig, chatApi]);
   
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -177,7 +125,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
           {siteName && <p className="text-sm text-muted-foreground">Connected to: {siteName}</p>}
           <p className="text-sm text-muted-foreground">Ask questions about your files and folders</p>
         </div>
-        <div className="flex-1 min-h-0 relative" ref={chatContainerRef}>
+        <div className="flex-1 min-h-0 relative">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
@@ -206,7 +154,8 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                       height: '100%', 
                       width: '100%',
                       display: 'block',
-                      minHeight: '400px' 
+                      minHeight: '400px',
+                      border: 'none'
                     }}
                   />
                 </div>

@@ -7,7 +7,7 @@ import CopilotMobileView from './CopilotMobileView';
 import { toast } from '@/hooks/use-toast';
 import { appConfig } from '@/config/appConfig';
 import { useAuth } from '@/context/AuthContext';
-import { IChatEmbeddedApiAuthProvider, ChatEmbeddedAPI } from '@microsoft/sharepointembedded-copilotchat-react';
+import { IChatEmbeddedApiAuthProvider, ChatEmbeddedAPI, ChatLaunchConfig } from '@microsoft/sharepointembedded-copilotchat-react';
 
 interface CopilotChatContainerProps {
   containerId: string;
@@ -106,9 +106,29 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     }, 500);
   };
 
-  // Chat configuration object
-  const chatConfig = {
-    theme: appConfig.copilotTheme
+  // Create an enhanced chat configuration
+  const chatConfig: ChatLaunchConfig = {
+    header: siteName ? `SharePoint Embedded - ${siteName}` : 'SharePoint Embedded',
+    theme: appConfig.copilotTheme,
+    zeroQueryPrompts: {
+      headerText: `Chat with content in ${siteName || 'your files'}`,
+      promptSuggestionList: [
+        {
+          suggestionText: 'Show me recent files',
+        },
+        {
+          suggestionText: "Summarize the main topics in my documents",
+        },
+        {
+          suggestionText: "What kind of files do I have?",
+        },
+        {
+          suggestionText: "Help me find documents related to planning",
+        }
+      ]
+    },
+    instruction: "You are a helpful assistant that helps users find and summarize information related to their files and documents. Make sure you include references to the documents data comes from when possible.",
+    locale: "en",
   };
 
   return isMobile ? (
