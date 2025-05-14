@@ -1,5 +1,7 @@
+
 import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
@@ -28,7 +30,7 @@ AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
->(({ className, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => (
   <AlertDialogPortal>
     <AlertDialogOverlay />
     <AlertDialogPrimitive.Content
@@ -38,7 +40,21 @@ const AlertDialogContent = React.forwardRef<
         className
       )}
       {...props}
-    />
+    >
+      {/* Make sure every alert dialog has at least a visually hidden title for screen readers */}
+      {!React.Children.toArray(children).some(
+        (child) =>
+          React.isValidElement(child) &&
+          (child.type === AlertDialogTitle || 
+           (React.isValidElement(child.props.children) && 
+            child.props.children.type === AlertDialogTitle))
+      ) && (
+        <VisuallyHidden>
+          <AlertDialogPrimitive.Title>Alert</AlertDialogPrimitive.Title>
+        </VisuallyHidden>
+      )}
+      {children}
+    </AlertDialogPrimitive.Content>
   </AlertDialogPortal>
 ))
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName

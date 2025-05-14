@@ -1,6 +1,7 @@
 
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 
 import { cn } from "@/lib/utils"
 
@@ -47,6 +48,16 @@ const DrawerContent = React.forwardRef<
       {...props}
     >
       <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+      {/* Make sure every drawer has at least a visually hidden title for screen readers */}
+      {!React.Children.toArray(children).some(
+        (child) =>
+          React.isValidElement(child) &&
+          child.type === DrawerTitle
+      ) && (
+        <VisuallyHidden>
+          <DrawerPrimitive.Title>Drawer</DrawerPrimitive.Title>
+        </VisuallyHidden>
+      )}
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>
