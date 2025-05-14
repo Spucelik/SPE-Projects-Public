@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { FilePlus, Folder, FileText, MoreHorizontal, Trash2, ExternalLink, Share } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -75,7 +74,9 @@ const FileList: React.FC<FileListProps> = ({
   }
 
   if (files.length === 0) {
-    return <EmptyState />;
+    return <EmptyState onUploadClick={() => {
+      console.log("Upload button clicked in EmptyState");
+    }} />;
   }
 
   return (
