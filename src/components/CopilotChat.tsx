@@ -35,6 +35,29 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
     console.log('CopilotChat initialized with containerId:', containerId);
     setErrorShown(false);
   }, [containerId, errorShown]);
+
+  // Add error boundary via window.addEventListener
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      if (event.error && event.error.message && event.error.message.includes('Cannot read properties of undefined')) {
+        console.error('Caught SharePoint Embedded error:', event.error);
+        if (!errorShown) {
+          setErrorShown(true);
+          toast({
+            title: "Copilot Error",
+            description: "An error occurred while loading the chat component. Please try refreshing.",
+            variant: "destructive",
+          });
+        }
+        event.preventDefault(); // Prevent default browser error handling
+      }
+    };
+
+    window.addEventListener('error', handleError);
+    return () => {
+      window.removeEventListener('error', handleError);
+    };
+  }, [errorShown]);
   
   // Early return if no containerId is provided
   if (!containerId || typeof containerId !== 'string') {

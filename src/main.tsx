@@ -6,9 +6,33 @@ import './index.css'
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Root element not found');
 
-// Add debugging for SharePoint Embedded components
+// Enhanced debugging for SharePoint Embedded components
 window.addEventListener('error', (e) => {
-  console.error('Global error caught:', e.error || e.message);
+  if (e.error && e.message && (
+    e.message.includes('chatodsp') || 
+    e.message.includes('sharepoint') || 
+    e.message.includes('Cannot read properties of undefined')
+  )) {
+    console.error('SharePoint Embedded error caught:', e.error || e.message);
+    // Prevent default browser error handling for these specific errors
+    e.preventDefault();
+  } else {
+    console.error('Global error caught:', e.error || e.message);
+  }
+});
+
+// Also catch unhandled promise rejections
+window.addEventListener('unhandledrejection', (e) => {
+  if (e.reason && (
+    (e.reason.message && e.reason.message.includes('sharepointembedded')) ||
+    (e.reason.toString && e.reason.toString().includes('SharePoint'))
+  )) {
+    console.error('Unhandled SharePoint promise rejection:', e.reason);
+    // Prevent default browser error handling
+    e.preventDefault();
+  } else {
+    console.error('Unhandled promise rejection:', e.reason);
+  }
 });
 
 const root = createRoot(rootElement);

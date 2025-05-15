@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
 import CopilotDesktopView from './CopilotDesktopView';
@@ -111,33 +112,14 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     }
   }), []);
   
-  // Create prompts for the chat - using only properties defined in the ZeroQueryPromptSuggestion type
-  const zeroQueryPrompts = React.useMemo(() => ({
-    headerText: `Chat with content in ${safeSiteName}`,
-    promptSuggestionList: [
-      { 
-        suggestionText: 'Show me recent files'
-      },
-      { 
-        suggestionText: 'What documents do I have access to?'
-      },
-      { 
-        suggestionText: 'Summarize the key points in my documents'
-      },
-      { 
-        suggestionText: 'What are the latest updates to my files?'
-      }
-    ]
-  }), [safeSiteName]);
-  
-  // Create chat configuration
+  // Create simplified configuration without zeroQueryPrompts
+  // This helps avoid any potential issues with the prompt suggestion format
   const chatConfig = React.useMemo((): ChatLaunchConfig => ({
     header: `SharePoint Embedded - ${safeSiteName}`,
     theme: chatTheme,
-    zeroQueryPrompts: zeroQueryPrompts,
     instruction: "You are a helpful assistant that helps users find and summarize information related to their files and documents.",
     locale: "en-US",
-  }), [safeSiteName, chatTheme, zeroQueryPrompts]);
+  }), [safeSiteName, chatTheme]);
   
   // Reset chat when there's an issue
   const handleResetChat = useCallback(() => {
