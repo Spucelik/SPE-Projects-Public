@@ -32,6 +32,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
       return;
     }
     
+    console.log('CopilotChat initialized with containerId:', containerId);
     setErrorShown(false);
   }, [containerId, errorShown]);
   

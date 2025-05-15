@@ -311,7 +311,7 @@ const Files = () => {
         </SheetContent>
       </Sheet>
       
-      {/* Copilot Chat Side Panel - This is the only chat panel we need */}
+      {/* Copilot Chat Side Panel */}
       {containerId && (
         <Sheet open={isCopilotOpen} onOpenChange={setIsCopilotOpen}>
           <SheetContent className="w-[400px] sm:w-[540px] p-0 border-l shadow-lg">
@@ -322,7 +322,9 @@ const Files = () => {
               </SheetDescription>
             </SheetHeader>
             <div className="h-[calc(100vh-120px)]">
-              <CopilotChat containerId={containerId} />
+              {isCopilotOpen && (
+                <CopilotChat containerId={containerId} />
+              )}
             </div>
           </SheetContent>
         </Sheet>

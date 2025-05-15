@@ -16,7 +16,7 @@ interface CopilotChatContainerProps {
 }
 
 const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true); // Start with chat open
   const { getSharePointToken, isAuthenticated } = useAuth();
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
   const [chatKey, setChatKey] = useState(0);
@@ -118,7 +118,6 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     promptSuggestionList: [
       { 
         suggestionText: 'Show me recent files'
-        // No icons specified - the error was likely related to accessing icon properties
       },
       { 
         suggestionText: 'What documents do I have access to?'
@@ -163,6 +162,13 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     console.log('Copilot chat API is ready');
     setChatApi(api);
   }, [handleError]);
+
+  // Ensure we open the chat
+  useEffect(() => {
+    if (!isOpen) {
+      setIsOpen(true);
+    }
+  }, []);
 
   return (
     <CopilotDesktopView

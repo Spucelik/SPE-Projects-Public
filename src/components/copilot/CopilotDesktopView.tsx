@@ -46,7 +46,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
   // Open the chat when the component is opened and we have a valid chat API
   useEffect(() => {
     if (isOpen && chatApi) {
-      console.log('Component opened, attempting to open chat...');
+      console.log('Component opened, attempting to open chat...', containerId);
       
       const openChatOnOpen = async () => {
         try {
@@ -64,7 +64,8 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 header: chatConfig.header,
                 locale: chatConfig.locale,
                 hasTheme: !!chatConfig.theme,
-                hasZeroQueryPrompts: !!chatConfig.zeroQueryPrompts
+                hasZeroQueryPrompts: !!chatConfig.zeroQueryPrompts,
+                containerId
               }));
               
               await chatApi.openChat(chatConfig);
@@ -82,7 +83,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
       
       openChatOnOpen();
     }
-  }, [isOpen, chatApi, chatConfig, onError]);
+  }, [isOpen, chatApi, chatConfig, onError, containerId]);
   
   // Reset chat when requested
   const handleResetChat = () => {
@@ -131,7 +132,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               <div 
                 className="h-full w-full"
                 style={{ 
-                  height: 'calc(100vh - 120px)',
+                  height: 'calc(100vh - 220px)',
                   position: "relative"
                 }}
                 data-testid="copilot-chat-container"
