@@ -322,7 +322,7 @@ const Files = () => {
               </SheetDescription>
             </SheetHeader>
             <div className="h-[calc(100vh-120px)]">
-              {isCopilotOpen && (
+              {isCopilotOpen && containerId && (
                 <CopilotChat containerId={containerId} />
               )}
             </div>

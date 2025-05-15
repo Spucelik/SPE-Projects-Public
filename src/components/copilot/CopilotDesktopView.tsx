@@ -57,6 +57,21 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
             return;
           }
           
+          // Verify required properties for zero query prompts
+          if (chatConfig.zeroQueryPrompts) {
+            const zqp = chatConfig.zeroQueryPrompts;
+            console.log('ZeroQueryPrompts:', JSON.stringify(zqp));
+            
+            // Make sure suggestions list has valid entries with required fields
+            if (zqp.promptSuggestionList && Array.isArray(zqp.promptSuggestionList)) {
+              for (const suggestion of zqp.promptSuggestionList) {
+                if (!suggestion.suggestionText || !suggestion.suggestionIconName) {
+                  console.warn('Invalid suggestion found:', suggestion);
+                }
+              }
+            }
+          }
+          
           // Add a small delay to ensure the container is ready
           setTimeout(async () => {
             try {

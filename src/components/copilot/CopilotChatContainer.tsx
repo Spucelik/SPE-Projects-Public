@@ -112,21 +112,25 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     }
   }), []);
   
-  // Create prompts for the chat - ensuring all objects have required properties
+  // Create prompts for the chat - ensuring all objects have all required properties
   const zeroQueryPrompts = React.useMemo(() => ({
     headerText: `Chat with content in ${safeSiteName}`,
     promptSuggestionList: [
       { 
-        suggestionText: 'Show me recent files'
+        suggestionText: 'Show me recent files',
+        suggestionIconName: 'Document' // Adding required icon name
       },
       { 
-        suggestionText: 'What documents do I have access to?'
+        suggestionText: 'What documents do I have access to?',
+        suggestionIconName: 'Document'
       },
       { 
-        suggestionText: 'Summarize the key points in my documents'
+        suggestionText: 'Summarize the key points in my documents',
+        suggestionIconName: 'Document'
       },
       { 
-        suggestionText: 'What are the latest updates to my files?'
+        suggestionText: 'What are the latest updates to my files?',
+        suggestionIconName: 'Document'
       }
     ]
   }), [safeSiteName]);
