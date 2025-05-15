@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useCopilotSite } from '@/hooks/useCopilotSite';
 import CopilotDesktopView from './CopilotDesktopView';
@@ -112,25 +111,21 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     }
   }), []);
   
-  // Create prompts for the chat - ensuring all objects have all required properties
+  // Create prompts for the chat - using only properties defined in the ZeroQueryPromptSuggestion type
   const zeroQueryPrompts = React.useMemo(() => ({
     headerText: `Chat with content in ${safeSiteName}`,
     promptSuggestionList: [
       { 
-        suggestionText: 'Show me recent files',
-        suggestionIconName: 'Document' // Adding required icon name
+        suggestionText: 'Show me recent files'
       },
       { 
-        suggestionText: 'What documents do I have access to?',
-        suggestionIconName: 'Document'
+        suggestionText: 'What documents do I have access to?'
       },
       { 
-        suggestionText: 'Summarize the key points in my documents',
-        suggestionIconName: 'Document'
+        suggestionText: 'Summarize the key points in my documents'
       },
       { 
-        suggestionText: 'What are the latest updates to my files?',
-        suggestionIconName: 'Document'
+        suggestionText: 'What are the latest updates to my files?'
       }
     ]
   }), [safeSiteName]);

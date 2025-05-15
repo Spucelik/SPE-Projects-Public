@@ -63,9 +63,10 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
             console.log('ZeroQueryPrompts:', JSON.stringify(zqp));
             
             // Make sure suggestions list has valid entries with required fields
+            // Note: Only check for suggestionText since that's what's defined in the type
             if (zqp.promptSuggestionList && Array.isArray(zqp.promptSuggestionList)) {
               for (const suggestion of zqp.promptSuggestionList) {
-                if (!suggestion.suggestionText || !suggestion.suggestionIconName) {
+                if (!suggestion.suggestionText) {
                   console.warn('Invalid suggestion found:', suggestion);
                 }
               }
