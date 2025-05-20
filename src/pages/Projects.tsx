@@ -128,15 +128,43 @@ const Projects = () => {
 
         // Use the new search-based method instead of the old method
         const projectsData = await sharePointService.listContainersUsingSearch(token);
-        const enhancedProjects = projectsData.map(project => ({
-          ...project,
-          type: ['Project', 'Tracker', 'Enhancement', 'Production Support'][Math.floor(Math.random() * 4)] as Project['type'],
-          status: ['Not Started', 'In Progress', 'Completed'][Math.floor(Math.random() * 3)] as Project['status'],
-          health: ['Green', 'Yellow', 'Red'][Math.floor(Math.random() * 3)] as Project['health'],
-          percentComplete: Math.floor(Math.random() * 100),
-          startDate: new Date(project.createdDateTime).toISOString(),
-          endDate: new Date(new Date(project.createdDateTime).getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        }));
+        
+        const enhancedProjects = projectsData.map(project => {
+          // Handle dates safely to prevent invalid date errors
+          let startDate;
+          let endDate;
+          
+          // Use project's createdDateTime if available, or fallback to current date
+          try {
+            if (project.createdDateTime && project.createdDateTime !== '') {
+              startDate = new Date(project.createdDateTime).toISOString();
+            } else {
+              startDate = new Date().toISOString();
+            }
+            
+            // Generate a random end date 1-30 days in the future from the start date
+            const start = new Date(startDate);
+            const futureDate = new Date(start.getTime() + (Math.floor(Math.random() * 30) + 1) * 24 * 60 * 60 * 1000);
+            endDate = futureDate.toISOString();
+          } catch (err) {
+            // Fallback if date parsing fails
+            console.warn('Date parsing issue:', err);
+            const now = new Date();
+            startDate = now.toISOString();
+            endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+          }
+          
+          return {
+            ...project,
+            type: ['Project', 'Tracker', 'Enhancement', 'Production Support'][Math.floor(Math.random() * 4)] as Project['type'],
+            status: ['Not Started', 'In Progress', 'Completed'][Math.floor(Math.random() * 3)] as Project['status'],
+            health: ['Green', 'Yellow', 'Red'][Math.floor(Math.random() * 3)] as Project['health'],
+            percentComplete: Math.floor(Math.random() * 100),
+            startDate,
+            endDate,
+          };
+        });
+        
         setProjects(enhancedProjects);
       } catch (error: any) {
         console.error('Error fetching projects:', error);
