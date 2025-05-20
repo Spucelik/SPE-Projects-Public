@@ -104,21 +104,13 @@ class SharePointService {
     }
   }
   
-  // Original method is DEPRECATED - now redirects to the search method
+  // Original method is completely removed and replaced with a function that uses the search method
   async listContainers(token: string): Promise<Container[]> {
-    console.warn('DEPRECATED: listContainers method is deprecated. Use listContainersUsingSearch instead. This call will be redirected to the search-based method.');
+    // Remove the old warning since it still shows the old URL in console logs
+    console.log('Using search-based method for listing containers');
     
-    try {
-      // Log the old URL for debugging purposes
-      const oldUrl = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.fileStorage}${appConfig.endpoints.containers}?$select=id,displayName,description,containerTypeId,createdDateTime&$filter=containerTypeId eq ${appConfig.containerTypeId}`;
-      console.log('REDIRECTING from old URL:', oldUrl);
-      
-      // Redirect to the search-based method
-      return await this.listContainersUsingSearch(token);
-    } catch (error) {
-      console.error('Redirected list containers error:', error);
-      throw error;
-    }
+    // Directly use the search-based method without constructing the old URL
+    return await this.listContainersUsingSearch(token);
   }
   
   // Get a specific container

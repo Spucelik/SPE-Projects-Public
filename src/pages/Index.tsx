@@ -30,7 +30,8 @@ const Index = () => {
         }
 
         try {
-          // Use the search-based method instead of the original listContainers method
+          // Directly use the search-based method for consistency
+          console.log('Fetching projects using search method...');
           const projectsList = await sharePointService.listContainersUsingSearch(token);
           setProjects(projectsList);
         } catch (error: any) {
