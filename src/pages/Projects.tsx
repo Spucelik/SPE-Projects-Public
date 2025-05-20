@@ -132,7 +132,7 @@ const Projects = () => {
         }
 
         try {
-          // First try the search-based method
+          // Use the search-based method instead of the old method
           const projectsData = await sharePointService.listContainersUsingSearch(token);
           
           const enhancedProjects = projectsData.map(project => {

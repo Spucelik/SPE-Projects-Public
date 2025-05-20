@@ -30,10 +30,11 @@ const Index = () => {
         }
 
         try {
-          const projectsList = await sharePointService.listContainers(token);
+          // Use the search-based method instead of the original listContainers method
+          const projectsList = await sharePointService.listContainersUsingSearch(token);
           setProjects(projectsList);
         } catch (error: any) {
-          console.error('Error from listContainers API:', error);
+          console.error('Error from search API:', error);
           // Check if it's a permissions error (403)
           if (error.message && error.message.includes('403')) {
             setPermissionError(true);
