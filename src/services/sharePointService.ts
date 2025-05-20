@@ -1,3 +1,4 @@
+
 // Define our own FileItem interface
 export interface FileItem {
   id: string;
@@ -16,12 +17,95 @@ export interface Container {
   description: string;
   containerTypeId: string;
   createdDateTime: string;
+  webUrl?: string;
 }
 
 import { appConfig } from '../config/appConfig';
 
 class SharePointService {
-  // List containers
+  // List containers using Search API (new method)
+  async listContainersUsingSearch(token: string): Promise<Container[]> {
+    try {
+      // Using the search API endpoint
+      const url = `${appConfig.endpoints.graphBaseUrl}/search/query`;
+      
+      console.log('Listing containers with search URL:', url);
+      
+      // Create the search query with the containerTypeId without quotes
+      const requestBody = {
+        requests: [
+          {
+            entityTypes: ["drive"],
+            query: {
+              queryString: `ContainerTypeId:${appConfig.containerTypeId}`
+            },
+            sharePointOneDriveOptions: {
+              includeHiddenContent: true
+            },
+            fields: [
+              "id",
+              "name",
+              "parentReference",
+              "webUrl",
+              "createdDateTime",
+              "lastModifiedDateTime",
+              "size",
+              "createdBy",
+              "lastModifiedBy",
+              "fileSystemInfo"
+            ]
+          }
+        ]
+      };
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response from search API:', errorText);
+        throw new Error(`Failed to list containers using search: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Search API response:', data);
+      
+      // Extract and transform the container data from the search results
+      const containers: Container[] = [];
+      
+      if (data.value && data.value.length > 0 && data.value[0].hitsContainers && data.value[0].hitsContainers.length > 0) {
+        const hits = data.value[0].hitsContainers[0].hits || [];
+        
+        for (const hit of hits) {
+          const resource = hit.resource;
+          if (resource) {
+            containers.push({
+              id: resource.id || '',
+              displayName: resource.name || '',
+              description: '',
+              containerTypeId: appConfig.containerTypeId,
+              createdDateTime: resource.createdDateTime || '',
+              webUrl: resource.webUrl || ''
+            });
+          }
+        }
+      }
+      
+      console.log('Processed containers:', containers);
+      return containers;
+    } catch (error) {
+      console.error('List containers using search error details:', error);
+      throw error;
+    }
+  }
+  
+  // Original method is kept for reference but we'll use the search method
   async listContainers(token: string): Promise<Container[]> {
     try {
       // API endpoint for SharePoint Embedded containers

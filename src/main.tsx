@@ -11,6 +11,8 @@ window.addEventListener('error', (e) => {
   if (e.error && e.message && (
     e.message.includes('chatodsp') || 
     e.message.includes('sharepoint') || 
+    e.message.includes('search') ||
+    e.message.includes('ContainerTypeId') ||
     e.message.includes('Cannot read properties of undefined')
   )) {
     console.error('SharePoint Embedded error caught:', e.error || e.message);
@@ -24,7 +26,11 @@ window.addEventListener('error', (e) => {
 // Also catch unhandled promise rejections
 window.addEventListener('unhandledrejection', (e) => {
   if (e.reason && (
-    (e.reason.message && e.reason.message.includes('sharepointembedded')) ||
+    (e.reason.message && (
+      e.reason.message.includes('sharepointembedded') ||
+      e.reason.message.includes('search') ||
+      e.reason.message.includes('ContainerTypeId')
+    )) ||
     (e.reason.toString && e.reason.toString().includes('SharePoint'))
   )) {
     console.error('Unhandled SharePoint promise rejection:', e.reason);

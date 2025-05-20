@@ -8,6 +8,7 @@ export const useContainerDetails = (containerId: string | undefined) => {
   const { isAuthenticated, getAccessToken } = useAuth();
 
   useEffect(() => {
+    // If no container ID provided, don't do anything
     if (!isAuthenticated || !containerId) return;
 
     const fetchContainerDetails = async () => {

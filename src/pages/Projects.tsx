@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -10,7 +11,8 @@ import {
   CircleDot,
   Calendar,
   Clock,
-  Info
+  Info,
+  ExternalLink
 } from 'lucide-react';
 import { 
   Sheet, 
@@ -41,6 +43,7 @@ interface Project {
   description: string;
   containerTypeId: string;
   createdDateTime: string;
+  webUrl?: string;
   type: 'Project' | 'Tracker' | 'Enhancement' | 'Production Support';
   status: 'Not Started' | 'In Progress' | 'Completed';
   health: 'Green' | 'Yellow' | 'Red';
@@ -50,20 +53,23 @@ interface Project {
 }
 
 const ProjectDetails = ({ project }: { project: Project }) => {
-  const containerDetails = useContainerDetails(project.id);
+  // If we already have webUrl from search, we can use it directly
+  const containerDetails = project.webUrl ? null : useContainerDetails(project.id);
+  const projectUrl = project.webUrl || (containerDetails?.webUrl || '');
 
   return (
     <div className="space-y-4">
       <div>
         <h4 className="font-semibold">Project URL</h4>
-        {containerDetails?.webUrl ? (
+        {projectUrl ? (
           <a 
-            href={containerDetails.webUrl} 
+            href={projectUrl} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="text-blue-600 hover:underline"
+            className="text-blue-600 hover:underline flex items-center gap-1"
           >
-            {containerDetails.webUrl}
+            <span className="truncate">{projectUrl}</span>
+            <ExternalLink className="h-4 w-4" />
           </a>
         ) : (
           <p className="text-muted-foreground">Loading URL...</p>
@@ -120,7 +126,8 @@ const Projects = () => {
           return;
         }
 
-        const projectsData = await sharePointService.listContainers(token);
+        // Use the new search-based method instead of the old method
+        const projectsData = await sharePointService.listContainersUsingSearch(token);
         const enhancedProjects = projectsData.map(project => ({
           ...project,
           type: ['Project', 'Tracker', 'Enhancement', 'Production Support'][Math.floor(Math.random() * 4)] as Project['type'],
