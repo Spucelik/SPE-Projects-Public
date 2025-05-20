@@ -132,7 +132,8 @@ const Projects = () => {
         }
 
         try {
-          // Use the search-based method instead of the old method
+          // Make sure to use the search method directly
+          console.log('Fetching projects using search method...');
           const projectsData = await sharePointService.listContainersUsingSearch(token);
           
           const enhancedProjects = projectsData.map(project => {

@@ -1,4 +1,3 @@
-
 // Define our own FileItem interface
 export interface FileItem {
   id: string;
@@ -105,31 +104,19 @@ class SharePointService {
     }
   }
   
-  // Original method is kept for reference but we'll use the search method
+  // Original method is DEPRECATED - now redirects to the search method
   async listContainers(token: string): Promise<Container[]> {
+    console.warn('DEPRECATED: listContainers method is deprecated. Use listContainersUsingSearch instead. This call will be redirected to the search-based method.');
+    
     try {
-      // API endpoint for SharePoint Embedded containers
-      const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.fileStorage}${appConfig.endpoints.containers}?$select=id,displayName,description,containerTypeId,createdDateTime&$filter=containerTypeId eq ${appConfig.containerTypeId}`;
+      // Log the old URL for debugging purposes
+      const oldUrl = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.fileStorage}${appConfig.endpoints.containers}?$select=id,displayName,description,containerTypeId,createdDateTime&$filter=containerTypeId eq ${appConfig.containerTypeId}`;
+      console.log('REDIRECTING from old URL:', oldUrl);
       
-      console.log('Listing containers with URL:', url);
-      
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`Failed to list containers: ${response.status} ${response.statusText} - ${errorText}`);
-      }
-      
-      const data = await response.json();
-      return data.value;
+      // Redirect to the search-based method
+      return await this.listContainersUsingSearch(token);
     } catch (error) {
-      console.error('List containers error details:', error);
+      console.error('Redirected list containers error:', error);
       throw error;
     }
   }
