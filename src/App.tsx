@@ -20,7 +20,16 @@ import Files from "./pages/Files";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./context/AuthContext";
 
-const queryClient = new QueryClient();
+// Initialize QueryClient with default options
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 const App = () => {
   return (

@@ -132,10 +132,11 @@ const Projects = () => {
         }
 
         try {
-          // Make sure to use the search method directly
+          // Always use the search API method directly
           console.log('Fetching projects using search method...');
           const projectsData = await sharePointService.listContainersUsingSearch(token);
           
+          // Process the data
           const enhancedProjects = projectsData.map(project => {
             // Handle dates safely to prevent invalid date errors
             let startDate;
