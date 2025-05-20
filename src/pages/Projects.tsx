@@ -12,7 +12,8 @@ import {
   Calendar,
   Clock,
   Info,
-  ExternalLink
+  ExternalLink,
+  ShieldAlert
 } from 'lucide-react';
 import { 
   Sheet, 
@@ -34,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { ConfigAlert } from '../components/ConfigAlert';
 import { useContainerDetails } from '../hooks/useContainerDetails';
 
@@ -108,10 +110,11 @@ const ProjectDetails = ({ project }: { project: Project }) => {
 };
 
 const Projects = () => {
-  const { isAuthenticated, getAccessToken } = useAuth();
+  const { isAuthenticated, getAccessToken, user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [permissionError, setPermissionError] = useState<boolean>(false);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -120,52 +123,69 @@ const Projects = () => {
       try {
         setLoading(true);
         setError(null);
+        setPermissionError(false);
+        
         const token = await getAccessToken();
         if (!token) {
           setError("Failed to get access token. Please try logging in again.");
           return;
         }
 
-        // Use the new search-based method instead of the old method
-        const projectsData = await sharePointService.listContainersUsingSearch(token);
-        
-        const enhancedProjects = projectsData.map(project => {
-          // Handle dates safely to prevent invalid date errors
-          let startDate;
-          let endDate;
+        try {
+          // First try the search-based method
+          const projectsData = await sharePointService.listContainersUsingSearch(token);
           
-          // Use project's createdDateTime if available, or fallback to current date
-          try {
-            if (project.createdDateTime && project.createdDateTime !== '') {
-              startDate = new Date(project.createdDateTime).toISOString();
-            } else {
-              startDate = new Date().toISOString();
+          const enhancedProjects = projectsData.map(project => {
+            // Handle dates safely to prevent invalid date errors
+            let startDate;
+            let endDate;
+            
+            // Use project's createdDateTime if available, or fallback to current date
+            try {
+              if (project.createdDateTime && project.createdDateTime !== '') {
+                startDate = new Date(project.createdDateTime).toISOString();
+              } else {
+                startDate = new Date().toISOString();
+              }
+              
+              // Generate a random end date 1-30 days in the future from the start date
+              const start = new Date(startDate);
+              const futureDate = new Date(start.getTime() + (Math.floor(Math.random() * 30) + 1) * 24 * 60 * 60 * 1000);
+              endDate = futureDate.toISOString();
+            } catch (err) {
+              // Fallback if date parsing fails
+              console.warn('Date parsing issue:', err);
+              const now = new Date();
+              startDate = now.toISOString();
+              endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
             }
             
-            // Generate a random end date 1-30 days in the future from the start date
-            const start = new Date(startDate);
-            const futureDate = new Date(start.getTime() + (Math.floor(Math.random() * 30) + 1) * 24 * 60 * 60 * 1000);
-            endDate = futureDate.toISOString();
-          } catch (err) {
-            // Fallback if date parsing fails
-            console.warn('Date parsing issue:', err);
-            const now = new Date();
-            startDate = now.toISOString();
-            endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
-          }
+            return {
+              ...project,
+              type: ['Project', 'Tracker', 'Enhancement', 'Production Support'][Math.floor(Math.random() * 4)] as Project['type'],
+              status: ['Not Started', 'In Progress', 'Completed'][Math.floor(Math.random() * 3)] as Project['status'],
+              health: ['Green', 'Yellow', 'Red'][Math.floor(Math.random() * 3)] as Project['health'],
+              percentComplete: Math.floor(Math.random() * 100),
+              startDate,
+              endDate,
+            };
+          });
           
-          return {
-            ...project,
-            type: ['Project', 'Tracker', 'Enhancement', 'Production Support'][Math.floor(Math.random() * 4)] as Project['type'],
-            status: ['Not Started', 'In Progress', 'Completed'][Math.floor(Math.random() * 3)] as Project['status'],
-            health: ['Green', 'Yellow', 'Red'][Math.floor(Math.random() * 3)] as Project['health'],
-            percentComplete: Math.floor(Math.random() * 100),
-            startDate,
-            endDate,
-          };
-        });
-        
-        setProjects(enhancedProjects);
+          setProjects(enhancedProjects);
+        } catch (error: any) {
+          console.error('Error from search API:', error);
+          // Check if it's a permissions error (403)
+          if (error.message && error.message.includes('403')) {
+            setPermissionError(true);
+            toast({
+              title: "Permission Error",
+              description: "Your account doesn't have sufficient permissions to access projects.",
+              variant: "destructive",
+            });
+          } else {
+            throw error; // Re-throw if it's not a permissions error
+          }
+        }
       } catch (error: any) {
         console.error('Error fetching projects:', error);
         setError(error.message);
@@ -210,12 +230,46 @@ const Projects = () => {
       </div>
       
       <ConfigAlert />
+
+      {permissionError && (
+        <Alert variant="destructive" className="mb-4">
+          <ShieldAlert className="h-4 w-4" />
+          <AlertTitle>Insufficient Permissions</AlertTitle>
+          <AlertDescription>
+            <p>Your account ({user?.username || 'Guest'}) does not have the required permissions to view or manage projects.</p>
+            <p className="mt-2">Please contact your administrator for access.</p>
+          </AlertDescription>
+        </Alert>
+      )}
       
       {loading ? (
         <div className="animate-pulse space-y-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-16 bg-gray-200 rounded"></div>
           ))}
+        </div>
+      ) : permissionError ? (
+        <div className="border rounded-lg p-8 text-center">
+          <ShieldAlert className="h-12 w-12 mx-auto text-red-500 mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Permission Denied</h3>
+          <p className="mb-4 text-muted-foreground">
+            Your account doesn't have access to view or manage projects. This is common for guest accounts.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Error code: 403 Forbidden
+          </p>
+        </div>
+      ) : error ? (
+        <Alert variant="destructive">
+          <AlertTitle>Error loading projects</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : projects.length === 0 ? (
+        <div className="border rounded-lg p-8 text-center">
+          <h3 className="text-lg font-semibold mb-2">No Projects Found</h3>
+          <p className="text-muted-foreground">
+            There are no projects available to display.
+          </p>
         </div>
       ) : (
         <div className="border rounded-lg">
