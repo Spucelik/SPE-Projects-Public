@@ -54,8 +54,8 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-blue-600">
       <div className="w-full max-w-4xl bg-white rounded-xl shadow-xl overflow-hidden flex">
         {/* Left side - Brand and illustration */}
-        <div className="bg-blue-600 p-8 text-white w-2/5 flex flex-col items-center text-center">
-          <div className="mb-6">
+        <div className="bg-blue-600 p-8 text-white w-2/5 flex flex-col items-center justify-center text-center">
+          <div className="mb-6 flex flex-col items-center">
             <h3 className="text-lg font-medium mb-1">Contoso</h3>
             <h2 className="text-2xl font-bold mb-1">Project</h2>
             <h2 className="text-2xl font-bold mb-1">Management</h2>
@@ -74,14 +74,14 @@ const Login = () => {
         </div>
         
         {/* Right side - Login form */}
-        <div className="p-8 w-3/5 bg-gray-50 flex flex-col items-center">
+        <div className="p-8 w-3/5 bg-gray-50 flex flex-col items-center justify-center">
           <div className="mb-8 text-center w-full">
             <h2 className="text-3xl font-bold text-blue-600">Log in</h2>
           </div>
           
-          <div className="space-y-5 w-full max-w-md">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-center block">
+          <div className="space-y-5 w-full max-w-md flex flex-col items-center">
+            <div className="space-y-2 w-full flex flex-col items-center">
+              <Label htmlFor="email" className="text-sm font-medium text-center">
                 E-mail
               </Label>
               <Input
@@ -90,24 +90,22 @@ const Login = () => {
                 placeholder="example.company@example.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full p-3 rounded-md"
+                className="w-full p-3 rounded-md text-center"
               />
             </div>
             
-            <div className="space-y-2">
-              <div className="flex items-center justify-center">
-                <Label htmlFor="password" className="text-sm font-medium">
-                  Password
-                </Label>
-              </div>
-              <div className="relative">
+            <div className="space-y-2 w-full flex flex-col items-center">
+              <Label htmlFor="password" className="text-sm font-medium text-center">
+                Password
+              </Label>
+              <div className="relative w-full">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full p-3 rounded-md pr-10"
+                  className="w-full p-3 rounded-md pr-10 text-center"
                 />
                 <button
                   type="button"
@@ -117,7 +115,7 @@ const Login = () => {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              <div className="text-center">
+              <div className="text-center w-full">
                 <button className="text-sm text-blue-600 hover:underline">
                   Forgot the password?
                 </button>
@@ -125,16 +123,16 @@ const Login = () => {
             </div>
             
             {error && (
-              <Alert variant="destructive" className="my-4">
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
+              <Alert variant="destructive" className="my-4 w-full text-center">
+                <AlertTitle className="text-center">Error</AlertTitle>
+                <AlertDescription className="text-center">{error}</AlertDescription>
               </Alert>
             )}
             
             {!isConfigured && (
-              <Alert className="bg-blue-50 border-blue-200 text-blue-700 my-4">
-                <AlertTitle>Configuration Required</AlertTitle>
-                <AlertDescription>
+              <Alert className="bg-blue-50 border-blue-200 text-blue-700 my-4 w-full">
+                <AlertTitle className="text-center">Configuration Required</AlertTitle>
+                <AlertDescription className="text-center">
                   You must configure CLIENT_ID, TENANT_ID, and CONTAINER_TYPE_ID before login will work.
                 </AlertDescription>
               </Alert>
