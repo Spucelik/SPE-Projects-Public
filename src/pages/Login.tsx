@@ -56,7 +56,7 @@ const Login = () => {
           {/* Left side - Brand and illustration */}
           <div className="bg-blue-600 p-8 md:w-2/5">
             <div className="text-white">
-              <h3 className="text-lg font-medium">Team-Line</h3>
+              <h3 className="text-lg font-medium">Contoso</h3>
               <h2 className="text-2xl font-bold">Project</h2>
               <h2 className="text-2xl font-bold">Management</h2>
               <h2 className="text-2xl font-bold mb-2">Service</h2>
