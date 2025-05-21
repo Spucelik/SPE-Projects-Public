@@ -1,4 +1,3 @@
-
 import { 
   BrowserRouter as Router, 
   Routes, 
@@ -33,14 +32,12 @@ const queryClient = new QueryClient({
 });
 
 // Log global query errors - using the correct listener format for TanStack Query v5
-queryClient.getQueryCache().subscribe(
-  // Pass a callback function directly instead of using an object with event handlers
-  (event) => {
-    if (event.type === 'error' && event.error) {
-      console.error('Query cache error:', event.error);
-    }
+queryClient.getQueryCache().subscribe((event) => {
+  // Check if the event has an error using type guard for safety
+  if (event.type === 'updated' && event.query.state.error) {
+    console.error('Query cache error:', event.query.state.error);
   }
-);
+});
 
 // Simple fallback for loading states
 const LoadingFallback = () => (
