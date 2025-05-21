@@ -56,7 +56,7 @@ const Login = () => {
         {/* Left sidebar with illustration and brand info */}
         <div className="bg-blue-600 text-white p-8 md:w-2/5 flex flex-col">
           <div className="mb-8">
-            <h2 className="text-xl font-medium">Team-Line</h2>
+            <h2 className="text-xl font-medium">Contoso</h2>
           </div>
           
           <div className="mb-8">
