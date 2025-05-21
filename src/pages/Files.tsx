@@ -39,6 +39,7 @@ const Files = () => {
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [copilotSize, setCopilotSize] = useState(30); // Default size percentage for Copilot panel
   
   const {
     files,
@@ -189,6 +190,13 @@ const Files = () => {
     });
   };
 
+  // Handle resize event from the resizable panel
+  const handleResize = (sizes: number[]) => {
+    if (sizes.length > 0) {
+      setCopilotSize(sizes[1]);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -259,15 +267,53 @@ const Files = () => {
         />
       )}
 
-      <FileList 
-        files={getSortedItems()}
-        loading={loading}
-        onFolderClick={(item) => handleFolderClick(item.id, item.name)}
-        onFileClick={handleViewFile}
-        onViewFile={handleViewFile}
-        onDeleteFile={handleDeleteFile}
-        containerId={containerId || ''}
-      />
+      {/* Main content with resizable panels */}
+      <div className={`${isCopilotOpen ? 'flex flex-row h-[calc(100vh-250px)]' : ''}`}>
+        <div className={`${isCopilotOpen ? 'flex-1 overflow-auto pr-4' : ''}`}>
+          <FileList 
+            files={getSortedItems()}
+            loading={loading}
+            onFolderClick={(item) => handleFolderClick(item.id, item.name)}
+            onFileClick={handleViewFile}
+            onViewFile={handleViewFile}
+            onDeleteFile={handleDeleteFile}
+            containerId={containerId || ''}
+          />
+        </div>
+        
+        {/* Copilot Chat Panel - Directly integrated (not in a Sheet) */}
+        {containerId && isCopilotOpen && (
+          <div className="flex flex-col border-l bg-background overflow-hidden" style={{ width: `${copilotSize}%` }}>
+            <div className="p-4 border-b flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-semibold">SharePoint AI Copilot</h2>
+                <p className="text-sm text-muted-foreground">
+                  {containerDetails?.name || 'AI Assistant'}
+                </p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsCopilotOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+            
+            <ResizablePanelGroup direction="horizontal" onLayout={handleResize} className="h-full">
+              <ResizablePanel defaultSize={0} />
+              <ResizableHandle withHandle className="bg-muted hover:bg-muted-foreground/20 transition-colors" />
+              <ResizablePanel defaultSize={100} className="h-full">
+                {containerId && (
+                  <div className="h-full">
+                    <CopilotChat containerId={containerId} className="h-full" />
+                  </div>
+                )}
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          </div>
+        )}
+      </div>
       
       <FilePreviewDialog
         isOpen={isPreviewOpen}
@@ -311,48 +357,6 @@ const Files = () => {
           </SheetFooter>
         </SheetContent>
       </Sheet>
-      
-      {/* Resizable Copilot Chat Side Panel with proper resize handle */}
-      {containerId && (
-        <Sheet open={isCopilotOpen} onOpenChange={setIsCopilotOpen}>
-          <SheetContent className="p-0 border-l shadow-lg w-auto max-w-full overflow-hidden flex flex-col">
-            <div className="flex h-full w-full">
-              <ResizablePanelGroup direction="horizontal">
-                <ResizablePanel 
-                  defaultSize={100} 
-                  minSize={20}
-                  maxSize={80}
-                  className="min-w-[300px]"
-                >
-                  <div className="w-full h-full flex flex-col">
-                    <SheetHeader className="px-6 py-4 border-b">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <SheetTitle>SharePoint AI Copilot</SheetTitle>
-                          <SheetDescription>
-                            Ask questions about your files and content
-                          </SheetDescription>
-                        </div>
-                        <SheetClose asChild>
-                          <Button variant="outline">Close</Button>
-                        </SheetClose>
-                      </div>
-                    </SheetHeader>
-                    <div className="flex flex-grow overflow-hidden">
-                      <div className="flex-grow h-[calc(100vh-120px)]">
-                        {isCopilotOpen && containerId && (
-                          <CopilotChat containerId={containerId} className="h-full" />
-                        )}
-                      </div>
-                      <ResizableHandle withHandle className="h-full" />
-                    </div>
-                  </div>
-                </ResizablePanel>
-              </ResizablePanelGroup>
-            </div>
-          </SheetContent>
-        </Sheet>
-      )}
     </div>
   );
 };
