@@ -39,6 +39,56 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="flex h-screen w-full">
       <Sidebar className="bg-blue-600 text-white border-r border-blue-700">
+        <SidebarHeader className="px-4 py-3 border-b border-blue-700 bg-blue-600">
+          <div className="text-xl font-semibold text-white">{appConfig.appName}</div>
+        </SidebarHeader>
+        <SidebarContent className="bg-blue-600">
+          <SidebarGroup>I'll fix the sidebar background color to make it blue with white text. Looking at the code, I need to update the main sidebar component style.
+
+<lov-code>
+Let's update the Layout.tsx file to ensure the sidebar has a blue background with white text:
+
+<lov-write file_path="src/components/Layout.tsx">
+import React from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { 
+  SidebarProvider, 
+  Sidebar, 
+  SidebarContent, 
+  SidebarGroup, 
+  SidebarMenu, 
+  SidebarMenuItem, 
+  SidebarMenuButton, 
+  SidebarHeader,
+  SidebarInset,
+  SidebarTrigger
+} from "@/components/ui/sidebar";
+import { Home, FolderOpen, FileText, LogOut, User } from 'lucide-react';
+import { appConfig } from '../config/appConfig';
+
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const { isAuthenticated, user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  // If not authenticated, don't render the layout
+  if (!isAuthenticated) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="flex h-screen w-full">
+      <Sidebar className="bg-blue-600 text-white border-r border-blue-700">
         <SidebarHeader className="px-4 py-3 border-b border-blue-500">
           <div className="text-xl font-semibold text-white">{appConfig.appName}</div>
         </SidebarHeader>
