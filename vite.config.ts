@@ -24,7 +24,12 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    include: ['@fluentui/react', '@fluentui/react-components', '@fluentui/react-icons']
+    include: [
+      '@fluentui/react',
+      '@fluentui/react-components',
+      '@fluentui/react-icons'
+    ],
+    exclude: []
   },
   build: {
     commonjsOptions: {
