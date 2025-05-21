@@ -51,7 +51,7 @@ const Login = () => {
   const isConfigured = appConfig.clientId && appConfig.tenantId && appConfig.containerTypeId;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md bg-white rounded-xl shadow-xl overflow-hidden">
         {/* Header with brand logo */}
         <div className="bg-blue-600 p-6 text-white text-center">
