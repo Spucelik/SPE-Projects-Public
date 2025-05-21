@@ -1,8 +1,17 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
   text-align: center;
+}
+
+/* Blue theme colors */
+:root {
+  --blue-primary: #1E88E5;
+  --blue-secondary: #2196F3;
+  --blue-accent: #64B5F6;
+  --blue-light: #E3F2FD;
+  --blue-dark: #1565C0;
 }
 
 .logo {
@@ -12,10 +21,7 @@
   transition: filter 300ms;
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  filter: drop-shadow(0 0 2em var(--blue-accent));
 }
 
 @keyframes logo-spin {

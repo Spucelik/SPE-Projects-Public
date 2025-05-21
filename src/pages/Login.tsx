@@ -51,37 +51,22 @@ const Login = () => {
   const isConfigured = appConfig.clientId && appConfig.tenantId && appConfig.containerTypeId;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600 p-4">
-      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row">
-        {/* Left sidebar with illustration and brand info */}
-        <div className="bg-blue-600 text-white p-8 md:w-2/5 flex flex-col">
-          <div className="mb-8">
-            <h2 className="text-xl font-medium">Contoso</h2>
-          </div>
-          
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Project Management Service</h1>
-            <p className="text-blue-100">
-              Everything you need for convenient team work
-            </p>
-          </div>
-          
-          <div className="mt-auto flex-1 flex items-center justify-center">
-            <img 
-              src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=1770&ixlib=rb-4.0.3" 
-              alt="Team collaboration" 
-              className="max-w-full rounded-lg opacity-85 max-h-64 object-cover"
-            />
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-xl overflow-hidden">
+        {/* Header with brand logo */}
+        <div className="bg-blue-600 p-6 text-white text-center">
+          <h2 className="text-2xl font-bold mb-1">Contoso</h2>
+          <h1 className="text-xl">Project Management Service</h1>
         </div>
         
-        {/* Right side login form */}
-        <div className="bg-gray-50 p-8 md:p-12 md:w-3/5">
-          <div className="mb-8 text-center md:text-left">
-            <h2 className="text-2xl font-bold text-blue-600 mb-2">Log in</h2>
+        {/* Form section */}
+        <div className="p-6 sm:p-8">
+          <div className="mb-6 text-center">
+            <h2 className="text-2xl font-semibold text-blue-600">Log in</h2>
+            <p className="text-gray-500 text-sm mt-1">Access your projects and files</p>
           </div>
           
-          <div className="space-y-6 max-w-md mx-auto md:mx-0">
+          <div className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
                 E-mail
@@ -121,7 +106,7 @@ const Login = () => {
               </div>
               <div className="text-right">
                 <button className="text-sm text-blue-600 hover:underline">
-                  Forgot the password
+                  Forgot password?
                 </button>
               </div>
             </div>
@@ -151,7 +136,7 @@ const Login = () => {
               {loading ? 'Signing in...' : 'Log in'}
             </Button>
             
-            <div className="mt-6 text-center text-sm text-gray-600">
+            <div className="mt-6 text-center text-sm text-gray-500">
               <p>Demo application for SharePoint Embedded</p>
             </div>
           </div>
