@@ -23,13 +23,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ['@fluentui/react', '@fluentui/react-components', '@fluentui/react-icons']
+  },
   build: {
-    rollupOptions: {
-      external: [
-        '@fluentui/react',
-        '@fluentui/react-components',
-        '@fluentui/react-icons'
-      ]
+    commonjsOptions: {
+      include: [/node_modules/]
     }
   }
 }));
