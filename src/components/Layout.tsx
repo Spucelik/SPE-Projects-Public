@@ -50,8 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   asChild 
                   isActive={location.pathname === '/'}
                   tooltip="Home"
-                  className="text-white hover:bg-blue-700"
-                  activeClassName="bg-blue-800 text-white"
+                  className={`text-white hover:bg-blue-700 ${location.pathname === '/' ? 'bg-blue-800' : ''}`}
                 >
                   <Link to="/">
                     <Home className="text-white" />
@@ -64,8 +63,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   asChild 
                   isActive={location.pathname === '/projects'}
                   tooltip="Projects"
-                  className="text-white hover:bg-blue-700"
-                  activeClassName="bg-blue-800 text-white"
+                  className={`text-white hover:bg-blue-700 ${location.pathname === '/projects' ? 'bg-blue-800' : ''}`}
                 >
                   <Link to="/projects">
                     <FolderOpen className="text-white" />
@@ -78,8 +76,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   asChild 
                   isActive={location.pathname.startsWith('/files')}
                   tooltip="Files"
-                  className="text-white hover:bg-blue-700"
-                  activeClassName="bg-blue-800 text-white"
+                  className={`text-white hover:bg-blue-700 ${location.pathname.startsWith('/files') ? 'bg-blue-800' : ''}`}
                 >
                   <Link to="/files">
                     <FileText className="text-white" />
