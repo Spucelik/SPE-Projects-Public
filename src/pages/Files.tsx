@@ -28,6 +28,7 @@ import { useFilePreview } from '@/hooks/useFilePreview';
 import { useAuth } from '@/context/AuthContext';
 import { sharePointService } from '@/services/sharePointService';
 import { toast } from '@/hooks/use-toast';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 const Files = () => {
   const { containerId } = useParams<{ containerId: string }>();
@@ -311,20 +312,39 @@ const Files = () => {
         </SheetContent>
       </Sheet>
       
-      {/* Copilot Chat Side Panel */}
+      {/* Resizable Copilot Chat Side Panel */}
       {containerId && (
         <Sheet open={isCopilotOpen} onOpenChange={setIsCopilotOpen}>
-          <SheetContent className="w-[400px] sm:w-[540px] p-0 border-l shadow-lg">
-            <SheetHeader className="px-6 py-4 border-b">
-              <SheetTitle>SharePoint AI Copilot</SheetTitle>
-              <SheetDescription>
-                Ask questions about your files and content
-              </SheetDescription>
-            </SheetHeader>
-            <div className="h-[calc(100vh-120px)]">
-              {isCopilotOpen && containerId && (
-                <CopilotChat containerId={containerId} />
-              )}
+          <SheetContent className="p-0 border-l shadow-lg w-auto max-w-full overflow-hidden flex flex-col">
+            <div className="flex h-full w-full">
+              <ResizablePanelGroup direction="horizontal">
+                <ResizablePanel defaultSize={75} minSize={30} maxSize={85}>
+                  <div className="w-full h-full">
+                    <SheetHeader className="px-6 py-4 border-b">
+                      <SheetTitle>SharePoint AI Copilot</SheetTitle>
+                      <SheetDescription>
+                        Ask questions about your files and content
+                      </SheetDescription>
+                    </SheetHeader>
+                    <div className="h-[calc(100vh-120px)]">
+                      {isCopilotOpen && containerId && (
+                        <CopilotChat containerId={containerId} className="h-full" />
+                      )}
+                    </div>
+                  </div>
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={25} minSize={15} maxSize={70}>
+                  <div className="w-full h-full flex items-center justify-center p-6 bg-muted/20">
+                    <div className="text-center text-muted-foreground">
+                      <p>Drag handle to resize the Copilot panel</p>
+                      <SheetClose asChild>
+                        <Button variant="outline" className="mt-4">Close Copilot</Button>
+                      </SheetClose>
+                    </div>
+                  </div>
+                </ResizablePanel>
+              </ResizablePanelGroup>
             </div>
           </SheetContent>
         </Sheet>
