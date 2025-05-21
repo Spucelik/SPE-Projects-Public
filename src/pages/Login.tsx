@@ -54,7 +54,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-blue-600">
       <div className="w-full max-w-4xl bg-white rounded-xl shadow-xl overflow-hidden flex">
         {/* Left side - Brand and illustration */}
-        <div className="bg-blue-600 p-8 text-white w-2/5 flex flex-col">
+        <div className="bg-blue-600 p-8 text-white w-2/5 flex flex-col items-center text-center">
           <div className="mb-6">
             <h3 className="text-lg font-medium mb-1">Contoso</h3>
             <h2 className="text-2xl font-bold mb-1">Project</h2>
@@ -74,14 +74,14 @@ const Login = () => {
         </div>
         
         {/* Right side - Login form */}
-        <div className="p-8 w-3/5 bg-gray-50">
-          <div className="mb-8 text-center">
+        <div className="p-8 w-3/5 bg-gray-50 flex flex-col items-center">
+          <div className="mb-8 text-center w-full">
             <h2 className="text-3xl font-bold text-blue-600">Log in</h2>
           </div>
           
-          <div className="space-y-5">
+          <div className="space-y-5 w-full max-w-md">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">
+              <Label htmlFor="email" className="text-sm font-medium text-center block">
                 E-mail
               </Label>
               <Input
@@ -95,7 +95,7 @@ const Login = () => {
             </div>
             
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-center">
                 <Label htmlFor="password" className="text-sm font-medium">
                   Password
                 </Label>
@@ -117,7 +117,7 @@ const Login = () => {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              <div className="text-right">
+              <div className="text-center">
                 <button className="text-sm text-blue-600 hover:underline">
                   Forgot the password?
                 </button>
