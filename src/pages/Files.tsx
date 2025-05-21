@@ -318,6 +318,17 @@ const Files = () => {
           <SheetContent className="p-0 border-l shadow-lg w-auto max-w-full overflow-hidden flex flex-col">
             <div className="flex h-full w-full">
               <ResizablePanelGroup direction="horizontal">
+                <ResizablePanel defaultSize={25} minSize={15} maxSize={70}>
+                  <div className="w-full h-full flex items-center justify-center p-6 bg-muted/20">
+                    <div className="text-center text-muted-foreground">
+                      <p>Drag handle to resize the Copilot panel</p>
+                      <SheetClose asChild>
+                        <Button variant="outline" className="mt-4">Close Copilot</Button>
+                      </SheetClose>
+                    </div>
+                  </div>
+                </ResizablePanel>
+                <ResizableHandle withHandle />
                 <ResizablePanel defaultSize={75} minSize={30} maxSize={85}>
                   <div className="w-full h-full">
                     <SheetHeader className="px-6 py-4 border-b">
@@ -330,17 +341,6 @@ const Files = () => {
                       {isCopilotOpen && containerId && (
                         <CopilotChat containerId={containerId} className="h-full" />
                       )}
-                    </div>
-                  </div>
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={25} minSize={15} maxSize={70}>
-                  <div className="w-full h-full flex items-center justify-center p-6 bg-muted/20">
-                    <div className="text-center text-muted-foreground">
-                      <p>Drag handle to resize the Copilot panel</p>
-                      <SheetClose asChild>
-                        <Button variant="outline" className="mt-4">Close Copilot</Button>
-                      </SheetClose>
                     </div>
                   </div>
                 </ResizablePanel>
