@@ -38,9 +38,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="flex h-screen w-full">
-      <Sidebar>
-        <SidebarHeader className="px-4 py-3 border-b">
-          <div className="text-xl font-semibold">{appConfig.appName}</div>
+      <Sidebar className="bg-blue-600 text-white border-r border-blue-700">
+        <SidebarHeader className="px-4 py-3 border-b border-blue-500">
+          <div className="text-xl font-semibold text-white">{appConfig.appName}</div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
@@ -50,9 +50,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   asChild 
                   isActive={location.pathname === '/'}
                   tooltip="Home"
+                  className="text-white hover:bg-blue-700"
+                  activeClassName="bg-blue-800 text-white"
                 >
                   <Link to="/">
-                    <Home />
+                    <Home className="text-white" />
                     <span>Home</span>
                   </Link>
                 </SidebarMenuButton>
@@ -62,9 +64,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   asChild 
                   isActive={location.pathname === '/projects'}
                   tooltip="Projects"
+                  className="text-white hover:bg-blue-700"
+                  activeClassName="bg-blue-800 text-white"
                 >
                   <Link to="/projects">
-                    <FolderOpen />
+                    <FolderOpen className="text-white" />
                     <span>Projects</span>
                   </Link>
                 </SidebarMenuButton>
@@ -74,9 +78,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   asChild 
                   isActive={location.pathname.startsWith('/files')}
                   tooltip="Files"
+                  className="text-white hover:bg-blue-700"
+                  activeClassName="bg-blue-800 text-white"
                 >
                   <Link to="/files">
-                    <FileText />
+                    <FileText className="text-white" />
                     <span>Files</span>
                   </Link>
                 </SidebarMenuButton>
@@ -87,22 +93,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </Sidebar>
       
       <SidebarInset className="flex flex-col">
-        <header className="flex justify-between items-center px-6 py-3 bg-white border-b">
+        <header className="flex justify-between items-center px-6 py-3 bg-blue-600 border-b border-blue-700 text-white">
           <div className="flex items-center gap-2">
-            <SidebarTrigger />
+            <SidebarTrigger className="text-white hover:bg-blue-700 p-1 rounded" />
             <h1 className="text-xl font-semibold">{appConfig.appName}</h1>
           </div>
           
           <div className="flex items-center gap-4">
             {user && (
               <div className="flex items-center gap-2">
-                <User size={18} />
+                <User size={18} className="text-white" />
                 <span>{user.username || user.name}</span>
               </div>
             )}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+              className="flex items-center gap-1 text-sm text-white hover:text-blue-200"
             >
               <LogOut size={18} />
               <span>Logout</span>
