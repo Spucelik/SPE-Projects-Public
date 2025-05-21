@@ -312,14 +312,19 @@ const Files = () => {
         </SheetContent>
       </Sheet>
       
-      {/* Resizable Copilot Chat Side Panel - Now with single panel */}
+      {/* Resizable Copilot Chat Side Panel with proper resize handle */}
       {containerId && (
         <Sheet open={isCopilotOpen} onOpenChange={setIsCopilotOpen}>
           <SheetContent className="p-0 border-l shadow-lg w-auto max-w-full overflow-hidden flex flex-col">
             <div className="flex h-full w-full">
               <ResizablePanelGroup direction="horizontal">
-                <ResizablePanel defaultSize={100} className="min-w-[300px]">
-                  <div className="w-full h-full">
+                <ResizablePanel 
+                  defaultSize={100} 
+                  minSize={20}
+                  maxSize={80}
+                  className="min-w-[300px]"
+                >
+                  <div className="w-full h-full flex flex-col">
                     <SheetHeader className="px-6 py-4 border-b">
                       <div className="flex items-center justify-between">
                         <div>
@@ -333,10 +338,13 @@ const Files = () => {
                         </SheetClose>
                       </div>
                     </SheetHeader>
-                    <div className="h-[calc(100vh-120px)]">
-                      {isCopilotOpen && containerId && (
-                        <CopilotChat containerId={containerId} className="h-full" />
-                      )}
+                    <div className="flex flex-grow overflow-hidden">
+                      <div className="flex-grow h-[calc(100vh-120px)]">
+                        {isCopilotOpen && containerId && (
+                          <CopilotChat containerId={containerId} className="h-full" />
+                        )}
+                      </div>
+                      <ResizableHandle withHandle className="h-full" />
                     </div>
                   </div>
                 </ResizablePanel>
