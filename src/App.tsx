@@ -32,9 +32,12 @@ const queryClient = new QueryClient({
   },
 });
 
-// Log global query errors
+// Log global query errors - using the correct listener format
 queryClient.getQueryCache().subscribe({
-  onError: (error) => {
+  onSuccess: undefined,
+  onSettled: undefined,
+  onMutate: undefined,
+  onFailed: (error) => {
     console.error('Query cache error:', error);
   }
 });
