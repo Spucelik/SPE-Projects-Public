@@ -312,30 +312,26 @@ const Files = () => {
         </SheetContent>
       </Sheet>
       
-      {/* Resizable Copilot Chat Side Panel */}
+      {/* Resizable Copilot Chat Side Panel - Now with single panel */}
       {containerId && (
         <Sheet open={isCopilotOpen} onOpenChange={setIsCopilotOpen}>
           <SheetContent className="p-0 border-l shadow-lg w-auto max-w-full overflow-hidden flex flex-col">
             <div className="flex h-full w-full">
               <ResizablePanelGroup direction="horizontal">
-                <ResizablePanel defaultSize={25} minSize={15} maxSize={70}>
-                  <div className="w-full h-full flex items-center justify-center p-6 bg-muted/20">
-                    <div className="text-center text-muted-foreground">
-                      <p>Drag handle to resize the Copilot panel</p>
-                      <SheetClose asChild>
-                        <Button variant="outline" className="mt-4">Close Copilot</Button>
-                      </SheetClose>
-                    </div>
-                  </div>
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={75} minSize={30} maxSize={85}>
+                <ResizablePanel defaultSize={100} className="min-w-[300px]">
                   <div className="w-full h-full">
                     <SheetHeader className="px-6 py-4 border-b">
-                      <SheetTitle>SharePoint AI Copilot</SheetTitle>
-                      <SheetDescription>
-                        Ask questions about your files and content
-                      </SheetDescription>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <SheetTitle>SharePoint AI Copilot</SheetTitle>
+                          <SheetDescription>
+                            Ask questions about your files and content
+                          </SheetDescription>
+                        </div>
+                        <SheetClose asChild>
+                          <Button variant="outline">Close</Button>
+                        </SheetClose>
+                      </div>
                     </SheetHeader>
                     <div className="h-[calc(100vh-120px)]">
                       {isCopilotOpen && containerId && (
