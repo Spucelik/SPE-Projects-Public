@@ -52,18 +52,18 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-blue-600">
-      <div className="w-full max-w-4xl bg-white rounded-xl shadow-xl overflow-hidden flex">
+      <div className="w-full max-w-4xl bg-white rounded-xl shadow-xl overflow-hidden flex flex-col md:flex-row">
         {/* Left side - Brand and illustration */}
-        <div className="bg-blue-600 p-8 text-white w-2/5 flex flex-col items-center justify-center text-center">
+        <div className="bg-blue-600 p-8 text-white w-full md:w-2/5 flex flex-col items-center justify-center text-center">
           <div className="mb-6 flex flex-col items-center">
-            <h3 className="text-lg font-medium mb-1">Contoso</h3>
-            <h2 className="text-2xl font-bold mb-1">Project</h2>
-            <h2 className="text-2xl font-bold mb-1">Management</h2>
-            <h2 className="text-2xl font-bold">Service</h2>
-            <p className="mt-4 text-sm text-blue-100">Everything you need for convenient team work</p>
+            <h3 className="text-lg font-medium mb-1 text-center">Contoso</h3>
+            <h2 className="text-2xl font-bold mb-1 text-center">Project</h2>
+            <h2 className="text-2xl font-bold mb-1 text-center">Management</h2>
+            <h2 className="text-2xl font-bold text-center">Service</h2>
+            <p className="mt-4 text-sm text-blue-100 text-center">Everything you need for convenient team work</p>
           </div>
           
-          <div className="flex-grow flex items-end justify-center">
+          <div className="flex-grow flex items-center justify-center">
             {/* Placeholder for illustration - could be replaced with an actual image */}
             <div className="w-64 h-64 rounded-full bg-blue-500/30 flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-32 w-32 text-white/70" viewBox="0 0 20 20" fill="currentColor">
@@ -74,14 +74,14 @@ const Login = () => {
         </div>
         
         {/* Right side - Login form */}
-        <div className="p-8 w-3/5 bg-gray-50 flex flex-col items-center justify-center">
+        <div className="p-8 w-full md:w-3/5 bg-gray-50 flex flex-col items-center justify-center">
           <div className="mb-8 text-center w-full">
-            <h2 className="text-3xl font-bold text-blue-600">Log in</h2>
+            <h2 className="text-3xl font-bold text-blue-600 text-center">Log in</h2>
           </div>
           
           <div className="space-y-5 w-full max-w-md flex flex-col items-center">
             <div className="space-y-2 w-full flex flex-col items-center">
-              <Label htmlFor="email" className="text-sm font-medium text-center">
+              <Label htmlFor="email" className="text-sm font-medium text-center w-full">
                 E-mail
               </Label>
               <Input
@@ -95,10 +95,10 @@ const Login = () => {
             </div>
             
             <div className="space-y-2 w-full flex flex-col items-center">
-              <Label htmlFor="password" className="text-sm font-medium text-center">
+              <Label htmlFor="password" className="text-sm font-medium text-center w-full">
                 Password
               </Label>
-              <div className="relative w-full">
+              <div className="relative w-full flex justify-center">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
