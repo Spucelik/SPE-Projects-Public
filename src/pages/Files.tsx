@@ -193,7 +193,7 @@ const Files = () => {
   // Handle resize event from the resizable panel
   const handleResize = (sizes: number[]) => {
     if (sizes.length > 0) {
-      setCopilotSize(sizes[1]);
+      setCopilotSize(100 - sizes[0]);
     }
   };
 
@@ -269,7 +269,57 @@ const Files = () => {
 
       {/* Main content with resizable panels */}
       <div className={`${isCopilotOpen ? 'flex flex-row h-[calc(100vh-250px)]' : ''}`}>
-        <div className={`${isCopilotOpen ? 'flex-1 overflow-auto pr-4' : ''}`}>
+        {/* Copilot Chat Panel with resize handle on the left side */}
+        <ResizablePanelGroup 
+          direction="horizontal" 
+          onLayout={handleResize} 
+          className={isCopilotOpen ? "h-full w-full" : "hidden"}
+        >
+          <ResizablePanel defaultSize={70} minSize={30}>
+            <div className="h-full overflow-auto pr-4">
+              <FileList 
+                files={getSortedItems()}
+                loading={loading}
+                onFolderClick={(item) => handleFolderClick(item.id, item.name)}
+                onFileClick={handleViewFile}
+                onViewFile={handleViewFile}
+                onDeleteFile={handleDeleteFile}
+                containerId={containerId || ''}
+              />
+            </div>
+          </ResizablePanel>
+          
+          <ResizableHandle withHandle className="bg-muted hover:bg-muted-foreground/20 transition-colors" />
+          
+          <ResizablePanel defaultSize={30} minSize={20}>
+            <div className="flex flex-col bg-background overflow-hidden h-full">
+              <div className="p-4 border-b flex justify-between items-center">
+                <div>
+                  <h2 className="text-lg font-semibold">SharePoint AI Copilot</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {containerDetails?.name || 'AI Assistant'}
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setIsCopilotOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+              
+              {containerId && (
+                <div className="h-full">
+                  <CopilotChat containerId={containerId} className="h-full" />
+                </div>
+              )}
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+        
+        {/* Show file list when copilot is closed */}
+        {!isCopilotOpen && (
           <FileList 
             files={getSortedItems()}
             loading={loading}
@@ -279,39 +329,6 @@ const Files = () => {
             onDeleteFile={handleDeleteFile}
             containerId={containerId || ''}
           />
-        </div>
-        
-        {/* Copilot Chat Panel - Directly integrated (not in a Sheet) */}
-        {containerId && isCopilotOpen && (
-          <div className="flex flex-col border-l bg-background overflow-hidden" style={{ width: `${copilotSize}%` }}>
-            <div className="p-4 border-b flex justify-between items-center">
-              <div>
-                <h2 className="text-lg font-semibold">SharePoint AI Copilot</h2>
-                <p className="text-sm text-muted-foreground">
-                  {containerDetails?.name || 'AI Assistant'}
-                </p>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setIsCopilotOpen(false)}
-              >
-                Close
-              </Button>
-            </div>
-            
-            <ResizablePanelGroup direction="horizontal" onLayout={handleResize} className="h-full">
-              <ResizablePanel defaultSize={0} />
-              <ResizableHandle withHandle className="bg-muted hover:bg-muted-foreground/20 transition-colors" />
-              <ResizablePanel defaultSize={100} className="h-full">
-                {containerId && (
-                  <div className="h-full">
-                    <CopilotChat containerId={containerId} className="h-full" />
-                  </div>
-                )}
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </div>
         )}
       </div>
       
