@@ -34,7 +34,7 @@ const queryClient = new QueryClient({
 
 // Log global query errors - using the correct listener format
 queryClient.getQueryCache().subscribe({
-  onError: (error) => {
+  error: (error) => {
     console.error('Query cache error:', error);
   }
 });
