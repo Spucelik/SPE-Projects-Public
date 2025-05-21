@@ -23,4 +23,13 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      external: [
+        '@fluentui/react',
+        '@fluentui/react-components',
+        '@fluentui/react-icons'
+      ]
+    }
+  }
 }));
