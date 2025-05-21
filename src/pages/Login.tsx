@@ -50,7 +50,7 @@ const Login = () => {
   const isConfigured = appConfig.clientId && appConfig.tenantId && appConfig.containerTypeId;
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-blue-600 p-4">
+    <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-5xl bg-white rounded-xl shadow-xl overflow-hidden">
         <div className="flex flex-col md:flex-row">
           {/* Left side - Brand and illustration */}
