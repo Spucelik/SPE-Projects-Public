@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -8,6 +9,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 
 const Login = () => {
   const { isAuthenticated, login } = useAuth();
@@ -62,98 +64,131 @@ const Login = () => {
               <p className="text-sm text-blue-100">Everything you need for convenient team work</p>
             </div>
             
-            {/* Abstract shapes for visual interest */}
-            <div className="absolute top-0 left-0 w-full h-full opacity-10">
-              <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                <path fill="#FFFFFF" d="M44.7,-76.4C58.8,-69.2,71.8,-59.1,79.6,-45.8C87.4,-32.6,89.9,-16.3,88.8,-0.6C87.7,15,83,30,74.9,42.3C66.8,54.6,55.4,64.2,42.2,70.6C28.9,77,14.5,80.2,-0.2,80.5C-14.8,80.8,-29.6,78.3,-43.9,72.5C-58.2,66.7,-72,57.7,-79.8,45.1C-87.7,32.5,-89.5,16.2,-87.4,1.2C-85.3,-13.9,-79.1,-27.8,-70.5,-39.7C-61.9,-51.6,-51,-61.5,-38.7,-69.4C-26.5,-77.4,-13.2,-83.3,1.2,-85.3C15.7,-87.3,31.3,-85.3,44.7,-76.4Z" transform="translate(100 100)" />
+            {/* Stylized abstract pattern */}
+            <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 w-72 h-72">
+              <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full opacity-20">
+                <path fill="#FFFFFF" d="M40.7,-67.2C54.3,-61.8,68,-53.9,76.4,-41.9C84.9,-29.8,88.1,-14.9,87.1,-0.5C86.1,13.8,80.8,27.6,72.5,39.4C64.2,51.2,52.7,61,40.1,68.5C27.4,76,13.7,81.1,-0.2,81.3C-14.1,81.5,-28.2,76.9,-41.1,69.4C-54,62,-65.8,51.7,-73.2,39C-80.6,26.2,-83.5,13.1,-84,0C-84.4,-13.1,-82.3,-26.1,-75.1,-36.5C-67.9,-46.8,-55.6,-54.4,-43.2,-60.8C-30.7,-67.1,-15.4,-72.3,-0.5,-71.4C14.3,-70.6,28.6,-63.8,40.7,-67.2Z" transform="translate(100 100)" />
               </svg>
             </div>
             
-            {/* Overlapping circles for depth */}
-            <div className="absolute -bottom-16 -right-16 w-64 h-64 bg-blue-500 rounded-full opacity-30"></div>
-            <div className="absolute -top-16 -left-16 w-64 h-64 bg-blue-700 rounded-full opacity-20"></div>
+            {/* Geometric pattern elements */}
+            <div className="absolute inset-0">
+              <div className="absolute top-5 right-5 w-16 h-16 border-4 border-white/20 rounded-full"></div>
+              <div className="absolute bottom-10 left-5 w-24 h-24 border-4 border-white/15 rounded-lg transform rotate-45"></div>
+              <div className="absolute top-1/3 left-10 w-8 h-8 bg-white/10 rounded-full"></div>
+              <div className="absolute bottom-1/3 right-10 w-12 h-12 bg-white/10 rounded-md transform rotate-12"></div>
+            </div>
             
-            {/* Small grid pattern */}
+            {/* Connected dots pattern */}
             <div className="absolute inset-0 opacity-10">
-              <div className="h-full w-full" style={{ 
-                backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', 
-                backgroundSize: '15px 15px' 
-              }}></div>
+              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="dotGrid" width="30" height="30" patternUnits="userSpaceOnUse">
+                    <circle cx="15" cy="15" r="2" fill="white" />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#dotGrid)" />
+                <line x1="15" y1="15" x2="45" y2="45" stroke="white" strokeWidth="0.5" />
+                <line x1="45" y1="15" x2="75" y2="45" stroke="white" strokeWidth="0.5" />
+                <line x1="45" y1="45" x2="75" y2="15" stroke="white" strokeWidth="0.5" />
+                <line x1="15" y1="45" x2="45" y2="75" stroke="white" strokeWidth="0.5" />
+                <line x1="45" y1="75" x2="75" y2="75" stroke="white" strokeWidth="0.5" />
+                <line x1="75" y1="45" x2="105" y2="75" stroke="white" strokeWidth="0.5" />
+              </svg>
+            </div>
+            
+            {/* Ripple effect circles */}
+            <div className="absolute left-1/2 top-3/4 transform -translate-x-1/2 -translate-y-1/2">
+              <div className="w-32 h-32 rounded-full border border-white/20 animate-pulse"></div>
+              <div className="w-48 h-48 rounded-full border border-white/15 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+              <div className="w-64 h-64 rounded-full border border-white/10 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
             </div>
           </div>
           
           {/* Right side - Login form */}
           <div className="p-8 md:w-3/5 bg-gray-50">
             <div className="max-w-md mx-auto">
-              <h2 className="text-3xl font-bold text-blue-600 mb-8 text-center">Log in</h2>
+              <h2 className="text-3xl font-bold text-blue-600 mb-2 text-center">Welcome Back</h2>
+              <p className="text-center text-gray-500 mb-8">Log in to continue to your account</p>
               
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="block text-sm font-medium">
-                    E-mail
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="example.company@example.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="block text-sm font-medium">
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      className="w-full pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+              <Card className="shadow-none border-0 bg-transparent">
+                <CardContent className="p-0">
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="block text-sm font-medium">
+                        E-mail
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="example.company@example.com"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="block text-sm font-medium">
+                        Password
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={e => setPassword(e.target.value)}
+                          className="w-full pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                        >
+                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                      <div className="flex justify-end">
+                        <button className="text-sm text-blue-600 hover:underline">
+                          Forgot the password?
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {error && (
+                      <Alert variant="destructive" className="my-4">
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {!isConfigured && (
+                      <Alert className="bg-blue-50 border-blue-200 text-blue-700 my-4">
+                        <AlertTitle>Configuration Required</AlertTitle>
+                        <AlertDescription>
+                          You must configure CLIENT_ID, TENANT_ID, and CONTAINER_TYPE_ID before login will work.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    <Button
+                      onClick={handleLogin}
+                      disabled={loading || !isConfigured}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md flex items-center justify-center gap-2"
                     >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+                      {loading ? (
+                        'Signing in...'
+                      ) : (
+                        <>
+                          <LogIn size={18} />
+                          Log in
+                        </>
+                      )}
+                    </Button>
                   </div>
-                  <div className="flex justify-end">
-                    <button className="text-sm text-blue-600 hover:underline">
-                      Forgot the password?
-                    </button>
-                  </div>
-                </div>
-                
-                {error && (
-                  <Alert variant="destructive" className="my-4">
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-                
-                {!isConfigured && (
-                  <Alert className="bg-blue-50 border-blue-200 text-blue-700 my-4">
-                    <AlertTitle>Configuration Required</AlertTitle>
-                    <AlertDescription>
-                      You must configure CLIENT_ID, TENANT_ID, and CONTAINER_TYPE_ID before login will work.
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                <Button
-                  onClick={handleLogin}
-                  disabled={loading || !isConfigured}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md"
-                >
-                  {loading ? 'Signing in...' : 'Log in'}
-                </Button>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
