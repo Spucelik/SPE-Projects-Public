@@ -34,7 +34,7 @@ const queryClient = new QueryClient({
 
 // Log global query errors - using the correct listener format for TanStack Query v5
 queryClient.getQueryCache().subscribe({
-  error: (error) => {
+  onError: (error) => {
     console.error('Query cache error:', error);
   }
 });
