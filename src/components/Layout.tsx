@@ -50,10 +50,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   asChild 
                   isActive={location.pathname === '/'}
                   tooltip="Home"
-                  className={`text-white hover:bg-blue-700 ${location.pathname === '/' ? 'bg-blue-800' : ''}`}
+                  className={`text-white hover:bg-white hover:text-blue-600 ${location.pathname === '/' ? 'bg-blue-800' : ''}`}
                 >
                   <Link to="/">
-                    <Home className="text-white" />
+                    <Home className="text-inherit" />
                     <span>Home</span>
                   </Link>
                 </SidebarMenuButton>
@@ -63,10 +63,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   asChild 
                   isActive={location.pathname === '/projects'}
                   tooltip="Projects"
-                  className={`text-white hover:bg-blue-700 ${location.pathname === '/projects' ? 'bg-blue-800' : ''}`}
+                  className={`text-white hover:bg-white hover:text-blue-600 ${location.pathname === '/projects' ? 'bg-blue-800' : ''}`}
                 >
                   <Link to="/projects">
-                    <FolderOpen className="text-white" />
+                    <FolderOpen className="text-inherit" />
                     <span>Projects</span>
                   </Link>
                 </SidebarMenuButton>
@@ -76,10 +76,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   asChild 
                   isActive={location.pathname.startsWith('/files')}
                   tooltip="Files"
-                  className={`text-white hover:bg-blue-700 ${location.pathname.startsWith('/files') ? 'bg-blue-800' : ''}`}
+                  className={`text-white hover:bg-white hover:text-blue-600 ${location.pathname.startsWith('/files') ? 'bg-blue-800' : ''}`}
                 >
                   <Link to="/files">
-                    <FileText className="text-white" />
+                    <FileText className="text-inherit" />
                     <span>Files</span>
                   </Link>
                 </SidebarMenuButton>
@@ -92,7 +92,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <SidebarInset className="flex flex-col">
         <header className="flex justify-between items-center px-6 py-3 bg-blue-600 border-b border-blue-700 text-white">
           <div className="flex items-center gap-2">
-            <SidebarTrigger className="text-white hover:bg-blue-700 p-1 rounded" />
+            <SidebarTrigger className="text-white hover:bg-white hover:text-blue-600 p-1 rounded" />
             <h1 className="text-xl font-semibold">{appConfig.appName}</h1>
           </div>
           
