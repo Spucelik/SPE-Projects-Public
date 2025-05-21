@@ -118,9 +118,7 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     theme: chatTheme,
     instruction: "You are a helpful assistant that helps users find and summarize information related to their files and documents.",
     locale: "en-US",
-    // Make sure quick prompts show up at the bottom
-    disableBoilerplatePrompts: false,
-    disableSuggestingFollowups: false
+    // Removed the unsupported properties
   }), [safeSiteName, chatTheme]);
   
   // Reset chat when there's an issue

@@ -64,9 +64,8 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 header: chatConfig.header,
                 locale: chatConfig.locale,
                 hasTheme: !!chatConfig.theme,
-                containerId,
-                disableBoilerplatePrompts: chatConfig.disableBoilerplatePrompts === false,
-                disableSuggestingFollowups: chatConfig.disableSuggestingFollowups === false
+                containerId
+                // Removed references to unsupported properties
               }));
               
               await chatApi.openChat(chatConfig);
