@@ -51,19 +51,32 @@ const Login = () => {
   const isConfigured = appConfig.clientId && appConfig.tenantId && appConfig.containerTypeId;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-xl overflow-hidden">
-        {/* Header with brand logo */}
-        <div className="bg-blue-600 p-6 text-white text-center">
-          <h2 className="text-2xl font-bold mb-1">Contoso</h2>
-          <h1 className="text-xl">Project Management Service</h1>
+    <div className="min-h-screen flex items-center justify-center bg-blue-600">
+      <div className="w-full max-w-4xl bg-white rounded-xl shadow-xl overflow-hidden flex">
+        {/* Left side - Brand and illustration */}
+        <div className="bg-blue-600 p-8 text-white w-2/5 flex flex-col">
+          <div className="mb-6">
+            <h3 className="text-lg font-medium mb-1">Team-Line</h3>
+            <h2 className="text-2xl font-bold mb-1">Project</h2>
+            <h2 className="text-2xl font-bold mb-1">Management</h2>
+            <h2 className="text-2xl font-bold">Service</h2>
+            <p className="mt-4 text-sm text-blue-100">Everything you need for convenient team work</p>
+          </div>
+          
+          <div className="flex-grow flex items-end justify-center">
+            {/* Placeholder for illustration - could be replaced with an actual image */}
+            <div className="w-64 h-64 rounded-full bg-blue-500/30 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-32 w-32 text-white/70" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
         </div>
         
-        {/* Form section */}
-        <div className="p-6 sm:p-8">
-          <div className="mb-6 text-center">
-            <h2 className="text-2xl font-semibold text-blue-600">Log in</h2>
-            <p className="text-gray-500 text-sm mt-1">Access your projects and files</p>
+        {/* Right side - Login form */}
+        <div className="p-8 w-3/5 bg-gray-50">
+          <div className="mb-8 text-center">
+            <h2 className="text-3xl font-bold text-blue-600">Log in</h2>
           </div>
           
           <div className="space-y-5">
@@ -106,7 +119,7 @@ const Login = () => {
               </div>
               <div className="text-right">
                 <button className="text-sm text-blue-600 hover:underline">
-                  Forgot password?
+                  Forgot the password?
                 </button>
               </div>
             </div>
@@ -132,13 +145,8 @@ const Login = () => {
               disabled={loading || !isConfigured}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md flex items-center justify-center"
             >
-              <LogIn className="mr-2" size={18} />
               {loading ? 'Signing in...' : 'Log in'}
             </Button>
-            
-            <div className="mt-6 text-center text-sm text-gray-500">
-              <p>Demo application for SharePoint Embedded</p>
-            </div>
           </div>
         </div>
       </div>
