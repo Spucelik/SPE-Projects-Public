@@ -19,19 +19,32 @@ import Projects from "./pages/Projects";
 import Files from "./pages/Files";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./context/AuthContext";
+import React, { Suspense } from 'react';
 
-// Initialize QueryClient with default options
+// Initialize QueryClient with default options and error handling
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutes
+      onError: (error) => {
+        console.error('Query error:', error);
+      }
     },
   },
 });
 
+// Simple fallback for loading states
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center h-screen w-full">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+  </div>
+);
+
 const App = () => {
+  console.log('App component rendering');
+  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -42,14 +55,16 @@ const App = () => {
                 <>
                   <Toaster />
                   <Sonner />
-                  <Routes>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                    <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
-                    <Route path="/files/:containerId" element={<ProtectedRoute><Files /></ProtectedRoute>} />
-                    <Route path="/files" element={<ProtectedRoute><Navigate to="/projects" replace /></ProtectedRoute>} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <Routes>
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                      <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+                      <Route path="/files/:containerId" element={<ProtectedRoute><Files /></ProtectedRoute>} />
+                      <Route path="/files" element={<ProtectedRoute><Navigate to="/projects" replace /></ProtectedRoute>} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
                 </>
               </SidebarProvider>
             </ConfigProvider>
@@ -63,7 +78,10 @@ const App = () => {
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
   
+  console.log('ProtectedRoute - Authentication status:', isAuthenticated);
+  
   if (!isAuthenticated) {
+    console.log('Not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   

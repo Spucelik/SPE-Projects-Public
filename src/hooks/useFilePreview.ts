@@ -11,30 +11,43 @@ export const useFilePreview = (containerId: string | undefined) => {
   const { getAccessToken } = useAuth();
 
   const handleViewFile = async (file: FileItem) => {
-    if (!containerId) return;
+    if (!containerId) {
+      console.error('Container ID is undefined');
+      toast({
+        title: "Error",
+        description: "Missing container information",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
+      console.log('Attempting to view file:', file.name);
       setPreviewLoading(true);
       setIsPreviewOpen(true);
       setPreviewUrl(null);
       
       const token = await getAccessToken();
       if (!token) {
+        console.error('Failed to get access token');
         toast({
           title: "Authentication Error",
           description: "Failed to get access token",
           variant: "destructive",
         });
+        setIsPreviewOpen(false);
         return;
       }
       
+      console.log('Getting file preview for:', file.id);
       const url = await sharePointService.getFilePreview(token, containerId, file.id);
+      console.log('Received preview URL:', url);
       setPreviewUrl(url);
     } catch (error: any) {
       console.error('Error getting file preview:', error);
       toast({
         title: "Error",
-        description: "Failed to get file preview. Please try again.",
+        description: "Failed to get file preview: " + (error.message || "Unknown error"),
         variant: "destructive",
       });
       setIsPreviewOpen(false);

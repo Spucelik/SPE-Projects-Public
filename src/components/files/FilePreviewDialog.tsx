@@ -17,20 +17,24 @@ const FilePreviewDialog: React.FC<FilePreviewDialogProps> = ({
   previewUrl,
   previewLoading,
 }) => {
+  console.log('FilePreviewDialog rendering:', { isOpen, previewUrl, previewLoading });
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-screen min-h-screen w-screen p-0 gap-0">
         <DialogTitle className="sr-only">File Preview</DialogTitle>
         <div className="flex justify-between items-center p-4 border-b">
           <div className="flex-1">
-            <Button 
-              variant="outline" 
-              onClick={() => window.open(previewUrl, '_blank')}
-              className="w-auto"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Open in New Tab
-            </Button>
+            {previewUrl && (
+              <Button 
+                variant="outline" 
+                onClick={() => window.open(previewUrl, '_blank')}
+                className="w-auto"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open in New Tab
+              </Button>
+            )}
           </div>
           <Button
             variant="ghost"
@@ -53,6 +57,7 @@ const FilePreviewDialog: React.FC<FilePreviewDialogProps> = ({
               className="w-full h-full border-0"
               title="File Preview"
               aria-describedby="file-preview-description"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             ></iframe>
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500">
