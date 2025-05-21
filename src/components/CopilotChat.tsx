@@ -79,7 +79,7 @@ const CopilotChat: React.FC<CopilotChatProps> = ({ containerId, className }) => 
   }
   
   return (
-    <div className={`copilot-wrapper ${className || ''}`} data-testid="copilot-chat-wrapper">
+    <div className={`copilot-wrapper h-full flex flex-col ${className || ''}`} data-testid="copilot-chat-wrapper">
       <CopilotChatContainer containerId={containerId} />
     </div>
   );

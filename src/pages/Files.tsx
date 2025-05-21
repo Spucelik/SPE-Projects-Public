@@ -38,7 +38,7 @@ const Files = () => {
   const [newFolderName, setNewFolderName] = useState('');
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [isCopilotOpen, setIsCopilotOpen] = useState(false); // Start with it closed
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false); // Always start with it closed
   const [copilotSize, setCopilotSize] = useState(30); // Default size percentage for Copilot panel
   
   const {
@@ -197,6 +197,11 @@ const Files = () => {
     }
   };
 
+  // Toggle the Copilot panel
+  const toggleCopilot = () => {
+    setIsCopilotOpen(!isCopilotOpen);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -239,7 +244,7 @@ const Files = () => {
             <Button 
               variant="outline" 
               className="gap-2"
-              onClick={() => setIsCopilotOpen(!isCopilotOpen)}
+              onClick={toggleCopilot}
             >
               <MessageSquare size={16} />
               <span>{isCopilotOpen ? "Hide Copilot" : "Show Copilot"}</span>
@@ -270,6 +275,7 @@ const Files = () => {
       {/* Main content with resizable panels */}
       <div className="h-[calc(100vh-250px)]">
         <ResizablePanelGroup direction="horizontal" onLayout={handleResize}>
+          {/* File List panel - always visible */}
           <ResizablePanel defaultSize={isCopilotOpen ? 70 : 100} minSize={30}>
             <div className="h-full overflow-auto pr-4">
               <FileList 
@@ -284,12 +290,13 @@ const Files = () => {
             </div>
           </ResizablePanel>
           
+          {/* Copilot panel - only visible when opened */}
           {isCopilotOpen && (
             <>
               <ResizableHandle withHandle className="bg-muted hover:bg-muted-foreground/20 transition-colors" />
               
               <ResizablePanel defaultSize={30} minSize={20} className="h-full">
-                <div className="flex flex-col bg-background overflow-hidden h-full">
+                <div className="flex flex-col h-full border-l">
                   <div className="p-4 border-b flex justify-between items-center">
                     <div>
                       <h2 className="text-lg font-semibold">SharePoint AI Copilot</h2>
@@ -306,8 +313,9 @@ const Files = () => {
                     </Button>
                   </div>
                   
+                  {/* CopilotChat with full height to ensure prompt is visible */}
                   {containerId && (
-                    <div className="h-full">
+                    <div className="flex-1 overflow-hidden">
                       <CopilotChat containerId={containerId} className="h-full" />
                     </div>
                   )}

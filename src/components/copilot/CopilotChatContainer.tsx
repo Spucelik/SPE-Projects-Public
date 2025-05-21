@@ -16,7 +16,7 @@ interface CopilotChatContainerProps {
 }
 
 const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId }) => {
-  const [isOpen, setIsOpen] = useState(true); // Start with chat open
+  const [isOpen, setIsOpen] = useState(true); // Keep the chat component open within its container
   const { getSharePointToken, isAuthenticated } = useAuth();
   const [chatApi, setChatApi] = useState<ChatEmbeddedAPI | null>(null);
   const [chatKey, setChatKey] = useState(0);
@@ -112,13 +112,15 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     }
   }), []);
   
-  // Create simplified configuration without zeroQueryPrompts
-  // This helps avoid any potential issues with the prompt suggestion format
+  // Create chat configuration with instruction to ensure prompt visibility
   const chatConfig = React.useMemo((): ChatLaunchConfig => ({
     header: `SharePoint Embedded - ${safeSiteName}`,
     theme: chatTheme,
     instruction: "You are a helpful assistant that helps users find and summarize information related to their files and documents.",
     locale: "en-US",
+    // Make sure quick prompts show up at the bottom
+    disableBoilerplatePrompts: false,
+    disableSuggestingFollowups: false
   }), [safeSiteName, chatTheme]);
   
   // Reset chat when there's an issue
@@ -143,13 +145,6 @@ const CopilotChatContainer: React.FC<CopilotChatContainerProps> = ({ containerId
     console.log('Copilot chat API is ready');
     setChatApi(api);
   }, [handleError]);
-
-  // Ensure we open the chat
-  useEffect(() => {
-    if (!isOpen) {
-      setIsOpen(true);
-    }
-  }, []);
 
   return (
     <CopilotDesktopView

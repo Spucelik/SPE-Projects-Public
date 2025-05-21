@@ -64,7 +64,9 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
                 header: chatConfig.header,
                 locale: chatConfig.locale,
                 hasTheme: !!chatConfig.theme,
-                containerId
+                containerId,
+                disableBoilerplatePrompts: chatConfig.disableBoilerplatePrompts === false,
+                disableSuggestingFollowups: chatConfig.disableSuggestingFollowups === false
               }));
               
               await chatApi.openChat(chatConfig);
@@ -131,7 +133,7 @@ const CopilotDesktopView: React.FC<CopilotDesktopViewProps> = ({
               <div 
                 className="h-full w-full"
                 style={{ 
-                  height: 'calc(100vh - 220px)',
+                  height: '100%',
                   position: "relative"
                 }}
                 data-testid="copilot-chat-container"
