@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -54,8 +53,8 @@ const Login = () => {
       <div className="w-full max-w-5xl bg-white rounded-xl shadow-xl overflow-hidden">
         <div className="flex flex-col md:flex-row">
           {/* Left side - Brand and illustration */}
-          <div className="bg-blue-600 p-8 md:w-2/5">
-            <div className="text-white">
+          <div className="bg-blue-600 p-8 md:w-2/5 relative overflow-hidden">
+            <div className="text-white relative z-10">
               <h3 className="text-lg font-medium">Contoso</h3>
               <h2 className="text-2xl font-bold">Project</h2>
               <h2 className="text-2xl font-bold">Management</h2>
@@ -63,13 +62,23 @@ const Login = () => {
               <p className="text-sm text-blue-100">Everything you need for convenient team work</p>
             </div>
             
-            <div className="flex justify-center mt-8">
-              {/* Illustration from the image */}
-              <div className="w-full max-w-xs">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full text-white/70" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-              </div>
+            {/* Abstract shapes for visual interest */}
+            <div className="absolute top-0 left-0 w-full h-full opacity-10">
+              <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                <path fill="#FFFFFF" d="M44.7,-76.4C58.8,-69.2,71.8,-59.1,79.6,-45.8C87.4,-32.6,89.9,-16.3,88.8,-0.6C87.7,15,83,30,74.9,42.3C66.8,54.6,55.4,64.2,42.2,70.6C28.9,77,14.5,80.2,-0.2,80.5C-14.8,80.8,-29.6,78.3,-43.9,72.5C-58.2,66.7,-72,57.7,-79.8,45.1C-87.7,32.5,-89.5,16.2,-87.4,1.2C-85.3,-13.9,-79.1,-27.8,-70.5,-39.7C-61.9,-51.6,-51,-61.5,-38.7,-69.4C-26.5,-77.4,-13.2,-83.3,1.2,-85.3C15.7,-87.3,31.3,-85.3,44.7,-76.4Z" transform="translate(100 100)" />
+              </svg>
+            </div>
+            
+            {/* Overlapping circles for depth */}
+            <div className="absolute -bottom-16 -right-16 w-64 h-64 bg-blue-500 rounded-full opacity-30"></div>
+            <div className="absolute -top-16 -left-16 w-64 h-64 bg-blue-700 rounded-full opacity-20"></div>
+            
+            {/* Small grid pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="h-full w-full" style={{ 
+                backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', 
+                backgroundSize: '15px 15px' 
+              }}></div>
             </div>
           </div>
           
