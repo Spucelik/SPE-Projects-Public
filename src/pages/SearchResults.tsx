@@ -52,6 +52,7 @@ const SearchResults = () => {
         }
         
         const searchResults = await searchService.searchFiles(token, searchTerm, containerId);
+        console.log('Setting search results:', searchResults);
         setResults(searchResults);
       } catch (error: any) {
         console.error('Search error:', error);
@@ -116,7 +117,7 @@ const SearchResults = () => {
           {loading && (
             <div className="space-y-6">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="border-b pb-4">
+                <div key={`loading-${i}`} className="border-b pb-4">
                   <div className="flex items-baseline mb-2">
                     <Skeleton className="h-6 w-32" />
                   </div>
@@ -148,8 +149,8 @@ const SearchResults = () => {
           
           {!loading && !error && results.length > 0 && (
             <div className="space-y-6">
-              {results.map((result, index) => (
-                <div key={result.id} className="border-b pb-4 last:border-b-0">
+              {results.map((result) => (
+                <div key={`result-${result.id || Math.random().toString()}`} className="border-b pb-4 last:border-b-0">
                   <div className="flex items-baseline mb-2">
                     <h3 
                       className="text-lg font-semibold text-blue-600 hover:underline cursor-pointer"

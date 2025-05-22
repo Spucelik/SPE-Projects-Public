@@ -91,17 +91,39 @@ export class SearchService {
         const hits = data.value[0].hitsContainers[0].hits || [];
         
         for (const hit of hits) {
+          // Extract and log the hit to see its structure
+          console.log('Processing hit:', hit);
+          
           const resource = hit.resource;
           if (resource) {
+            // Extract properties safely with fallbacks
+            const title = resource.Title || resource.name || resource.title || 'Untitled';
+            
+            // Extract preview/summary from the hit
+            const preview = hit.summary || resource.preview || resource.summary || '';
+            
+            // Extract created info
+            let createdBy = 'Unknown';
+            if (resource.createdBy && resource.createdBy.user && resource.createdBy.user.displayName) {
+              createdBy = resource.createdBy.user.displayName;
+            }
+            
+            const createdDateTime = resource.Created || resource.createdDateTime || '';
+            
+            // Extract IDs
+            const itemId = resource.itemId || resource.id || '';
+            const driveId = resource.driveId || '';
+            const webUrl = resource.webUrl || '';
+            
             searchResults.push({
-              id: resource.itemId || resource.id || '',
-              title: resource.Title || resource.name || 'Untitled',
-              createdBy: (resource.CreatedBy && resource.CreatedBy.user && resource.CreatedBy.user.displayName) || 'Unknown',
-              createdDateTime: resource.Created || resource.createdDateTime || '',
-              preview: resource.preview || resource.summary || '',
-              driveId: resource.driveId || '',
-              itemId: resource.itemId || resource.id || '',
-              webUrl: resource.webUrl || ''
+              id: itemId,
+              title: title,
+              createdBy: createdBy,
+              createdDateTime: createdDateTime,
+              preview: preview,
+              driveId: driveId,
+              itemId: itemId,
+              webUrl: webUrl
             });
           }
         }
