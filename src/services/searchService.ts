@@ -1,4 +1,3 @@
-
 import { appConfig } from '../config/appConfig';
 import { FileItem } from './sharePointService';
 
@@ -148,11 +147,25 @@ export class SearchService {
               itemId = resource.itemId || resource.id || '';
             }
             
-            // Extract webUrl - try to get it from path first, then from webUrl property
-            if (resource.listItem && resource.listItem.fields && resource.listItem.fields.path) {
-              webUrl = resource.listItem.fields.path;
-            } else if (resource.webUrl) {
+            // Extract webUrl more carefully - log it for debugging
+            if (resource.webUrl) {
               webUrl = resource.webUrl;
+              console.log(`Found webUrl directly: ${webUrl}`);
+            } else if (resource.listItem && resource.listItem.fields && resource.listItem.fields.path) {
+              webUrl = resource.listItem.fields.path;
+              console.log(`Found webUrl in path: ${webUrl}`);
+            } else if (resource.path) {
+              webUrl = resource.path;
+              console.log(`Found webUrl in resource.path: ${webUrl}`);
+            }
+            
+            // Ensure the webUrl is properly formatted if it's a relative URL
+            if (webUrl && !webUrl.startsWith('http')) {
+              if (webUrl.startsWith('/')) {
+                // Construct proper URL if it's a relative path
+                const baseUrl = new URL(appConfig.endpoints.graphBaseUrl).origin;
+                webUrl = `${baseUrl}${webUrl}`;
+              }
             }
             
             searchResults.push({

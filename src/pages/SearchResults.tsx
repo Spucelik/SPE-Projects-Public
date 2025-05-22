@@ -85,7 +85,8 @@ const SearchResults = () => {
     
     if (isOfficeDocument && result.webUrl) {
       // Open Office files directly in Office Online Viewer
-      window.open(result.webUrl, '_blank');
+      console.log('Opening Office document with webUrl:', result.webUrl);
+      window.open(result.webUrl, '_blank', 'noopener,noreferrer');
     } else {
       // For non-Office files or when webUrl is not available, use the file preview
       const fileItem = searchService.convertToFileItem(result);
