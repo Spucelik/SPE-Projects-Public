@@ -8,9 +8,10 @@ const SearchHeader: React.FC = () => {
   const { containerId } = useParams<{ containerId?: string }>();
   
   return (
-    <div className="border-b py-3 px-6 bg-background sticky top-0 z-10">
-      <div className="flex justify-end items-center">
-        <SearchBar containerId={containerId} />
+    <div className="border-b py-4 px-6 bg-background sticky top-0 z-10 shadow-sm">
+      <div className="flex justify-between items-center">
+        <div className="text-lg font-medium">Search Documents</div>
+        <SearchBar containerId={containerId} className="w-full max-w-md" />
       </div>
     </div>
   );

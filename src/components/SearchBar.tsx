@@ -33,13 +33,13 @@ const SearchBar: React.FC<SearchBarProps> = ({ containerId, className = '' }) =>
 
   return (
     <form onSubmit={handleSearch} className={`relative ${className}`}>
-      <div className="relative w-full max-w-sm">
+      <div className="relative w-full">
         <Input
           type="search"
-          placeholder="Search files..."
+          placeholder="Search documents..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-9 pr-4"
+          className="w-full pl-10 pr-4 bg-white border-gray-300 focus:border-blue-500"
         />
         <Button 
           type="submit" 
@@ -47,7 +47,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ containerId, className = '' }) =>
           variant="ghost" 
           className="absolute left-0 top-0 h-full px-2"
         >
-          <Search className="h-4 w-4 text-muted-foreground" />
+          <Search className="h-4 w-4 text-gray-500" />
           <span className="sr-only">Search</span>
         </Button>
       </div>
