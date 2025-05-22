@@ -96,24 +96,59 @@ export class SearchService {
           
           const resource = hit.resource;
           if (resource) {
-            // Extract properties safely with fallbacks
-            const title = resource.Title || resource.name || resource.title || 'Untitled';
-            
-            // Extract preview/summary from the hit
-            const preview = hit.summary || resource.preview || resource.summary || '';
-            
-            // Extract created info
+            // Extract properties from the listItem fields if available
+            let title = 'Untitled';
             let createdBy = 'Unknown';
-            if (resource.createdBy && resource.createdBy.user && resource.createdBy.user.displayName) {
-              createdBy = resource.createdBy.user.displayName;
+            let createdDateTime = '';
+            let preview = '';
+            let driveId = '';
+            let itemId = '';
+            let webUrl = '';
+            
+            // Extract title
+            if (resource.listItem && resource.listItem.fields && resource.listItem.fields.title) {
+              title = resource.listItem.fields.title;
+            } else {
+              title = resource.Title || resource.name || resource.title || 'Untitled';
             }
             
-            const createdDateTime = resource.Created || resource.createdDateTime || '';
+            // Extract preview/summary from the hit
+            preview = hit.summary || '';
+            if (!preview && resource.listItem && resource.listItem.fields && resource.listItem.fields.preview) {
+              preview = resource.listItem.fields.preview;
+            }
+            
+            // Extract created info
+            if (resource.listItem && resource.listItem.fields && resource.listItem.fields.createdBy) {
+              createdBy = resource.listItem.fields.createdBy;
+            } else if (resource.createdBy && resource.createdBy.user && resource.createdBy.user.displayName) {
+              createdBy = resource.createdBy.user.displayName;
+            } else if (resource.CreatedBy) {
+              createdBy = resource.CreatedBy;
+            }
+            
+            // Extract creation date
+            if (resource.listItem && resource.listItem.fields && resource.listItem.fields.created) {
+              createdDateTime = resource.listItem.fields.created;
+            } else {
+              createdDateTime = resource.Created || resource.createdDateTime || '';
+            }
             
             // Extract IDs
-            const itemId = resource.itemId || resource.id || '';
-            const driveId = resource.driveId || '';
-            const webUrl = resource.webUrl || '';
+            if (resource.listItem && resource.listItem.fields && resource.listItem.fields.driveId) {
+              driveId = resource.listItem.fields.driveId;
+            } else {
+              driveId = resource.driveId || '';
+            }
+            
+            if (resource.listItem && resource.listItem.id) {
+              itemId = resource.listItem.id;
+            } else {
+              itemId = resource.itemId || resource.id || '';
+            }
+            
+            // Extract webUrl
+            webUrl = resource.webUrl || '';
             
             searchResults.push({
               id: itemId,
