@@ -200,6 +200,39 @@ export class SearchService {
     }
   }
 
+  // Get detailed file information including proper webUrl
+  async getFileDetails(token: string, driveId: string, itemId: string): Promise<{ webUrl: string }> {
+    try {
+      const url = `${appConfig.endpoints.graphBaseUrl}/drives/${driveId}/items/${itemId}?$expand=listItem($expand=fields)`;
+      
+      console.log('Fetching file details:', { url });
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error fetching file details:', errorText);
+        throw new Error(`Failed to get file details: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('File details response:', data);
+      
+      return { 
+        webUrl: data.webUrl || data.listItem?.webUrl || data.listItem?.fields?.webUrl || ''
+      };
+    } catch (error) {
+      console.error('Error getting file details:', error);
+      throw error;
+    }
+  }
+
   // Convert search result to file item format for preview
   convertToFileItem(result: SearchResult): FileItem {
     return {

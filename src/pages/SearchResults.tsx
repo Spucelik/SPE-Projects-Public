@@ -83,27 +83,52 @@ const SearchResults = () => {
     // Check if the file is a Microsoft Office document
     const isOfficeDocument = isOfficeFile(result.title);
     
-    if (isOfficeDocument && result.webUrl) {
-      // Force open Office files in a new tab to bypass our preview dialog
-      console.log('Opening Office document with webUrl:', result.webUrl);
-      
-      // Use window.open with _blank target and ensure it's a top-level navigation
-      const newWindow = window.open(result.webUrl, '_blank');
-      
-      // Ensure the window opened successfully
-      if (!newWindow) {
+    if (isOfficeDocument) {
+      try {
+        // Get the accurate webUrl using the direct API method
+        console.log('Getting accurate webUrl for Office document');
+        const token = await getAccessToken();
+        
+        if (!token) {
+          throw new Error("Failed to get access token");
+        }
+        
+        const fileDetails = await searchService.getFileDetails(token, result.driveId, result.itemId);
+        
+        if (!fileDetails.webUrl) {
+          throw new Error("Could not retrieve valid webUrl for the document");
+        }
+        
+        console.log('Opening Office document with accurate webUrl:', fileDetails.webUrl);
+        
+        // Open in new tab
+        const newWindow = window.open(fileDetails.webUrl, '_blank');
+        
+        // Ensure the window opened successfully
+        if (!newWindow) {
+          toast({
+            title: "Popup Blocked",
+            description: "Please allow popups for this site to open documents",
+            variant: "destructive",
+          });
+        }
+      } catch (error: any) {
+        console.error('Error opening Office document:', error);
         toast({
-          title: "Popup Blocked",
-          description: "Please allow popups for this site to open documents",
+          title: "Error Opening Document",
+          description: error.message || "Could not open the document",
           variant: "destructive",
         });
+        
+        // Fall back to preview if we can't open it directly
+        const fileItem = searchService.convertToFileItem(result);
+        await handleViewFile(fileItem);
       }
       
-      // Don't proceed to file preview
       return;
     }
     
-    // For non-Office files or when webUrl is not available, use the file preview
+    // For non-Office files, use the file preview
     const fileItem = searchService.convertToFileItem(result);
     await handleViewFile(fileItem);
   };
