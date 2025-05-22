@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import FilePreviewDialog from '@/components/files/FilePreviewDialog';
 import { useFilePreview } from '@/hooks/useFilePreview';
+import { Badge } from '@/components/ui/badge';
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
@@ -271,7 +272,7 @@ const SearchResults = () => {
             <div className="space-y-6">
               {results.map((result) => {
                 const isOfficeDoc = isOfficeFile(result.title);
-                const fileType = getFileType(result.title);
+                const fileExt = getFileExtension(result.title);
                 // Get the best URL to use (with detailed logging)
                 const targetUrl = isOfficeDoc ? getBestDocumentUrl(result) : null;
                 
@@ -320,13 +321,15 @@ const SearchResults = () => {
                       )}
                     </div>
                     
-                    {/* File type information */}
-                    <div className="pl-0 mb-2">
-                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded flex items-center w-fit">
-                        <FileIcon className="h-3 w-3 mr-1" />
-                        {fileType}
-                      </span>
-                    </div>
+                    {/* File extension badge */}
+                    {fileExt && (
+                      <div className="pl-0 mb-2">
+                        <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700">
+                          <FileIcon className="h-3 w-3 mr-1" />
+                          {fileExt}
+                        </Badge>
+                      </div>
+                    )}
                     
                     <div>
                       <p className="text-sm mb-2 line-clamp-2">
