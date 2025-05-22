@@ -20,6 +20,8 @@ const SearchResults = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [officeDocUrls, setOfficeDocUrls] = useState<Record<string, string>>({});
+  const [loadingUrls, setLoadingUrls] = useState<Record<string, boolean>>({});
   
   const { getAccessToken } = useAuth();
   
@@ -69,6 +71,55 @@ const SearchResults = () => {
     
     performSearch();
   }, [searchTerm, containerId, getAccessToken]);
+
+  // New effect to prefetch webUrls for Office documents
+  useEffect(() => {
+    const fetchOfficeDocUrls = async () => {
+      if (!results.length || !containerId) return;
+      
+      const token = await getAccessToken();
+      if (!token) return;
+      
+      const officeFiles = results.filter(r => isOfficeFile(r.title));
+      
+      // Create a temporary loading state object
+      const newLoadingState: Record<string, boolean> = {};
+      officeFiles.forEach(file => {
+        newLoadingState[file.id] = true;
+      });
+      setLoadingUrls(newLoadingState);
+      
+      // Fetch all webUrls in parallel
+      const urlPromises = officeFiles.map(async (file) => {
+        try {
+          if (!file.driveId || !file.itemId) return null;
+          
+          const details = await searchService.getFileDetails(token, file.driveId, file.itemId);
+          return { id: file.id, webUrl: details.webUrl };
+        } catch (error) {
+          console.error(`Error fetching URL for ${file.title}:`, error);
+          return null;
+        } finally {
+          // Update loading state for this specific file
+          setLoadingUrls(prev => ({ ...prev, [file.id]: false }));
+        }
+      });
+      
+      const results = await Promise.all(urlPromises);
+      
+      // Update state with all fetched URLs
+      const urlMap: Record<string, string> = {};
+      results.forEach(result => {
+        if (result && result.webUrl) {
+          urlMap[result.id] = result.webUrl;
+        }
+      });
+      
+      setOfficeDocUrls(urlMap);
+    };
+    
+    fetchOfficeDocUrls();
+  }, [results, containerId, getAccessToken]);
   
   const handleResultClick = async (result: SearchResult) => {
     if (!result.driveId || !result.itemId) {
@@ -84,6 +135,12 @@ const SearchResults = () => {
     const isOfficeDocument = isOfficeFile(result.title);
     
     if (isOfficeDocument) {
+      // If we already have the URL cached, use it directly
+      if (officeDocUrls[result.id]) {
+        openOfficeDocument(officeDocUrls[result.id]);
+        return;
+      }
+      
       try {
         // Get the accurate webUrl using the direct API method
         console.log('Getting accurate webUrl for Office document');
@@ -99,19 +156,7 @@ const SearchResults = () => {
           throw new Error("Could not retrieve valid webUrl for the document");
         }
         
-        console.log('Opening Office document with accurate webUrl:', fileDetails.webUrl);
-        
-        // Open in new tab
-        const newWindow = window.open(fileDetails.webUrl, '_blank');
-        
-        // Ensure the window opened successfully
-        if (!newWindow) {
-          toast({
-            title: "Popup Blocked",
-            description: "Please allow popups for this site to open documents",
-            variant: "destructive",
-          });
-        }
+        openOfficeDocument(fileDetails.webUrl);
       } catch (error: any) {
         console.error('Error opening Office document:', error);
         toast({
@@ -131,6 +176,21 @@ const SearchResults = () => {
     // For non-Office files, use the file preview
     const fileItem = searchService.convertToFileItem(result);
     await handleViewFile(fileItem);
+  };
+  
+  // Helper function to open Office documents
+  const openOfficeDocument = (webUrl: string) => {
+    console.log('Opening Office document with webUrl:', webUrl);
+    
+    const newWindow = window.open(webUrl, '_blank');
+    
+    if (!newWindow) {
+      toast({
+        title: "Popup Blocked",
+        description: "Please allow popups for this site to open documents",
+        variant: "destructive",
+      });
+    }
   };
   
   // Helper function to determine if a file is a Microsoft Office document
@@ -209,32 +269,59 @@ const SearchResults = () => {
           
           {!loading && !error && results.length > 0 && (
             <div className="space-y-6">
-              {results.map((result) => (
-                <div key={`result-${result.id || Math.random().toString()}`} className="border-b pb-4 last:border-b-0">
-                  <div className="flex items-baseline mb-2">
-                    <h3 
-                      className="text-lg font-semibold text-blue-600 hover:underline cursor-pointer"
-                      onClick={() => handleResultClick(result)}
-                    >
-                      {result.title || 'Unnamed Document'}
-                    </h3>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm mb-2 line-clamp-2">
-                      {result.preview || 'No preview available'}
-                    </p>
+              {results.map((result) => {
+                const isOfficeDoc = isOfficeFile(result.title);
+                const hasLoadedUrl = isOfficeDoc && officeDocUrls[result.id];
+                const isLoadingUrl = isOfficeDoc && loadingUrls[result.id];
+                
+                return (
+                  <div key={`result-${result.id || Math.random().toString()}`} className="border-b pb-4 last:border-b-0">
+                    <div className="flex items-baseline mb-2">
+                      {isOfficeDoc && hasLoadedUrl ? (
+                        // Direct link for Office documents with loaded URLs
+                        <a 
+                          href={officeDocUrls[result.id]}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-lg font-semibold text-blue-600 hover:underline"
+                          onClick={(e) => {
+                            // Handle popup blockers by capturing the click
+                            e.preventDefault();
+                            openOfficeDocument(officeDocUrls[result.id]);
+                          }}
+                        >
+                          {result.title || 'Unnamed Document'}
+                        </a>
+                      ) : (
+                        // Regular button for non-Office files or files with no URL yet
+                        <h3 
+                          className={`text-lg font-semibold text-blue-600 hover:underline cursor-pointer ${
+                            isLoadingUrl ? 'opacity-70' : ''
+                          }`}
+                          onClick={() => !isLoadingUrl && handleResultClick(result)}
+                        >
+                          {result.title || 'Unnamed Document'} 
+                          {isLoadingUrl && <span className="text-xs ml-2">(loading...)</span>}
+                        </h3>
+                      )}
+                    </div>
                     
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-                      <Clock className="h-3 w-3" />
-                      <span>
-                        Last modified {formatDate(result.createdDateTime || '')}
-                        {result.createdBy && ` by ${result.createdBy}`}
-                      </span>
+                    <div>
+                      <p className="text-sm mb-2 line-clamp-2">
+                        {result.preview || 'No preview available'}
+                      </p>
+                      
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                        <Clock className="h-3 w-3" />
+                        <span>
+                          Last modified {formatDate(result.createdDateTime || '')}
+                          {result.createdBy && ` by ${result.createdBy}`}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
