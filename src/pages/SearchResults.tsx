@@ -84,14 +84,28 @@ const SearchResults = () => {
     const isOfficeDocument = isOfficeFile(result.title);
     
     if (isOfficeDocument && result.webUrl) {
-      // Open Office files directly in Office Online Viewer
+      // Force open Office files in a new tab to bypass our preview dialog
       console.log('Opening Office document with webUrl:', result.webUrl);
-      window.open(result.webUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      // For non-Office files or when webUrl is not available, use the file preview
-      const fileItem = searchService.convertToFileItem(result);
-      await handleViewFile(fileItem);
+      
+      // Use window.open with _blank target and ensure it's a top-level navigation
+      const newWindow = window.open(result.webUrl, '_blank');
+      
+      // Ensure the window opened successfully
+      if (!newWindow) {
+        toast({
+          title: "Popup Blocked",
+          description: "Please allow popups for this site to open documents",
+          variant: "destructive",
+        });
+      }
+      
+      // Don't proceed to file preview
+      return;
     }
+    
+    // For non-Office files or when webUrl is not available, use the file preview
+    const fileItem = searchService.convertToFileItem(result);
+    await handleViewFile(fileItem);
   };
   
   // Helper function to determine if a file is a Microsoft Office document

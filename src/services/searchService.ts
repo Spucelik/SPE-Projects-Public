@@ -147,10 +147,16 @@ export class SearchService {
               itemId = resource.itemId || resource.id || '';
             }
             
-            // Extract webUrl more carefully - log it for debugging
+            // Extract webUrl with highest priority on direct webUrl property
             if (resource.webUrl) {
               webUrl = resource.webUrl;
-              console.log(`Found webUrl directly: ${webUrl}`);
+              console.log(`Found webUrl directly on resource: ${webUrl}`);
+            } else if (resource.listItem && resource.listItem.webUrl) {
+              webUrl = resource.listItem.webUrl;
+              console.log(`Found webUrl on listItem: ${webUrl}`);
+            } else if (resource.listItem && resource.listItem.fields && resource.listItem.fields.webUrl) {
+              webUrl = resource.listItem.fields.webUrl;
+              console.log(`Found webUrl in fields: ${webUrl}`);
             } else if (resource.listItem && resource.listItem.fields && resource.listItem.fields.path) {
               webUrl = resource.listItem.fields.path;
               console.log(`Found webUrl in path: ${webUrl}`);
@@ -165,8 +171,12 @@ export class SearchService {
                 // Construct proper URL if it's a relative path
                 const baseUrl = new URL(appConfig.endpoints.graphBaseUrl).origin;
                 webUrl = `${baseUrl}${webUrl}`;
+                console.log(`Converted relative URL to absolute: ${webUrl}`);
               }
             }
+            
+            // Log out the final webUrl for debugging
+            console.log(`Final webUrl for ${title}: ${webUrl}`);
             
             searchResults.push({
               id: itemId,
