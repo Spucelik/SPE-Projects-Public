@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertCircle, Search, Clock } from 'lucide-react';
@@ -72,10 +71,11 @@ const SearchResults = () => {
     performSearch();
   }, [searchTerm, containerId, getAccessToken]);
 
-  // New effect to prefetch webUrls for Office documents
+  // Modified effect to fix the variable declaration issue
   useEffect(() => {
     const fetchOfficeDocUrls = async () => {
-      if (!results.length || !containerId) return;
+      // Make sure we have results and a container ID before proceeding
+      if (results.length === 0 || !containerId) return;
       
       const token = await getAccessToken();
       if (!token) return;
@@ -105,11 +105,11 @@ const SearchResults = () => {
         }
       });
       
-      const results = await Promise.all(urlPromises);
+      const urlResults = await Promise.all(urlPromises);
       
       // Update state with all fetched URLs
       const urlMap: Record<string, string> = {};
-      results.forEach(result => {
+      urlResults.forEach(result => {
         if (result && result.webUrl) {
           urlMap[result.id] = result.webUrl;
         }
