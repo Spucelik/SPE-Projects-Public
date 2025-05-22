@@ -46,7 +46,8 @@ export class SearchService {
               "summary",
               "preview",
               "driveId",
-              "itemId"
+              "itemId",
+              "webUrl"
             ],
             sharePointOneDriveOptions: {
               includeHiddenContent: true
@@ -147,8 +148,12 @@ export class SearchService {
               itemId = resource.itemId || resource.id || '';
             }
             
-            // Extract webUrl
-            webUrl = resource.webUrl || '';
+            // Extract webUrl - try to get it from path first, then from webUrl property
+            if (resource.listItem && resource.listItem.fields && resource.listItem.fields.path) {
+              webUrl = resource.listItem.fields.path;
+            } else if (resource.webUrl) {
+              webUrl = resource.webUrl;
+            }
             
             searchResults.push({
               id: itemId,

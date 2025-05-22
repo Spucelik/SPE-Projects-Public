@@ -80,11 +80,31 @@ const SearchResults = () => {
       return;
     }
     
-    // Convert search result to file item format for preview
-    const fileItem = searchService.convertToFileItem(result);
+    // Check if the file is a Microsoft Office document
+    const isOfficeDocument = isOfficeFile(result.title);
     
-    // Use the existing view file handler
-    await handleViewFile(fileItem);
+    if (isOfficeDocument && result.webUrl) {
+      // Open Office files directly in Office Online Viewer
+      window.open(result.webUrl, '_blank');
+    } else {
+      // For non-Office files or when webUrl is not available, use the file preview
+      const fileItem = searchService.convertToFileItem(result);
+      await handleViewFile(fileItem);
+    }
+  };
+  
+  // Helper function to determine if a file is a Microsoft Office document
+  const isOfficeFile = (fileName: string): boolean => {
+    if (!fileName) return false;
+    
+    const officeExtensions = [
+      '.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt', 
+      '.vsdx', '.vsd', '.odt', '.odp', '.ods'
+    ];
+    
+    return officeExtensions.some(ext => 
+      fileName.toLowerCase().endsWith(ext.toLowerCase())
+    );
   };
   
   const formatDate = (dateString: string) => {
