@@ -1,10 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertCircle, Search, Clock, FileIcon } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import SearchBar from '@/components/SearchBar';
 import { SearchResult, searchService } from '@/services/searchService';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -221,7 +221,7 @@ const SearchResults = () => {
     <div className="container space-y-6 py-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Search Results</h1>
-        <SearchBar containerId={containerId} />
+        {/* Search bar has been removed from here */}
       </div>
 
       <div className="text-sm text-muted-foreground mb-4">
