@@ -239,14 +239,14 @@ const SearchResults = () => {
                   <div className="flex items-baseline mb-2">
                     <Skeleton className="h-6 w-32" />
                   </div>
-                  <div className="pl-8 mb-1">
-                    <Skeleton className="h-4 w-24" />
+                  <div className="pl-0 mb-1">
+                    <Skeleton className="h-4 w-12" /> {/* File extension badge skeleton */}
                   </div>
-                  <div className="space-y-2 mb-2 pl-8">
+                  <div className="space-y-2 mb-2 pl-0">
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-3/4" />
                   </div>
-                  <div className="pl-8">
+                  <div className="pl-0">
                     <Skeleton className="h-4 w-64" />
                   </div>
                 </div>
