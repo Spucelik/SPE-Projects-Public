@@ -75,7 +75,7 @@ const SearchResults = () => {
   useEffect(() => {
     const fetchOfficeDocUrls = async () => {
       // Make sure we have results and a container ID before proceeding
-      if (results.length === 0 || !containerId) return;
+      if (!results || results.length === 0 || !containerId) return;
       
       const token = await getAccessToken();
       if (!token) return;
@@ -185,15 +185,8 @@ const SearchResults = () => {
   const openOfficeDocument = (webUrl: string) => {
     console.log('Opening Office document with webUrl:', webUrl);
     
-    const newWindow = window.open(webUrl, '_blank');
-    
-    if (!newWindow) {
-      toast({
-        title: "Popup Blocked",
-        description: "Please allow popups for this site to open documents",
-        variant: "destructive",
-      });
-    }
+    // Open in a new tab instead of using popup
+    window.open(webUrl, '_blank', 'noopener,noreferrer');
   };
   
   // Helper function to determine if a file is a Microsoft Office document
@@ -282,19 +275,12 @@ const SearchResults = () => {
                     <div className="flex items-baseline mb-2">
                       {isOfficeDoc && hasLoadedUrl ? (
                         // Direct link for Office documents with loaded URLs
-                        <a 
-                          href={officeDocUrls[result.id]}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-lg font-semibold text-blue-600 hover:underline"
-                          onClick={(e) => {
-                            // Handle popup blockers by capturing the click
-                            e.preventDefault();
-                            openOfficeDocument(officeDocUrls[result.id]);
-                          }}
+                        <span 
+                          onClick={() => openOfficeDocument(officeDocUrls[result.id])}
+                          className="text-lg font-semibold text-blue-600 hover:underline cursor-pointer"
                         >
                           {result.title || 'Unnamed Document'}
-                        </a>
+                        </span>
                       ) : (
                         // Regular button for non-Office files or files with no URL yet
                         <h3 
