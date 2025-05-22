@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertCircle, Search, Clock } from 'lucide-react';
@@ -153,6 +152,31 @@ const SearchResults = () => {
     });
   };
   
+  // A helper function to determine the best URL to use for Office documents
+  const getBestDocumentUrl = (result: SearchResult): string | null => {
+    // Log all available URLs for debugging
+    console.log('Available URLs for document:', {
+      title: result.title,
+      editUrl: result.editUrl || 'Not available',
+      webUrl: result.webUrl || 'Not available',
+    });
+    
+    // Prioritize editUrl if available (this is the "Edit in Office" URL)
+    if (result.editUrl) {
+      console.log(`Using editUrl for ${result.title}: ${result.editUrl}`);
+      return result.editUrl;
+    }
+    
+    // Fall back to webUrl if editUrl is not available
+    if (result.webUrl) {
+      console.log(`Using webUrl for ${result.title}: ${result.webUrl}`);
+      return result.webUrl;
+    }
+    
+    console.log(`No URL available for ${result.title}`);
+    return null;
+  }
+  
   return (
     <div className="container space-y-6 py-6">
       <div className="flex justify-between items-center">
@@ -205,8 +229,8 @@ const SearchResults = () => {
             <div className="space-y-6">
               {results.map((result) => {
                 const isOfficeDoc = isOfficeFile(result.title);
-                // Prioritize editUrl over webUrl for Office documents
-                const targetUrl = isOfficeDoc ? (result.editUrl || result.webUrl) : null;
+                // Get the best URL to use (with detailed logging)
+                const targetUrl = isOfficeDoc ? getBestDocumentUrl(result) : null;
                 
                 return (
                   <div key={`result-${result.id || Math.random().toString()}`} className="border-b pb-4 last:border-b-0">
@@ -221,6 +245,21 @@ const SearchResults = () => {
                           onClick={(e) => {
                             e.preventDefault(); // Prevent default behavior
                             console.log(`Opening Office document with URL: ${targetUrl}`);
+                            
+                            // Log URL components for debugging
+                            try {
+                              const urlObj = new URL(targetUrl);
+                              console.log('URL details:', {
+                                protocol: urlObj.protocol,
+                                hostname: urlObj.hostname,
+                                pathname: urlObj.pathname,
+                                search: urlObj.search,
+                                hash: urlObj.hash
+                              });
+                            } catch (err) {
+                              console.error('Invalid URL format:', targetUrl, err);
+                            }
+                            
                             // Open in new tab manually to ensure it works across browsers
                             window.open(targetUrl, '_blank', 'noopener,noreferrer');
                           }}
