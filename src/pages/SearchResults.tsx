@@ -219,7 +219,10 @@ const SearchResults = () => {
                           rel="noopener noreferrer"
                           className="text-lg font-semibold text-blue-600 hover:underline"
                           onClick={(e) => {
+                            e.preventDefault(); // Prevent default behavior
                             console.log(`Opening Office document with URL: ${targetUrl}`);
+                            // Open in new tab manually to ensure it works across browsers
+                            window.open(targetUrl, '_blank', 'noopener,noreferrer');
                           }}
                         >
                           {result.title || 'Unnamed Document'}
@@ -268,4 +271,3 @@ const SearchResults = () => {
 };
 
 export default SearchResults;
-
