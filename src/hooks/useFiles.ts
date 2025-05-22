@@ -39,7 +39,15 @@ export const useFiles = (containerId: string | undefined) => {
 
       console.log(`Fetching files for container ${containerId}, folder ${currentFolder || 'root'}`);
       const fileItems = await sharePointService.listFiles(token, containerId, currentFolder);
-      setFiles(fileItems);
+      
+      // Ensure each file has the creator information and format
+      const enhancedFiles = fileItems.map(item => ({
+        ...item,
+        createdByName: item.createdBy?.user?.displayName || 'Unknown',
+        childCount: item.folder?.childCount || 0
+      }));
+      
+      setFiles(enhancedFiles);
     } catch (error: any) {
       console.error('Error fetching files:', error);
       setError(error.message || "Failed to fetch files. This may be due to insufficient permissions or API limitations.");

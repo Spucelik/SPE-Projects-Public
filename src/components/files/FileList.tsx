@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { FilePlus, Folder, FileText, MoreHorizontal, Trash2, ExternalLink, Share, Pencil } from 'lucide-react';
+import { FilePlus, Folder, FileText, MoreHorizontal, Trash2, ExternalLink, Share, Pencil, Users } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
@@ -102,7 +102,9 @@ const FileList: React.FC<FileListProps> = ({
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead className="hidden md:table-cell">Modified</TableHead>
-            <TableHead className="hidden md:table-cell">Size</TableHead>
+            <TableHead className="hidden md:table-cell">Created</TableHead>
+            <TableHead className="hidden md:table-cell">Created By</TableHead>
+            <TableHead className="hidden md:table-cell">Size/Items</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -127,12 +129,28 @@ const FileList: React.FC<FileListProps> = ({
                   </span>
                 </div>
               </TableCell>
+              
               <TableCell className="hidden md:table-cell text-muted-foreground">
                 {formatDate(item.lastModifiedDateTime)}
               </TableCell>
+              
               <TableCell className="hidden md:table-cell text-muted-foreground">
-                {item.isFolder ? '-' : formatSize(item.size)}
+                {formatDate(item.createdDateTime || '')}
               </TableCell>
+              
+              <TableCell className="hidden md:table-cell text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  <span>{item.createdByName || 'Unknown'}</span>
+                </div>
+              </TableCell>
+              
+              <TableCell className="hidden md:table-cell text-muted-foreground">
+                {item.isFolder ? 
+                  `${item.childCount || 0} item${item.childCount !== 1 ? 's' : ''}` : 
+                  formatSize(item.size)}
+              </TableCell>
+              
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

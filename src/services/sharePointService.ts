@@ -4,9 +4,18 @@ export interface FileItem {
   name: string;
   size: number;
   lastModifiedDateTime: string;
+  createdDateTime?: string;
   webUrl: string;
   folder?: { childCount: number };
   isFolder: boolean;
+  createdBy?: {
+    user?: {
+      displayName?: string;
+      email?: string;
+    }
+  };
+  createdByName?: string;
+  childCount?: number;
 }
 
 // Define our Container interface
@@ -268,7 +277,9 @@ class SharePointService {
     const data = await response.json();
     return data.value.map((item: any) => ({
       ...item,
-      isFolder: !!item.folder
+      isFolder: !!item.folder,
+      childCount: item.folder?.childCount || 0,
+      createdByName: item.createdBy?.user?.displayName || 'Unknown'
     }));
   }
   
