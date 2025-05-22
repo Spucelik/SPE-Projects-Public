@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertCircle, Search, Clock } from 'lucide-react';
@@ -19,8 +20,6 @@ const SearchResults = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [officeDocUrls, setOfficeDocUrls] = useState<Record<string, string>>({});
-  const [loadingUrls, setLoadingUrls] = useState<Record<string, boolean>>({});
   
   const { getAccessToken } = useAuth();
   
@@ -54,7 +53,28 @@ const SearchResults = () => {
         
         const searchResults = await searchService.searchFiles(token, searchTerm, containerId);
         console.log('Setting search results:', searchResults);
-        setResults(searchResults);
+        
+        // For Office documents, fetch their webUrls directly
+        const enhancedResults = await Promise.all(
+          searchResults.map(async (result) => {
+            if (isOfficeFile(result.title) && containerId && result.driveId && result.itemId) {
+              try {
+                const fileDetails = await searchService.getFileDetails(token, result.driveId, result.itemId);
+                
+                // Add the webUrl to the result
+                if (fileDetails.webUrl) {
+                  console.log(`Found webUrl for ${result.title}: ${fileDetails.webUrl}`);
+                  return { ...result, webUrl: fileDetails.webUrl };
+                }
+              } catch (error) {
+                console.error(`Failed to get webUrl for ${result.title}:`, error);
+              }
+            }
+            return result;
+          })
+        );
+        
+        setResults(enhancedResults);
       } catch (error: any) {
         console.error('Search error:', error);
         setError(error.message || 'An error occurred while searching');
@@ -70,56 +90,6 @@ const SearchResults = () => {
     
     performSearch();
   }, [searchTerm, containerId, getAccessToken]);
-
-  // Modified effect to fix the variable declaration issue
-  useEffect(() => {
-    const fetchOfficeDocUrls = async () => {
-      // Make sure we have results and a container ID before proceeding
-      if (!results || results.length === 0 || !containerId) return;
-      
-      const token = await getAccessToken();
-      if (!token) return;
-      
-      const officeFiles = results.filter(r => isOfficeFile(r.title));
-      
-      // Create a temporary loading state object
-      const newLoadingState: Record<string, boolean> = {};
-      officeFiles.forEach(file => {
-        newLoadingState[file.id] = true;
-      });
-      setLoadingUrls(newLoadingState);
-      
-      // Fetch all webUrls in parallel
-      const urlPromises = officeFiles.map(async (file) => {
-        try {
-          if (!file.driveId || !file.itemId) return null;
-          
-          const details = await searchService.getFileDetails(token, file.driveId, file.itemId);
-          return { id: file.id, webUrl: details.webUrl };
-        } catch (error) {
-          console.error(`Error fetching URL for ${file.title}:`, error);
-          return null;
-        } finally {
-          // Update loading state for this specific file
-          setLoadingUrls(prev => ({ ...prev, [file.id]: false }));
-        }
-      });
-      
-      const urlResults = await Promise.all(urlPromises);
-      
-      // Update state with all fetched URLs
-      const urlMap: Record<string, string> = {};
-      urlResults.forEach(result => {
-        if (result && result.webUrl) {
-          urlMap[result.id] = result.webUrl;
-        }
-      });
-      
-      setOfficeDocUrls(urlMap);
-    };
-    
-    fetchOfficeDocUrls();
-  }, [results, containerId, getAccessToken]);
   
   const handleResultClick = async (result: SearchResult) => {
     if (!result.driveId || !result.itemId) {
@@ -134,59 +104,16 @@ const SearchResults = () => {
     // Check if the file is a Microsoft Office document
     const isOfficeDocument = isOfficeFile(result.title);
     
-    if (isOfficeDocument) {
-      // If we already have the URL cached, use it directly
-      if (officeDocUrls[result.id]) {
-        openOfficeDocument(officeDocUrls[result.id]);
-        return;
-      }
-      
-      try {
-        // Get the webUrl using the direct API method
-        console.log('Getting webUrl for Office document');
-        const token = await getAccessToken();
-        
-        if (!token) {
-          throw new Error("Failed to get access token");
-        }
-        
-        const fileDetails = await searchService.getFileDetails(token, result.driveId, result.itemId);
-        
-        if (!fileDetails.webUrl) {
-          throw new Error("Could not retrieve valid webUrl for the document");
-        }
-        
-        openOfficeDocument(fileDetails.webUrl);
-        
-        // Skip the file preview completely for Office documents
-        return;
-      } catch (error: any) {
-        console.error('Error opening Office document:', error);
-        toast({
-          title: "Error Opening Document",
-          description: error.message || "Could not open the document",
-          variant: "destructive",
-        });
-        
-        // Fall back to preview if we can't open it directly
-        const fileItem = searchService.convertToFileItem(result);
-        await handleViewFile(fileItem);
-      }
-      
+    if (isOfficeDocument && result.webUrl) {
+      // Open Office documents directly using their webUrl
+      console.log('Opening Office document with webUrl:', result.webUrl);
+      window.open(result.webUrl, '_blank', 'noopener,noreferrer');
       return;
     }
     
-    // For non-Office files, use the file preview
+    // For non-Office files or Office files without webUrl, use the file preview
     const fileItem = searchService.convertToFileItem(result);
     await handleViewFile(fileItem);
-  };
-  
-  // Helper function to open Office documents
-  const openOfficeDocument = (webUrl: string) => {
-    console.log('Opening Office document with webUrl:', webUrl);
-    
-    // Open in a new tab instead of using popup
-    window.open(webUrl, '_blank', 'noopener,noreferrer');
   };
   
   // Helper function to determine if a file is a Microsoft Office document
@@ -267,30 +194,28 @@ const SearchResults = () => {
             <div className="space-y-6">
               {results.map((result) => {
                 const isOfficeDoc = isOfficeFile(result.title);
-                const hasLoadedUrl = isOfficeDoc && officeDocUrls[result.id];
-                const isLoadingUrl = isOfficeDoc && loadingUrls[result.id];
+                const hasWebUrl = isOfficeDoc && !!result.webUrl;
                 
                 return (
                   <div key={`result-${result.id || Math.random().toString()}`} className="border-b pb-4 last:border-b-0">
                     <div className="flex items-baseline mb-2">
-                      {isOfficeDoc && hasLoadedUrl ? (
-                        // Direct link for Office documents with loaded URLs
-                        <span 
-                          onClick={() => openOfficeDocument(officeDocUrls[result.id])}
-                          className="text-lg font-semibold text-blue-600 hover:underline cursor-pointer"
+                      {isOfficeDoc && hasWebUrl ? (
+                        // Direct link for Office documents with webUrl
+                        <a 
+                          href={result.webUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-lg font-semibold text-blue-600 hover:underline"
                         >
                           {result.title || 'Unnamed Document'}
-                        </span>
+                        </a>
                       ) : (
-                        // Regular button for non-Office files or files with no URL yet
+                        // Regular button for non-Office files or files with no webUrl
                         <h3 
-                          className={`text-lg font-semibold text-blue-600 hover:underline cursor-pointer ${
-                            isLoadingUrl ? 'opacity-70' : ''
-                          }`}
-                          onClick={() => !isLoadingUrl && handleResultClick(result)}
+                          className="text-lg font-semibold text-blue-600 hover:underline cursor-pointer"
+                          onClick={() => handleResultClick(result)}
                         >
-                          {result.title || 'Unnamed Document'} 
-                          {isLoadingUrl && <span className="text-xs ml-2">(loading...)</span>}
+                          {result.title || 'Unnamed Document'}
                         </h3>
                       )}
                     </div>
