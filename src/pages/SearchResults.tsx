@@ -54,7 +54,7 @@ const SearchResults = () => {
         const searchResults = await searchService.searchFiles(token, searchTerm, containerId);
         console.log('Setting search results:', searchResults);
         
-        // For Office documents, fetch their webUrls directly
+        // For Office documents, fetch their webUrls and build edit URLs
         const enhancedResults = await Promise.all(
           searchResults.map(async (result) => {
             if (isOfficeFile(result.title) && containerId && result.driveId && result.itemId) {
@@ -64,7 +64,18 @@ const SearchResults = () => {
                 // Add the webUrl to the result
                 if (fileDetails.webUrl) {
                   console.log(`Found webUrl for ${result.title}: ${fileDetails.webUrl}`);
-                  return { ...result, webUrl: fileDetails.webUrl };
+                  
+                  // Get the full file data from Graph API to build edit URL
+                  const editUrl = searchService.buildEditUrl({
+                    ...result,
+                    webUrl: fileDetails.webUrl,
+                  });
+                  
+                  return { 
+                    ...result, 
+                    webUrl: fileDetails.webUrl,
+                    editUrl: editUrl 
+                  };
                 }
               } catch (error) {
                 console.error(`Failed to get webUrl for ${result.title}:`, error);
@@ -194,15 +205,15 @@ const SearchResults = () => {
             <div className="space-y-6">
               {results.map((result) => {
                 const isOfficeDoc = isOfficeFile(result.title);
-                const hasWebUrl = isOfficeDoc && !!result.webUrl;
+                const targetUrl = isOfficeDoc && result.editUrl ? result.editUrl : result.webUrl;
                 
                 return (
                   <div key={`result-${result.id || Math.random().toString()}`} className="border-b pb-4 last:border-b-0">
                     <div className="flex items-baseline mb-2">
-                      {isOfficeDoc && hasWebUrl ? (
-                        // Direct link for Office documents with webUrl
+                      {isOfficeDoc && targetUrl ? (
+                        // Direct link for Office documents with editUrl or webUrl
                         <a 
-                          href={result.webUrl}
+                          href={targetUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-lg font-semibold text-blue-600 hover:underline"
@@ -210,7 +221,7 @@ const SearchResults = () => {
                           {result.title || 'Unnamed Document'}
                         </a>
                       ) : (
-                        // Regular button for non-Office files or files with no webUrl
+                        // Regular button for non-Office files or files with no URL
                         <h3 
                           className="text-lg font-semibold text-blue-600 hover:underline cursor-pointer"
                           onClick={() => handleResultClick(result)}

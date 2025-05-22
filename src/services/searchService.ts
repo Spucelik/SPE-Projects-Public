@@ -10,6 +10,13 @@ export interface SearchResult {
   driveId: string;
   itemId: string;
   webUrl?: string;
+  editUrl?: string;
+  parentReference?: {
+    siteId?: string;
+    sharepointIds?: {
+      listItemUniqueId?: string;
+    };
+  };
 }
 
 export class SearchService {
@@ -186,7 +193,13 @@ export class SearchService {
               preview: preview,
               driveId: driveId,
               itemId: itemId,
-              webUrl: webUrl
+              webUrl: webUrl,
+              parentReference: {
+                siteId: resource.parentReference?.siteId,
+                sharepointIds: {
+                  listItemUniqueId: resource.parentReference?.sharepointIds?.listItemUniqueId
+                }
+              }
             });
           }
         }
@@ -200,7 +213,6 @@ export class SearchService {
     }
   }
 
-  // Get detailed file information including proper webUrl
   async getFileDetails(token: string, driveId: string, itemId: string): Promise<{ webUrl: string }> {
     try {
       const url = `${appConfig.endpoints.graphBaseUrl}/drives/${driveId}/items/${itemId}?$expand=listItem($expand=fields)`;
@@ -233,7 +245,42 @@ export class SearchService {
     }
   }
 
-  // Convert search result to file item format for preview
+  // Build an edit URL for Office documents based on SharePoint site details
+  buildEditUrl(result: SearchResult): string | undefined {
+    try {
+      if (!result.webUrl || !result.parentReference?.siteId || 
+          !result.parentReference?.sharepointIds?.listItemUniqueId || !result.title) {
+        console.log('Missing data to build edit URL:', result);
+        return undefined;
+      }
+      
+      // Step 1: Get hostname from siteId
+      const siteIdParts = result.parentReference.siteId.split(',');
+      const hostname = siteIdParts[0];
+      
+      // Step 2: Get site path from webUrl
+      const webUrl = result.webUrl;
+      const sitePath = '/' + webUrl.split('/').slice(3, 5).join('/');
+      
+      // Step 3: Get sourcedoc from listItemUniqueId and format it
+      const rawId = result.parentReference.sharepointIds.listItemUniqueId;
+      const upperId = rawId.toUpperCase();
+      const sourcedoc = encodeURIComponent(`{${upperId}}`);
+      
+      // Step 4: Get file name
+      const fileName = result.title;
+      
+      // Step 5: Assemble final URL
+      const finalUrl = `https://${hostname}${sitePath}/_layouts/15/Doc.aspx?sourcedoc=${sourcedoc}&file=${encodeURIComponent(fileName)}&action=edit&mobileredirect=true`;
+      
+      console.log(`Built edit URL for ${fileName}:`, finalUrl);
+      return finalUrl;
+    } catch (error) {
+      console.error('Error building edit URL:', error);
+      return undefined;
+    }
+  }
+
   convertToFileItem(result: SearchResult): FileItem {
     return {
       id: result.itemId,
