@@ -142,8 +142,8 @@ const SearchResults = () => {
       }
       
       try {
-        // Get the accurate webUrl using the direct API method
-        console.log('Getting accurate webUrl for Office document');
+        // Get the webUrl using the direct API method
+        console.log('Getting webUrl for Office document');
         const token = await getAccessToken();
         
         if (!token) {
@@ -157,6 +157,9 @@ const SearchResults = () => {
         }
         
         openOfficeDocument(fileDetails.webUrl);
+        
+        // Skip the file preview completely for Office documents
+        return;
       } catch (error: any) {
         console.error('Error opening Office document:', error);
         toast({
