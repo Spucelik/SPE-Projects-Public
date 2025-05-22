@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertCircle, Search, Clock } from 'lucide-react';
+import { AlertCircle, Search, Clock, FileIcon } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -140,6 +140,45 @@ const SearchResults = () => {
     );
   };
   
+  // Function to get file extension from filename
+  const getFileExtension = (filename: string): string => {
+    if (!filename) return '';
+    const parts = filename.split('.');
+    return parts.length > 1 ? parts.pop()?.toLowerCase() || '' : '';
+  };
+  
+  // Function to get friendly file type from extension
+  const getFileType = (filename: string): string => {
+    const ext = getFileExtension(filename);
+    
+    const fileTypes: Record<string, string> = {
+      'pdf': 'PDF Document',
+      'doc': 'Word Document',
+      'docx': 'Word Document',
+      'xls': 'Excel Spreadsheet',
+      'xlsx': 'Excel Spreadsheet',
+      'ppt': 'PowerPoint Presentation',
+      'pptx': 'PowerPoint Presentation',
+      'txt': 'Text Document',
+      'csv': 'CSV File',
+      'jpg': 'JPEG Image',
+      'jpeg': 'JPEG Image',
+      'png': 'PNG Image',
+      'gif': 'GIF Image',
+      'zip': 'ZIP Archive',
+      'mp4': 'Video File',
+      'mp3': 'Audio File',
+      'html': 'HTML Document',
+      'odt': 'OpenDocument Text',
+      'ods': 'OpenDocument Spreadsheet',
+      'odp': 'OpenDocument Presentation',
+      'vsd': 'Visio Drawing',
+      'vsdx': 'Visio Drawing',
+    };
+    
+    return fileTypes[ext] || `${ext.toUpperCase()} File`;
+  };
+  
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Unknown date';
     const date = new Date(dateString);
@@ -199,6 +238,9 @@ const SearchResults = () => {
                   <div className="flex items-baseline mb-2">
                     <Skeleton className="h-6 w-32" />
                   </div>
+                  <div className="pl-8 mb-1">
+                    <Skeleton className="h-4 w-24" />
+                  </div>
                   <div className="space-y-2 mb-2 pl-8">
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-3/4" />
@@ -229,12 +271,13 @@ const SearchResults = () => {
             <div className="space-y-6">
               {results.map((result) => {
                 const isOfficeDoc = isOfficeFile(result.title);
+                const fileType = getFileType(result.title);
                 // Get the best URL to use (with detailed logging)
                 const targetUrl = isOfficeDoc ? getBestDocumentUrl(result) : null;
                 
                 return (
                   <div key={`result-${result.id || Math.random().toString()}`} className="border-b pb-4 last:border-b-0">
-                    <div className="flex items-baseline mb-2">
+                    <div className="flex items-baseline mb-1">
                       {isOfficeDoc && targetUrl ? (
                         // Direct link for Office documents with URL
                         <a 
@@ -275,6 +318,14 @@ const SearchResults = () => {
                           {result.title || 'Unnamed Document'}
                         </h3>
                       )}
+                    </div>
+                    
+                    {/* File type information */}
+                    <div className="pl-0 mb-2">
+                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded flex items-center w-fit">
+                        <FileIcon className="h-3 w-3 mr-1" />
+                        {fileType}
+                      </span>
                     </div>
                     
                     <div>
