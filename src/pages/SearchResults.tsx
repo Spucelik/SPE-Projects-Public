@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Search, Clock } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -86,11 +86,29 @@ const SearchResults = () => {
     await handleViewFile(fileItem);
   };
   
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Unknown date';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+  
   return (
     <div className="container space-y-6 py-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Search Results</h1>
         <SearchBar containerId={containerId} />
+      </div>
+
+      <div className="text-sm text-muted-foreground mb-4">
+        {!loading && results.length > 0 && (
+          <p>{results.length} results for "{searchTerm}"</p>
+        )}
       </div>
       
       <Card>
@@ -133,24 +151,26 @@ const SearchResults = () => {
               {results.map((result, index) => (
                 <div key={result.id} className="border-b pb-4 last:border-b-0">
                   <div className="flex items-baseline mb-2">
-                    <span className="text-muted-foreground mr-2">{index + 1}</span>
                     <h3 
                       className="text-lg font-semibold text-blue-600 hover:underline cursor-pointer"
                       onClick={() => handleResultClick(result)}
                     >
-                      {result.title}
+                      {result.title || 'Unnamed Document'}
                     </h3>
                   </div>
                   
-                  <div className="pl-8">
-                    <p className="text-sm mb-2">
-                      <span className="font-semibold">Summary:</span>
+                  <div>
+                    <p className="text-sm mb-2 line-clamp-2">
+                      {result.preview || 'No preview available'}
                     </p>
-                    <p className="text-sm pl-4 mb-2">{result.preview || 'No preview available'}</p>
                     
-                    <p className="text-xs text-gray-500 italic">
-                      Last modified by {result.createdBy} {result.createdDateTime}
-                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        Last modified {formatDate(result.createdDateTime || '')}
+                        {result.createdBy && ` by ${result.createdBy}`}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
