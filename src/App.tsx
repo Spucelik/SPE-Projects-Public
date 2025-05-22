@@ -1,4 +1,3 @@
-
 import { 
   BrowserRouter as Router, 
   Routes, 
@@ -13,10 +12,12 @@ import { AuthProvider } from "./context/AuthContext";
 import { ConfigProvider } from "./context/ConfigContext";
 import { SidebarProvider } from "./components/ui/sidebar";
 import Layout from "./components/Layout";
+import LayoutWithSearch from "./components/LayoutWithSearch";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Projects from "./pages/Projects";
 import Files from "./pages/Files";
+import SearchResults from "./pages/SearchResults";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./context/AuthContext";
 import React, { Suspense } from 'react';
@@ -63,10 +64,11 @@ const App = () => {
                   <Suspense fallback={<LoadingFallback />}>
                     <Routes>
                       <Route path="/login" element={<Login />} />
-                      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                      <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
-                      <Route path="/files/:containerId" element={<ProtectedRoute><Files /></ProtectedRoute>} />
-                      <Route path="/files" element={<ProtectedRoute><Navigate to="/projects" replace /></ProtectedRoute>} />
+                      <Route path="/" element={<ProtectedRouteWithSearch><Index /></ProtectedRouteWithSearch>} />
+                      <Route path="/projects" element={<ProtectedRouteWithSearch><Projects /></ProtectedRouteWithSearch>} />
+                      <Route path="/files/:containerId" element={<ProtectedRouteWithSearch><Files /></ProtectedRouteWithSearch>} />
+                      <Route path="/files" element={<ProtectedRouteWithSearch><Navigate to="/projects" replace /></ProtectedRouteWithSearch>} />
+                      <Route path="/search" element={<ProtectedRouteWithSearch><SearchResults /></ProtectedRouteWithSearch>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>
@@ -80,17 +82,31 @@ const App = () => {
   );
 };
 
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center h-screen w-full">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+  </div>
+);
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
   
-  console.log('ProtectedRoute - Authentication status:', isAuthenticated);
-  
   if (!isAuthenticated) {
-    console.log('Not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   
   return <Layout>{children}</Layout>;
+};
+
+// New protected route that includes the search header
+const ProtectedRouteWithSearch = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <LayoutWithSearch>{children}</LayoutWithSearch>;
 };
 
 export default App;
