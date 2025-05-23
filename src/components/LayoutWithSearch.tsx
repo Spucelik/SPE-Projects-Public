@@ -89,7 +89,24 @@ const LayoutWithSearch: React.FC<LayoutWithSearchProps> = ({ children }) => {
       </Sidebar>
       
       <SidebarInset className="flex flex-col">
-        <SearchHeader />
+        <div className="flex justify-between items-center">
+          <SearchHeader />
+          <div className="flex items-center gap-4 px-6 py-3 bg-blue-600 text-white">
+            {user && (
+              <div className="flex items-center gap-2">
+                <User size={18} className="text-white" />
+                <span>{user.username || user.name}</span>
+              </div>
+            )}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1 text-sm text-white hover:text-blue-200"
+            >
+              <LogOut size={18} />
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
         <main className="flex-1 overflow-auto p-6 bg-gray-50">
           {children}
         </main>
