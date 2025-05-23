@@ -9,7 +9,7 @@ const SearchHeader: React.FC = () => {
   
   return (
     <div className="border-b py-4 px-6 bg-background sticky top-0 z-10 shadow-sm">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center gap-6">
         <div className="text-lg font-medium whitespace-nowrap">Search Documents</div>
         <SearchBar containerId={containerId} className="w-full max-w-md" />
       </div>
