@@ -203,47 +203,42 @@ export function RollupDashboard() {
           </CardHeader>
           <CardContent>
             <div className="h-[450px]">
-              <ChartContainer config={{
-                tasks: {
-                  color: "#8B5CF6",
-                  label: "Tasks"
-                }
-              }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
-                    data={mockRollupData.tasksByType} 
-                    layout="horizontal"
-                    margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
+              <ResponsiveContainer width="100%" height="90%">
+                <BarChart 
+                  data={mockRollupData.tasksByType} 
+                  layout="horizontal"
+                  margin={{ top: 20, right: 30, left: 60, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    type="number" 
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickFormatter={(value) => `${value}`}
+                    domain={[0, 'dataMax']}
+                  />
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    width={60}
+                    stroke="#6b7280"
+                    fontSize={12}
+                  />
+                  <Tooltip content={<TaskTypeTooltip />} />
+                  <Bar 
+                    dataKey="tasks" 
+                    radius={[0, 4, 4, 0]}
+                    fill="#8B5CF6"
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis 
-                      type="number" 
-                      stroke="#6b7280"
-                      fontSize={12}
-                      tickFormatter={(value) => `${value} tasks`}
-                    />
-                    <YAxis 
-                      dataKey="name" 
-                      type="category" 
-                      width={80}
-                      stroke="#6b7280"
-                      fontSize={12}
-                    />
-                    <Tooltip content={<TaskTypeTooltip />} />
-                    <Bar 
-                      dataKey="tasks" 
-                      radius={[0, 4, 4, 0]}
-                    >
-                      {mockRollupData.tasksByType.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+                    {mockRollupData.tasksByType.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
               
               {/* Custom Legend */}
-              <div className="flex justify-center gap-6 mt-4">
+              <div className="flex justify-center gap-6 mt-2">
                 {mockRollupData.tasksByType.map((item, index) => (
                   <div key={item.name} className="flex items-center gap-2">
                     <div 
