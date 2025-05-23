@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -11,7 +10,8 @@ import {
   ResponsiveContainer,
   Tooltip,
   Cell,
-  Legend
+  Legend,
+  CartesianGrid
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 
@@ -30,13 +30,14 @@ const mockRollupData = {
     { name: 'Completed', value: 40, count: 10 }
   ],
   tasksByType: [
-    { name: 'Project', tasks: 8 },
-    { name: 'Tracker', tasks: 12 },
-    { name: 'Enhancement', tasks: 5 }
+    { name: 'Project', tasks: 8, color: '#8B5CF6' },
+    { name: 'Tracker', tasks: 12, color: '#06B6D4' },
+    { name: 'Enhancement', tasks: 5, color: '#10B981' }
   ]
 };
 
 const COLORS = ['#00C49F', '#FFBB28', '#FF8042'];
+const TASK_COLORS = ['#8B5CF6', '#06B6D4', '#10B981'];
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
@@ -50,6 +51,27 @@ const CustomTooltip = ({ active, payload }: any) => {
         <p className="text-sm text-gray-600">
           Percentage: {data.value}%
         </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const TaskTypeTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    return (
+      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+        <p className="font-semibold text-gray-800">{label}</p>
+        <div className="flex items-center gap-2 mt-1">
+          <div 
+            className="w-3 h-3 rounded-full" 
+            style={{ backgroundColor: data.payload.color }}
+          />
+          <p className="text-sm text-gray-600">
+            Tasks: {data.value}
+          </p>
+        </div>
       </div>
     );
   }
@@ -174,25 +196,66 @@ export function RollupDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Tasks by Type</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full"></div>
+              Tasks by Type
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[450px]">
               <ChartContainer config={{
                 tasks: {
-                  color: "#0088FE",
+                  color: "#8B5CF6",
                   label: "Tasks"
                 }
               }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={mockRollupData.tasksByType} layout="horizontal">
-                    <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" width={80} />
-                    <ChartTooltip />
-                    <Bar dataKey="tasks" fill="#0088FE" />
+                  <BarChart 
+                    data={mockRollupData.tasksByType} 
+                    layout="horizontal"
+                    margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      type="number" 
+                      stroke="#6b7280"
+                      fontSize={12}
+                      tickFormatter={(value) => `${value} tasks`}
+                    />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      width={80}
+                      stroke="#6b7280"
+                      fontSize={12}
+                    />
+                    <Tooltip content={<TaskTypeTooltip />} />
+                    <Bar 
+                      dataKey="tasks" 
+                      radius={[0, 4, 4, 0]}
+                    >
+                      {mockRollupData.tasksByType.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </ChartContainer>
+              
+              {/* Custom Legend */}
+              <div className="flex justify-center gap-6 mt-4">
+                {mockRollupData.tasksByType.map((item, index) => (
+                  <div key={item.name} className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full shadow-sm" 
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-sm text-gray-600 font-medium">
+                      {item.name} ({item.tasks})
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
