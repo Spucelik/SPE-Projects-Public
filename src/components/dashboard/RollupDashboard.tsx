@@ -10,9 +10,10 @@ import {
   YAxis, 
   ResponsiveContainer,
   Tooltip,
-  Cell
+  Cell,
+  Legend
 } from 'recharts';
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 
 const mockRollupData = {
   summary: {
@@ -24,9 +25,9 @@ const mockRollupData = {
     tasksLate: 70
   },
   statusData: [
-    { name: 'In Progress', value: 35 },
-    { name: 'Not Started', value: 25 },
-    { name: 'Completed', value: 40 }
+    { name: 'In Progress', value: 35, count: 9 },
+    { name: 'Not Started', value: 25, count: 6 },
+    { name: 'Completed', value: 40, count: 10 }
   ],
   tasksByType: [
     { name: 'Project', tasks: 8 },
@@ -36,6 +37,24 @@ const mockRollupData = {
 };
 
 const COLORS = ['#00C49F', '#FFBB28', '#FF8042'];
+
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    return (
+      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+        <p className="font-semibold">{data.name}</p>
+        <p className="text-sm text-gray-600">
+          Projects: {data.payload.count}
+        </p>
+        <p className="text-sm text-gray-600">
+          Percentage: {data.value}%
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export function RollupDashboard() {
   return (
@@ -107,13 +126,13 @@ export function RollupDashboard() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle>Project Status</CardTitle>
+            <CardTitle>Project Status Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[450px]">
               <ChartContainer config={{
                 status: {
                   color: "#00C49F",
@@ -126,16 +145,26 @@ export function RollupDashboard() {
                       data={mockRollupData.statusData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={120}
+                      fill="#8884d8"
                       dataKey="value"
                     >
                       {mockRollupData.statusData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <ChartTooltip />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36}
+                      formatter={(value, entry: any) => (
+                        <span style={{ color: entry.color }}>
+                          {value} ({entry.payload.count} projects)
+                        </span>
+                      )}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </ChartContainer>
@@ -148,7 +177,7 @@ export function RollupDashboard() {
             <CardTitle>Tasks by Type</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[450px]">
               <ChartContainer config={{
                 tasks: {
                   color: "#0088FE",
@@ -156,9 +185,9 @@ export function RollupDashboard() {
                 }
               }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={mockRollupData.tasksByType}>
-                    <XAxis dataKey="name" />
-                    <YAxis />
+                  <BarChart data={mockRollupData.tasksByType} layout="horizontal">
+                    <XAxis type="number" />
+                    <YAxis dataKey="name" type="category" width={80} />
                     <ChartTooltip />
                     <Bar dataKey="tasks" fill="#0088FE" />
                   </BarChart>
