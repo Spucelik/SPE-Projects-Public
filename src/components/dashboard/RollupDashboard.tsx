@@ -126,8 +126,8 @@ export function RollupDashboard() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
           <CardHeader>
             <CardTitle>Project Status Distribution</CardTitle>
           </CardHeader>
