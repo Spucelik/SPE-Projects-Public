@@ -13,7 +13,8 @@ import {
   Clock,
   Info,
   ExternalLink,
-  ShieldAlert
+  ShieldAlert,
+  Plus
 } from 'lucide-react';
 import { 
   Sheet, 
@@ -38,6 +39,7 @@ import {
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { ConfigAlert } from '../components/ConfigAlert';
 import { useContainerDetails } from '../hooks/useContainerDetails';
+import { CreateContainerForm } from '../components/CreateContainerForm';
 
 interface Project {
   id: string;
@@ -115,94 +117,99 @@ const Projects = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [permissionError, setPermissionError] = useState<boolean>(false);
+  const [isCreatePanelOpen, setIsCreatePanelOpen] = useState<boolean>(false);
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setPermissionError(false);
+      
+      const token = await getAccessToken();
+      if (!token) {
+        setError("Failed to get access token. Please try logging in again.");
+        return;
+      }
+
+      try {
+        // Use the enumeration method as the primary method now
+        console.log('Fetching projects using enumeration method...');
+        const projectsData = await sharePointService.listContainers(token);
+        
+        // Process the data
+        const enhancedProjects = projectsData.map(project => {
+          // Handle dates safely to prevent invalid date errors
+          let startDate;
+          let endDate;
+          
+          // Use project's createdDateTime if available, or fallback to current date
+          try {
+            if (project.createdDateTime && project.createdDateTime !== '') {
+              startDate = new Date(project.createdDateTime).toISOString();
+            } else {
+              startDate = new Date().toISOString();
+            }
+            
+            // Generate a random end date 1-30 days in the future from the start date
+            const start = new Date(startDate);
+            const futureDate = new Date(start.getTime() + (Math.floor(Math.random() * 30) + 1) * 24 * 60 * 60 * 1000);
+            endDate = futureDate.toISOString();
+          } catch (err) {
+            // Fallback if date parsing fails
+            console.warn('Date parsing issue:', err);
+            const now = new Date();
+            startDate = now.toISOString();
+            endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+          }
+          
+          return {
+            ...project,
+            type: ['Project', 'Tracker', 'Enhancement', 'Production Support'][Math.floor(Math.random() * 4)] as Project['type'],
+            status: ['Not Started', 'In Progress', 'Completed'][Math.floor(Math.random() * 3)] as Project['status'],
+            health: ['Green', 'Yellow', 'Red'][Math.floor(Math.random() * 3)] as Project['health'],
+            percentComplete: Math.floor(Math.random() * 100),
+            startDate,
+            endDate,
+          };
+        });
+        
+        setProjects(enhancedProjects);
+      } catch (error: any) {
+        console.error('Error from enumeration API:', error);
+        // Check if it's a permissions error (403)
+        if (error.message && error.message.includes('403')) {
+          setPermissionError(true);
+          toast({
+            title: "Permission Error",
+            description: "Your account doesn't have sufficient permissions to access projects.",
+            variant: "destructive",
+          });
+        } else {
+          throw error; // Re-throw if it's not a permissions error
+        }
+      }
+    } catch (error: any) {
+      console.error('Error fetching projects:', error);
+      setError(error.message);
+      toast({
+        title: "Error",
+        description: "Failed to fetch projects",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) return;
-
-    const fetchProjects = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        setPermissionError(false);
-        
-        const token = await getAccessToken();
-        if (!token) {
-          setError("Failed to get access token. Please try logging in again.");
-          return;
-        }
-
-        try {
-          // Always use the search API method directly
-          console.log('Fetching projects using search method...');
-          const projectsData = await sharePointService.listContainersUsingSearch(token);
-          
-          // Process the data
-          const enhancedProjects = projectsData.map(project => {
-            // Handle dates safely to prevent invalid date errors
-            let startDate;
-            let endDate;
-            
-            // Use project's createdDateTime if available, or fallback to current date
-            try {
-              if (project.createdDateTime && project.createdDateTime !== '') {
-                startDate = new Date(project.createdDateTime).toISOString();
-              } else {
-                startDate = new Date().toISOString();
-              }
-              
-              // Generate a random end date 1-30 days in the future from the start date
-              const start = new Date(startDate);
-              const futureDate = new Date(start.getTime() + (Math.floor(Math.random() * 30) + 1) * 24 * 60 * 60 * 1000);
-              endDate = futureDate.toISOString();
-            } catch (err) {
-              // Fallback if date parsing fails
-              console.warn('Date parsing issue:', err);
-              const now = new Date();
-              startDate = now.toISOString();
-              endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
-            }
-            
-            return {
-              ...project,
-              type: ['Project', 'Tracker', 'Enhancement', 'Production Support'][Math.floor(Math.random() * 4)] as Project['type'],
-              status: ['Not Started', 'In Progress', 'Completed'][Math.floor(Math.random() * 3)] as Project['status'],
-              health: ['Green', 'Yellow', 'Red'][Math.floor(Math.random() * 3)] as Project['health'],
-              percentComplete: Math.floor(Math.random() * 100),
-              startDate,
-              endDate,
-            };
-          });
-          
-          setProjects(enhancedProjects);
-        } catch (error: any) {
-          console.error('Error from search API:', error);
-          // Check if it's a permissions error (403)
-          if (error.message && error.message.includes('403')) {
-            setPermissionError(true);
-            toast({
-              title: "Permission Error",
-              description: "Your account doesn't have sufficient permissions to access projects.",
-              variant: "destructive",
-            });
-          } else {
-            throw error; // Re-throw if it's not a permissions error
-          }
-        }
-      } catch (error: any) {
-        console.error('Error fetching projects:', error);
-        setError(error.message);
-        toast({
-          title: "Error",
-          description: "Failed to fetch projects",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProjects();
   }, [isAuthenticated, getAccessToken]);
+
+  const handleCreateSuccess = () => {
+    setIsCreatePanelOpen(false);
+    fetchProjects(); // Refresh the projects list
+  };
 
   const getHealthIcon = (health: Project['health']) => {
     switch (health) {
@@ -229,6 +236,28 @@ const Projects = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Project Sites Rollup</h1>
+        <Sheet open={isCreatePanelOpen} onOpenChange={setIsCreatePanelOpen}>
+          <SheetTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Create Container
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Create New Container</SheetTitle>
+              <SheetDescription>
+                Create a new project container with display name, description, and administrator settings.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-6">
+              <CreateContainerForm 
+                onSuccess={handleCreateSuccess}
+                onCancel={() => setIsCreatePanelOpen(false)}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
       
       <ConfigAlert />
@@ -270,7 +299,7 @@ const Projects = () => {
         <div className="border rounded-lg p-8 text-center">
           <h3 className="text-lg font-semibold mb-2">No Projects Found</h3>
           <p className="text-muted-foreground">
-            There are no projects available to display.
+            There are no projects available to display. Create your first container to get started.
           </p>
         </div>
       ) : (

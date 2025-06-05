@@ -31,7 +31,40 @@ export interface Container {
 import { appConfig } from '../config/appConfig';
 
 class SharePointService {
-  // List containers using Search API (new method)
+  // List containers using enumeration API (updated method)
+  async listContainers(token: string): Promise<Container[]> {
+    try {
+      // Use the enumeration API endpoint with proper filtering
+      const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.fileStorage}${appConfig.endpoints.containers}?$select=id,displayName,description,containerTypeId,createdDateTime&$filter=containerTypeId eq ${appConfig.containerTypeId}`;
+      
+      console.log('Listing containers with enumeration URL:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response from enumeration API:', errorText);
+        throw new Error(`Failed to list containers using enumeration: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Enumeration API response:', data);
+      
+      // Return the containers directly from the value array
+      return data.value || [];
+    } catch (error) {
+      console.error('List containers using enumeration error details:', error);
+      throw error;
+    }
+  }
+
+  // List containers using Search API (keep as backup method)
   async listContainersUsingSearch(token: string): Promise<Container[]> {
     try {
       // Using the search API endpoint
@@ -111,15 +144,6 @@ class SharePointService {
       console.error('List containers using search error details:', error);
       throw error;
     }
-  }
-  
-  // Original method is completely removed and replaced with a function that uses the search method
-  async listContainers(token: string): Promise<Container[]> {
-    // Remove the old warning since it still shows the old URL in console logs
-    console.log('Using search-based method for listing containers');
-    
-    // Directly use the search-based method without constructing the old URL
-    return await this.listContainersUsingSearch(token);
   }
   
   // Get a specific container
@@ -226,6 +250,9 @@ class SharePointService {
       description,
       containerTypeId: appConfig.containerTypeId
     };
+    
+    console.log('Creating container with URL:', url);
+    console.log('Request body:', body);
     
     const response = await fetch(url, {
       method: 'POST',
