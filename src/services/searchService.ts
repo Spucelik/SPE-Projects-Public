@@ -255,7 +255,8 @@ export class SearchService {
       createdDateTime: result.createdDateTime,
       webUrl: result.webUrl || '',
       isFolder: false,
-      createdByName: result.createdBy
+      createdByName: result.createdBy,
+      driveId: result.driveId // Include driveId for preview functionality
     };
   }
 }

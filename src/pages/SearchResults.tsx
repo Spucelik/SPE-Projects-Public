@@ -129,45 +129,9 @@ const SearchResults = () => {
   };
   
   const handlePreviewDocument = async (result: SearchResult) => {
-    if (!result.driveId || !result.itemId) {
-      toast({
-        title: "Error",
-        description: "Cannot preview this file: Missing file information",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      console.log('Getting preview for non-Office document:', result.title);
-      setIsPreviewOpen(true);
-      setPreviewLoading(true);
-      
-      const token = await getAccessToken();
-      if (!token) {
-        toast({
-          title: "Authentication Error",
-          description: "Failed to get access token",
-          variant: "destructive",
-        });
-        setIsPreviewOpen(false);
-        return;
-      }
-      
-      // Use the preview URL method for non-Office documents
-      const previewUrl = await searchService.getFilePreviewUrl(token, result.driveId, result.itemId);
-      setPreviewUrl(previewUrl);
-    } catch (error: any) {
-      console.error('Error getting file preview:', error);
-      toast({
-        title: "Error",
-        description: `Failed to get file preview: ${error.message || 'Unknown error'}`,
-        variant: "destructive",
-      });
-      setIsPreviewOpen(false);
-    } finally {
-      setPreviewLoading(false);
-    }
+    // Convert SearchResult to FileItem format and use the hook's handleViewFile
+    const fileItem = searchService.convertToFileItem(result);
+    await handleViewFile(fileItem);
   };
   
   const formatDate = (dateString: string) => {

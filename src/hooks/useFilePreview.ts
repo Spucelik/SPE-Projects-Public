@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService, FileItem } from '@/services/sharePointService';
+import { searchService } from '@/services/searchService';
 import { toast } from '@/hooks/use-toast';
 
 export const useFilePreview = (containerId: string | undefined) => {
@@ -39,8 +40,20 @@ export const useFilePreview = (containerId: string | undefined) => {
         return;
       }
       
-      console.log('Getting file preview for:', file.id);
-      const url = await sharePointService.getFilePreview(token, containerId, file.id);
+      // Check if this file has driveId (from search results)
+      const fileWithIds = file as FileItem & { driveId?: string };
+      
+      let url: string;
+      if (fileWithIds.driveId) {
+        // This is from search results, use searchService
+        console.log('Getting file preview URL from search service for:', file.id);
+        url = await searchService.getFilePreviewUrl(token, fileWithIds.driveId, file.id);
+      } else {
+        // This is from regular file browsing, use sharePointService
+        console.log('Getting file preview for:', file.id);
+        url = await sharePointService.getFilePreview(token, containerId, file.id);
+      }
+      
       console.log('Received preview URL:', url);
       setPreviewUrl(url);
     } catch (error: any) {
