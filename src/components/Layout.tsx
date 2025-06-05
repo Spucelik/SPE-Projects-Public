@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -12,23 +12,41 @@ import {
   SidebarMenuButton, 
   SidebarHeader,
   SidebarInset,
-  SidebarTrigger
+  SidebarTrigger,
+  SidebarFooter
 } from "@/components/ui/sidebar";
-import { Home, FolderOpen, FileText, LogOut, User } from 'lucide-react';
+import { Home, FolderOpen, FileText, LogOut, User, Bug } from 'lucide-react';
 import { appConfig } from '../config/appConfig';
+import { DevModePanel } from './DevModePanel';
 
 interface LayoutProps {
   children: React.ReactNode;
+}
+
+interface ApiCall {
+  id: string;
+  timestamp: string;
+  method: string;
+  url: string;
+  request?: any;
+  response?: any;
+  status?: number;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { isAuthenticated, user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [isDevModeOpen, setIsDevModeOpen] = useState(false);
+  const [apiCalls, setApiCalls] = useState<ApiCall[]>([]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const toggleDevMode = () => {
+    setIsDevModeOpen(!isDevModeOpen);
   };
 
   // If not authenticated, don't render the layout
@@ -87,6 +105,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
+        
+        <SidebarFooter className="border-t border-blue-500">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={toggleDevMode}
+                tooltip="Dev Mode"
+                className="text-white hover:bg-white hover:text-blue-600 gap-2"
+              >
+                <Bug className="text-inherit" />
+                <span>Dev Mode</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
       </Sidebar>
       
       <SidebarInset className="flex flex-col">
@@ -128,6 +161,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </a>
         </footer>
       </SidebarInset>
+
+      {/* Dev Mode Panel */}
+      <DevModePanel
+        isOpen={isDevModeOpen}
+        onToggle={toggleDevMode}
+        apiCalls={apiCalls}
+      />
     </div>
   );
 };
