@@ -57,18 +57,13 @@ export const DevModePanel: React.FC<DevModePanelProps> = ({
                 ) : (
                   apiCalls.map((call) => (
                     <div key={call.id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm bg-muted px-2 py-1 rounded">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-sm bg-muted px-2 py-1 rounded font-semibold">
                             {call.method}
                           </span>
-                          <span className="text-sm font-medium truncate">
-                            {call.url}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
                           {call.status && (
-                            <span className={`text-xs px-2 py-1 rounded ${
+                            <span className={`text-xs px-2 py-1 rounded font-medium ${
                               call.status >= 200 && call.status < 300
                                 ? 'bg-green-100 text-green-800'
                                 : 'bg-red-100 text-red-800'
@@ -76,8 +71,14 @@ export const DevModePanel: React.FC<DevModePanelProps> = ({
                               {call.status}
                             </span>
                           )}
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground ml-auto">
                             {call.timestamp}
+                          </span>
+                        </div>
+                        
+                        <div className="break-all">
+                          <span className="text-sm font-medium text-foreground">
+                            {call.url}
                           </span>
                         </div>
                       </div>
