@@ -1,3 +1,4 @@
+
 import { appConfig } from '../config/appConfig';
 import { FileItem } from './sharePointService';
 
@@ -26,7 +27,7 @@ export class SearchService {
     containerId?: string
   ): Promise<SearchResult[]> {
     try {
-      const url = `${appConfig.endpoints.graphBaseUrl}/search/query`;
+      const url = `${appConfig.endpoints.graphBaseUrl.replace('/v1.0', '/beta')}/search/query`;
       
       // Build query string based on whether containerId is available
       let queryString = `'${searchTerm}'`;
@@ -52,8 +53,7 @@ export class SearchService {
               "summary",
               "preview",
               "driveId",
-              "itemId",
-              "webUrl"
+              "itemId"
             ],
             sharePointOneDriveOptions: {
               includeHiddenContent: true
@@ -98,92 +98,37 @@ export class SearchService {
         const hits = data.value[0].hitsContainers[0].hits || [];
         
         for (const hit of hits) {
-          // Extract and log the hit to see its structure
           console.log('Processing hit:', hit);
           
           const resource = hit.resource;
           if (resource) {
-            // Extract properties from the listItem fields if available
+            // Extract properties from the resource
             let title = 'Untitled';
             let createdBy = 'Unknown';
             let createdDateTime = '';
             let preview = '';
             let driveId = '';
             let itemId = '';
-            let webUrl = '';
             
             // Extract title
-            if (resource.listItem && resource.listItem.fields && resource.listItem.fields.title) {
-              title = resource.listItem.fields.title;
-            } else {
-              title = resource.Title || resource.name || resource.title || 'Untitled';
-            }
+            title = resource.Title || resource.name || resource.title || 'Untitled';
             
             // Extract preview/summary from the hit
-            preview = hit.summary || '';
-            if (!preview && resource.listItem && resource.listItem.fields && resource.listItem.fields.preview) {
-              preview = resource.listItem.fields.preview;
-            }
+            preview = hit.summary || resource.preview || '';
             
             // Extract created info
-            if (resource.listItem && resource.listItem.fields && resource.listItem.fields.createdBy) {
-              createdBy = resource.listItem.fields.createdBy;
-            } else if (resource.createdBy && resource.createdBy.user && resource.createdBy.user.displayName) {
+            if (resource.createdBy && resource.createdBy.user && resource.createdBy.user.displayName) {
               createdBy = resource.createdBy.user.displayName;
             } else if (resource.CreatedBy) {
               createdBy = resource.CreatedBy;
             }
             
             // Extract creation date
-            if (resource.listItem && resource.listItem.fields && resource.listItem.fields.created) {
-              createdDateTime = resource.listItem.fields.created;
-            } else {
-              createdDateTime = resource.Created || resource.createdDateTime || '';
-            }
+            createdDateTime = resource.Created || resource.createdDateTime || resource.lastModifiedDateTime || '';
             
             // Extract IDs
-            if (resource.listItem && resource.listItem.fields && resource.listItem.fields.driveId) {
-              driveId = resource.listItem.fields.driveId;
-            } else {
-              driveId = resource.driveId || '';
-            }
-            
-            if (resource.listItem && resource.listItem.id) {
-              itemId = resource.listItem.id;
-            } else {
-              itemId = resource.itemId || resource.id || '';
-            }
-            
-            // Extract webUrl with highest priority on direct webUrl property
-            if (resource.webUrl) {
-              webUrl = resource.webUrl;
-              console.log(`Found webUrl directly on resource: ${webUrl}`);
-            } else if (resource.listItem && resource.listItem.webUrl) {
-              webUrl = resource.listItem.webUrl;
-              console.log(`Found webUrl on listItem: ${webUrl}`);
-            } else if (resource.listItem && resource.listItem.fields && resource.listItem.fields.webUrl) {
-              webUrl = resource.listItem.fields.webUrl;
-              console.log(`Found webUrl in fields: ${webUrl}`);
-            } else if (resource.listItem && resource.listItem.fields && resource.listItem.fields.path) {
-              webUrl = resource.listItem.fields.path;
-              console.log(`Found webUrl in path: ${webUrl}`);
-            } else if (resource.path) {
-              webUrl = resource.path;
-              console.log(`Found webUrl in resource.path: ${webUrl}`);
-            }
-            
-            // Ensure the webUrl is properly formatted if it's a relative URL
-            if (webUrl && !webUrl.startsWith('http')) {
-              if (webUrl.startsWith('/')) {
-                // Construct proper URL if it's a relative path
-                const baseUrl = new URL(appConfig.endpoints.graphBaseUrl).origin;
-                webUrl = `${baseUrl}${webUrl}`;
-                console.log(`Converted relative URL to absolute: ${webUrl}`);
-              }
-            }
-            
-            // Log out the final webUrl for debugging
-            console.log(`Final webUrl for ${title}: ${webUrl}`);
+            driveId = resource.driveId || '';
+            itemId = resource.itemId || resource.id || '';
             
             searchResults.push({
               id: itemId,
@@ -192,14 +137,7 @@ export class SearchService {
               createdDateTime: createdDateTime,
               preview: preview,
               driveId: driveId,
-              itemId: itemId,
-              webUrl: webUrl,
-              parentReference: {
-                siteId: resource.parentReference?.siteId,
-                sharepointIds: {
-                  listItemUniqueId: resource.parentReference?.sharepointIds?.listItemUniqueId
-                }
-              }
+              itemId: itemId
             });
           }
         }
@@ -237,7 +175,7 @@ export class SearchService {
       console.log('File details response:', data);
       
       return { 
-        webUrl: data.webUrl || data.listItem?.webUrl || data.listItem?.fields?.webUrl || ''
+        webUrl: data.webUrl || ''
       };
     } catch (error) {
       console.error('Error getting file details:', error);
@@ -245,47 +183,11 @@ export class SearchService {
     }
   }
 
-  // Build an edit URL for Office documents based on SharePoint site details
-  buildEditUrl(result: SearchResult): string | undefined {
-    try {
-      if (!result.webUrl || !result.parentReference?.siteId || 
-          !result.parentReference?.sharepointIds?.listItemUniqueId || !result.title) {
-        console.log('Missing data to build edit URL:', result);
-        return undefined;
-      }
-      
-      // Step 1: Get hostname from siteId
-      const siteIdParts = result.parentReference.siteId.split(',');
-      const hostname = siteIdParts[0];
-      
-      // Step 2: Get site path from webUrl
-      const webUrl = result.webUrl;
-      const sitePath = '/' + webUrl.split('/').slice(3, 5).join('/');
-      
-      // Step 3: Get sourcedoc from listItemUniqueId and format it
-      const rawId = result.parentReference.sharepointIds.listItemUniqueId;
-      const upperId = rawId.toUpperCase();
-      const sourcedoc = encodeURIComponent(`{${upperId}}`);
-      
-      // Step 4: Get file name
-      const fileName = result.title;
-      
-      // Step 5: Assemble final URL
-      const finalUrl = `https://${hostname}${sitePath}/_layouts/15/Doc.aspx?sourcedoc=${sourcedoc}&file=${encodeURIComponent(fileName)}&action=edit&mobileredirect=true`;
-      
-      console.log(`Built edit URL for ${fileName}:`, finalUrl);
-      return finalUrl;
-    } catch (error) {
-      console.error('Error building edit URL:', error);
-      return undefined;
-    }
-  }
-
   convertToFileItem(result: SearchResult): FileItem {
     return {
       id: result.itemId,
       name: result.title,
-      size: 0, // Size not available in search results
+      size: 0,
       lastModifiedDateTime: result.createdDateTime,
       createdDateTime: result.createdDateTime,
       webUrl: result.webUrl || '',
