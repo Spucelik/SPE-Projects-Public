@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertCircle, Clock, FileIcon } from 'lucide-react';
@@ -78,18 +77,63 @@ const SearchResults = () => {
     performSearch();
   }, [searchTerm, containerId, getAccessToken]);
   
+  const isOfficeDocument = (filename: string): boolean => {
+    if (!filename) return false;
+    const extension = filename.toLowerCase().split('.').pop();
+    return ['docx', 'xlsx', 'pptx', 'doc', 'xls', 'ppt'].includes(extension || '');
+  };
+  
   const handleResultClick = async (result: SearchResult) => {
     if (!result.driveId || !result.itemId) {
       toast({
         title: "Error",
-        description: "Cannot preview this file: Missing file information",
+        description: "Cannot open this file: Missing file information",
         variant: "destructive",
       });
       return;
     }
     
-    const fileItem = searchService.convertToFileItem(result);
-    await handleViewFile(fileItem);
+    try {
+      // Check if it's an Office document
+      if (isOfficeDocument(result.title)) {
+        console.log('Opening Office document via webUrl for:', result.title);
+        
+        // Get the webUrl for the file
+        const token = await getAccessToken();
+        if (!token) {
+          toast({
+            title: "Authentication Error",
+            description: "Failed to get access token",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        const fileDetails = await searchService.getFileDetails(token, result.driveId, result.itemId);
+        if (fileDetails.webUrl) {
+          // Open in new tab/window
+          window.open(fileDetails.webUrl, '_blank');
+        } else {
+          toast({
+            title: "Error",
+            description: "Could not retrieve file URL",
+            variant: "destructive",
+          });
+        }
+      } else {
+        // Open other files in the viewer
+        console.log('Opening non-Office document in viewer for:', result.title);
+        const fileItem = searchService.convertToFileItem(result);
+        await handleViewFile(fileItem);
+      }
+    } catch (error: any) {
+      console.error('Error opening file:', error);
+      toast({
+        title: "Error",
+        description: `Failed to open file: ${error.message || 'Unknown error'}`,
+        variant: "destructive",
+      });
+    }
   };
   
   const formatDate = (dateString: string) => {
@@ -162,6 +206,7 @@ const SearchResults = () => {
               <TableBody>
                 {results.map((result) => {
                   const fileExt = getFileExtension(result.title);
+                  const isOffice = isOfficeDocument(result.title);
                   
                   return (
                     <TableRow key={`result-${result.id || Math.random().toString()}`}>
@@ -170,6 +215,7 @@ const SearchResults = () => {
                           <button
                             className="text-blue-600 hover:underline cursor-pointer text-left font-medium"
                             onClick={() => handleResultClick(result)}
+                            title={isOffice ? 'Open in Office Online' : 'Open in viewer'}
                           >
                             {result.title || 'Unnamed Document'}
                           </button>
