@@ -85,10 +85,10 @@ export const DevModePanel: React.FC<DevModePanelProps> = ({
                       
                       <Separator />
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-4">
                         {call.request && (
                           <div>
-                            <h4 className="text-sm font-semibold mb-2">Request</h4>
+                            <h4 className="text-sm font-semibold mb-2">Request Body</h4>
                             <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-40">
                               {JSON.stringify(call.request, null, 2)}
                             </pre>
