@@ -59,7 +59,9 @@ export class SearchService {
               "driveId",
               "itemId",
               "name",
-              "filename"
+              "filename",
+              "parentReference",
+              "webUrl"
             ],
             sharePointOneDriveOptions: {
               includeHiddenContent: true
@@ -154,15 +156,26 @@ export class SearchService {
                             resource.modified ||
                             '';
             
-            // Fix: Extract IDs properly - for driveItem search, the hitId IS the driveId, and resource.id is the itemId
-            driveId = hit.hitId || resource.id || '';
-            itemId = resource.id || '';
+            // Fix: Extract IDs properly from the resource itself, not from hitId
+            // The resource should contain the actual driveId and id
+            driveId = resource.driveId || resource.parentReference?.driveId || '';
+            itemId = resource.id || resource.itemId || '';
             
-            // If we don't have an itemId from resource.id, try to extract it from the hitId
-            if (!itemId && hit.hitId) {
-              // For drive items, sometimes the itemId needs to be fetched separately
-              // For now, use the hit.hitId as both driveId and fallback itemId
-              itemId = hit.hitId;
+            // If we still don't have proper IDs, try to extract from webUrl or other sources
+            if (!driveId && resource.webUrl) {
+              // Try to extract driveId from webUrl pattern
+              const webUrlMatch = resource.webUrl.match(/\/drives\/([^\/]+)\//);
+              if (webUrlMatch) {
+                driveId = webUrlMatch[1];
+              }
+            }
+            
+            // If we still don't have itemId, try to extract from webUrl
+            if (!itemId && resource.webUrl) {
+              const itemMatch = resource.webUrl.match(/\/items\/([^\/\?]+)/);
+              if (itemMatch) {
+                itemId = itemMatch[1];
+              }
             }
             
             console.log('Final processed result with corrected IDs:', {
@@ -172,7 +185,10 @@ export class SearchService {
               driveId,
               itemId,
               hitId: hit.hitId,
-              resourceId: resource.id
+              resourceId: resource.id,
+              resourceDriveId: resource.driveId,
+              parentReference: resource.parentReference,
+              webUrl: resource.webUrl
             });
             
             // Only add results that have both driveId and itemId
@@ -184,10 +200,19 @@ export class SearchService {
                 createdDateTime: createdDateTime,
                 preview: preview,
                 driveId: driveId,
-                itemId: itemId
+                itemId: itemId,
+                webUrl: resource.webUrl
               });
             } else {
-              console.warn('Skipping result due to missing IDs:', { driveId, itemId, hit });
+              console.warn('Skipping result due to missing IDs:', { 
+                driveId, 
+                itemId, 
+                hit,
+                resourceKeys: Object.keys(resource),
+                resourceDriveId: resource.driveId,
+                resourceId: resource.id,
+                parentReference: resource.parentReference
+              });
             }
           }
         }
