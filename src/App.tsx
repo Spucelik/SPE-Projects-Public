@@ -11,6 +11,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./context/AuthContext";
 import { ConfigProvider } from "./context/ConfigContext";
+import { ApiCallsProvider } from "./context/ApiCallsContext";
 import { SidebarProvider } from "./components/ui/sidebar";
 import Layout from "./components/Layout";
 import LayoutWithSearch from "./components/LayoutWithSearch";
@@ -58,23 +59,25 @@ const App = () => {
         <Router>
           <AuthProvider>
             <ConfigProvider>
-              <SidebarProvider>
-                <>
-                  <Toaster />
-                  <Sonner />
-                  <Suspense fallback={<LoadingFallback />}>
-                    <Routes>
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/" element={<ProtectedRouteWithSearch><Index /></ProtectedRouteWithSearch>} />
-                      <Route path="/projects" element={<ProtectedRouteWithSearch><Projects /></ProtectedRouteWithSearch>} />
-                      <Route path="/files/:containerId" element={<ProtectedRouteWithSearch><Files /></ProtectedRouteWithSearch>} />
-                      <Route path="/files" element={<ProtectedRouteWithSearch><Navigate to="/projects" replace /></ProtectedRouteWithSearch>} />
-                      <Route path="/search" element={<ProtectedRouteWithSearch><SearchResults /></ProtectedRouteWithSearch>} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </Suspense>
-                </>
-              </SidebarProvider>
+              <ApiCallsProvider>
+                <SidebarProvider>
+                  <>
+                    <Toaster />
+                    <Sonner />
+                    <Suspense fallback={<LoadingFallback />}>
+                      <Routes>
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/" element={<ProtectedRouteWithSearch><Index /></ProtectedRouteWithSearch>} />
+                        <Route path="/projects" element={<ProtectedRouteWithSearch><Projects /></ProtectedRouteWithSearch>} />
+                        <Route path="/files/:containerId" element={<ProtectedRouteWithSearch><Files /></ProtectedRouteWithSearch>} />
+                        <Route path="/files" element={<ProtectedRouteWithSearch><Navigate to="/projects" replace /></ProtectedRouteWithSearch>} />
+                        <Route path="/search" element={<ProtectedRouteWithSearch><SearchResults /></ProtectedRouteWithSearch>} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
+                  </>
+                </SidebarProvider>
+              </ApiCallsProvider>
             </ConfigProvider>
           </AuthProvider>
         </Router>
