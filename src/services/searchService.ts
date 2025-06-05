@@ -1,3 +1,4 @@
+
 import { appConfig } from '../config/appConfig';
 import { FileItem } from './sharePointService';
 
@@ -61,7 +62,8 @@ export class SearchService {
               "name",
               "filename",
               "parentReference",
-              "webUrl"
+              "webUrl",
+              "id"
             ],
             sharePointOneDriveOptions: {
               includeHiddenContent: true
@@ -108,6 +110,7 @@ export class SearchService {
         for (const hit of hits) {
           console.log('Processing hit:', hit);
           console.log('Hit resource:', hit.resource);
+          console.log('Hit hitId:', hit.hitId);
           
           const resource = hit.resource;
           if (resource) {
@@ -156,21 +159,47 @@ export class SearchService {
                             resource.modified ||
                             '';
             
-            // Fix: Extract IDs properly from the resource itself, not from hitId
-            // The resource should contain the actual driveId and id
+            // Fix: For Microsoft Graph search, the hitId often contains the item identifier
+            // and we need to extract both driveId and itemId properly
+            
+            // Try to get driveId from resource first, then from parentReference
             driveId = resource.driveId || resource.parentReference?.driveId || '';
+            
+            // For itemId, try multiple sources in the search response
             itemId = resource.id || resource.itemId || '';
             
-            // If we still don't have proper IDs, try to extract from webUrl or other sources
+            // If itemId is still empty, try to extract from hitId
+            // The hitId in search results often contains both drive and item information
+            if (!itemId && hit.hitId) {
+              console.log('Attempting to extract itemId from hitId:', hit.hitId);
+              
+              // For SharePoint search results, hitId might be in format like:
+              // "SPOb!CORq-a8orUGIrd3_z9t1_vjCBSeqM3JKhDglEU3DIDvEl-Hms0qoQ7QCWYNQfGOF01EOXMF2IRLUG6LVWVR3T4OY5JNFXGVI"
+              // or just a direct item ID
+              
+              // Try different extraction patterns
+              if (hit.hitId.includes('SPO')) {
+                // Remove SPO prefix and extract the item part after the drive ID
+                const cleanHitId = hit.hitId.replace(/^SPO[a-z]!/, '');
+                if (cleanHitId.length > 43) { // Drive ID is typically 43 chars
+                  itemId = cleanHitId.substring(43);
+                }
+              } else {
+                // If hitId doesn't follow the SPO pattern, use it directly as itemId
+                itemId = hit.hitId;
+              }
+              
+              console.log('Extracted itemId from hitId:', itemId);
+            }
+            
+            // If we still don't have proper IDs, try to extract from webUrl
             if (!driveId && resource.webUrl) {
-              // Try to extract driveId from webUrl pattern
               const webUrlMatch = resource.webUrl.match(/\/drives\/([^\/]+)\//);
               if (webUrlMatch) {
                 driveId = webUrlMatch[1];
               }
             }
             
-            // If we still don't have itemId, try to extract from webUrl
             if (!itemId && resource.webUrl) {
               const itemMatch = resource.webUrl.match(/\/items\/([^\/\?]+)/);
               if (itemMatch) {
@@ -187,6 +216,7 @@ export class SearchService {
               hitId: hit.hitId,
               resourceId: resource.id,
               resourceDriveId: resource.driveId,
+              resourceItemId: resource.itemId,
               parentReference: resource.parentReference,
               webUrl: resource.webUrl
             });
@@ -211,7 +241,9 @@ export class SearchService {
                 resourceKeys: Object.keys(resource),
                 resourceDriveId: resource.driveId,
                 resourceId: resource.id,
-                parentReference: resource.parentReference
+                resourceItemId: resource.itemId,
+                parentReference: resource.parentReference,
+                hitId: hit.hitId
               });
             }
           }
