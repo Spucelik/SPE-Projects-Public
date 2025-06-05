@@ -4,20 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
 import { FileItem } from '@/services/sharePointService';
 import { toast } from '@/hooks/use-toast';
+import { useApiCalls } from '../context/ApiCallsContext';
 
 interface BreadcrumbItem {
   id: string;
   name: string;
-}
-
-interface ApiCall {
-  id: string;
-  timestamp: string;
-  method: string;
-  url: string;
-  request?: any;
-  response?: any;
-  status?: number;
 }
 
 export const useFiles = (containerId: string | undefined) => {
@@ -28,17 +19,8 @@ export const useFiles = (containerId: string | undefined) => {
   const [currentPath, setCurrentPath] = useState<BreadcrumbItem[]>([
     { id: '', name: 'Root' }
   ]);
-  const [apiCalls, setApiCalls] = useState<ApiCall[]>([]);
   const { isAuthenticated, getAccessToken } = useAuth();
-
-  const addApiCall = useCallback((call: Omit<ApiCall, 'id' | 'timestamp'>) => {
-    const newCall: ApiCall = {
-      ...call,
-      id: Math.random().toString(36).substr(2, 9),
-      timestamp: new Date().toLocaleTimeString()
-    };
-    setApiCalls(prev => [newCall, ...prev]);
-  }, []);
+  const { addApiCall } = useApiCalls();
 
   const fetchFiles = useCallback(async () => {
     if (!isAuthenticated || !containerId) return;
@@ -184,10 +166,6 @@ export const useFiles = (containerId: string | undefined) => {
     fetchFiles();
   }, [fetchFiles]);
 
-  const clearApiCalls = useCallback(() => {
-    setApiCalls([]);
-  }, []);
-
   return {
     files,
     loading,
@@ -197,8 +175,6 @@ export const useFiles = (containerId: string | undefined) => {
     handleFolderClick,
     handleNavigate,
     handleDeleteFile,
-    refreshFiles,
-    apiCalls,
-    clearApiCalls
+    refreshFiles
   };
 };

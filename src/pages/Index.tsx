@@ -8,6 +8,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { ShieldAlert } from "lucide-react";
 import { sharePointService } from '@/services/sharePointService';
 import { RollupDashboard } from '@/components/dashboard/RollupDashboard';
+import { useApiCalls } from '../context/ApiCallsContext';
 
 const Index = () => {
   const { getAccessToken, user } = useAuth();
@@ -15,6 +16,7 @@ const Index = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [permissionError, setPermissionError] = useState<boolean>(false);
+  const { addApiCall } = useApiCalls();
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -29,13 +31,35 @@ const Index = () => {
           return;
         }
 
+        // Track API call
+        const apiCallData = {
+          method: 'GET',
+          url: '/search/query',
+          request: { query: 'containers using search method' }
+        };
+
         try {
           // Directly use the search-based method for consistency
           console.log('Fetching projects using search method...');
           const projectsList = await sharePointService.listContainersUsingSearch(token);
           setProjects(projectsList);
+          
+          // Track successful API call
+          addApiCall({
+            ...apiCallData,
+            response: projectsList,
+            status: 200
+          });
         } catch (error: any) {
           console.error('Error from search API:', error);
+          
+          // Track failed API call
+          addApiCall({
+            ...apiCallData,
+            response: { error: error.message },
+            status: error.status || 500
+          });
+          
           // Check if it's a permissions error (403)
           if (error.message && error.message.includes('403')) {
             setPermissionError(true);
@@ -52,7 +76,7 @@ const Index = () => {
     };
 
     fetchProjects();
-  }, [getAccessToken]);
+  }, [getAccessToken, addApiCall]);
 
   return (
     <div className="space-y-8">

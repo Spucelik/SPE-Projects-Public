@@ -18,19 +18,10 @@ import {
 import { Home, FolderOpen, FileText, LogOut, User, Bug } from 'lucide-react';
 import { appConfig } from '../config/appConfig';
 import { DevModePanel } from './DevModePanel';
+import { useApiCalls } from '../context/ApiCallsContext';
 
 interface LayoutProps {
   children: React.ReactNode;
-}
-
-interface ApiCall {
-  id: string;
-  timestamp: string;
-  method: string;
-  url: string;
-  request?: any;
-  response?: any;
-  status?: number;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
@@ -38,7 +29,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isDevModeOpen, setIsDevModeOpen] = useState(false);
-  const [apiCalls, setApiCalls] = useState<ApiCall[]>([]);
+  const { apiCalls } = useApiCalls();
 
   const handleLogout = () => {
     logout();

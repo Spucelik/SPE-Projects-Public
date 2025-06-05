@@ -17,19 +17,10 @@ import { Home, FolderOpen, FileText, LogOut, User, Bug } from 'lucide-react';
 import { appConfig } from '../config/appConfig';
 import SearchHeader from './SearchHeader';
 import { DevModePanel } from './DevModePanel';
+import { useApiCalls } from '../context/ApiCallsContext';
 
 interface LayoutWithSearchProps {
   children: React.ReactNode;
-}
-
-interface ApiCall {
-  id: string;
-  timestamp: string;
-  method: string;
-  url: string;
-  request?: any;
-  response?: any;
-  status?: number;
 }
 
 const LayoutWithSearch: React.FC<LayoutWithSearchProps> = ({ children }) => {
@@ -37,7 +28,7 @@ const LayoutWithSearch: React.FC<LayoutWithSearchProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isDevModeOpen, setIsDevModeOpen] = useState(false);
-  const [apiCalls, setApiCalls] = useState<ApiCall[]>([]);
+  const { apiCalls } = useApiCalls();
 
   const handleLogout = () => {
     logout();
