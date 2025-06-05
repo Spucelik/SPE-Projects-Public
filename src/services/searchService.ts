@@ -53,7 +53,9 @@ export class SearchService {
               "summary",
               "preview",
               "driveId",
-              "itemId"
+              "itemId",
+              "name",
+              "filename"
             ],
             sharePointOneDriveOptions: {
               includeHiddenContent: true
@@ -99,6 +101,7 @@ export class SearchService {
         
         for (const hit of hits) {
           console.log('Processing hit:', hit);
+          console.log('Hit resource:', hit.resource);
           
           const resource = hit.resource;
           if (resource) {
@@ -110,25 +113,54 @@ export class SearchService {
             let driveId = '';
             let itemId = '';
             
-            // Extract title
-            title = resource.Title || resource.name || resource.title || 'Untitled';
+            // More comprehensive title extraction - try multiple possible fields
+            title = resource.name || 
+                   resource.Title || 
+                   resource.title || 
+                   resource.filename || 
+                   resource.displayName ||
+                   hit.hitId ||
+                   'Untitled';
+            
+            console.log('Extracted title from resource:', {
+              name: resource.name,
+              Title: resource.Title,
+              title: resource.title,
+              filename: resource.filename,
+              displayName: resource.displayName,
+              finalTitle: title
+            });
             
             // Extract preview/summary from the hit
-            preview = hit.summary || resource.preview || '';
+            preview = hit.summary || resource.preview || resource.description || '';
             
             // Extract created info
             if (resource.createdBy && resource.createdBy.user && resource.createdBy.user.displayName) {
               createdBy = resource.createdBy.user.displayName;
             } else if (resource.CreatedBy) {
               createdBy = resource.CreatedBy;
+            } else if (resource.author) {
+              createdBy = resource.author;
             }
             
             // Extract creation date
-            createdDateTime = resource.Created || resource.createdDateTime || resource.lastModifiedDateTime || '';
+            createdDateTime = resource.Created || 
+                            resource.createdDateTime || 
+                            resource.lastModifiedDateTime || 
+                            resource.modified ||
+                            '';
             
             // Extract IDs
             driveId = resource.driveId || '';
             itemId = resource.itemId || resource.id || '';
+            
+            console.log('Final processed result:', {
+              title,
+              createdBy,
+              createdDateTime,
+              driveId,
+              itemId
+            });
             
             searchResults.push({
               id: itemId,
