@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertCircle, Search, Clock, FileIcon } from 'lucide-react';
@@ -11,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import FilePreviewDialog from '@/components/files/FilePreviewDialog';
 import { useFilePreview } from '@/hooks/useFilePreview';
 import { Badge } from '@/components/ui/badge';
+import { stripHtmlTags } from '@/lib/utils';
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
@@ -333,7 +333,7 @@ const SearchResults = () => {
                     
                     <div>
                       <p className="text-sm mb-2 line-clamp-2">
-                        {result.preview || 'No preview available'}
+                        {stripHtmlTags(result.preview || 'No preview available')}
                       </p>
                       
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
