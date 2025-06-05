@@ -154,27 +154,41 @@ export class SearchService {
                             resource.modified ||
                             '';
             
-            // Extract IDs
-            driveId = resource.driveId || '';
-            itemId = resource.itemId || resource.id || '';
+            // Fix: Extract IDs properly - for driveItem search, the hitId IS the driveId, and resource.id is the itemId
+            driveId = hit.hitId || resource.id || '';
+            itemId = resource.id || '';
             
-            console.log('Final processed result:', {
+            // If we don't have an itemId from resource.id, try to extract it from the hitId
+            if (!itemId && hit.hitId) {
+              // For drive items, sometimes the itemId needs to be fetched separately
+              // For now, use the hit.hitId as both driveId and fallback itemId
+              itemId = hit.hitId;
+            }
+            
+            console.log('Final processed result with corrected IDs:', {
               title,
               createdBy,
               createdDateTime,
               driveId,
-              itemId
+              itemId,
+              hitId: hit.hitId,
+              resourceId: resource.id
             });
             
-            searchResults.push({
-              id: itemId,
-              title: title,
-              createdBy: createdBy,
-              createdDateTime: createdDateTime,
-              preview: preview,
-              driveId: driveId,
-              itemId: itemId
-            });
+            // Only add results that have both driveId and itemId
+            if (driveId && itemId) {
+              searchResults.push({
+                id: itemId,
+                title: title,
+                createdBy: createdBy,
+                createdDateTime: createdDateTime,
+                preview: preview,
+                driveId: driveId,
+                itemId: itemId
+              });
+            } else {
+              console.warn('Skipping result due to missing IDs:', { driveId, itemId, hit });
+            }
           }
         }
       }
