@@ -19,6 +19,11 @@ export interface SearchResult {
   };
 }
 
+// Extended FileItem interface to include driveId for search results
+export interface SearchFileItem extends FileItem {
+  driveId?: string;
+}
+
 export class SearchService {
   async searchFiles(
     token: string,
@@ -246,7 +251,7 @@ export class SearchService {
     }
   }
 
-  convertToFileItem(result: SearchResult): FileItem {
+  convertToFileItem(result: SearchResult): SearchFileItem {
     return {
       id: result.itemId,
       name: result.title,
@@ -256,7 +261,7 @@ export class SearchService {
       webUrl: result.webUrl || '',
       isFolder: false,
       createdByName: result.createdBy,
-      driveId: result.driveId // Include driveId for preview functionality
+      driveId: result.driveId // Now this is allowed by SearchFileItem interface
     };
   }
 }
