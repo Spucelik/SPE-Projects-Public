@@ -1,4 +1,3 @@
-
 import { appConfig } from '../config/appConfig';
 import { FileItem } from './sharePointService';
 
@@ -211,6 +210,38 @@ export class SearchService {
       };
     } catch (error) {
       console.error('Error getting file details:', error);
+      throw error;
+    }
+  }
+
+  async getFilePreviewUrl(token: string, driveId: string, itemId: string): Promise<string> {
+    try {
+      const url = `${appConfig.endpoints.graphBaseUrl}/drives/${driveId}/items/${itemId}/preview`;
+      
+      console.log('Fetching file preview URL:', { url });
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error fetching file preview URL:', errorText);
+        throw new Error(`Failed to get file preview URL: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('File preview URL response:', data);
+      
+      // Add &nb=true parameter as specified
+      const previewUrl = data.getUrl + "&nb=true";
+      return previewUrl;
+    } catch (error) {
+      console.error('Error getting file preview URL:', error);
       throw error;
     }
   }

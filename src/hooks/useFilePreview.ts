@@ -60,7 +60,9 @@ export const useFilePreview = (containerId: string | undefined) => {
     isPreviewOpen,
     setIsPreviewOpen,
     previewUrl,
+    setPreviewUrl,
     previewLoading,
+    setPreviewLoading,
     handleViewFile
   };
 };

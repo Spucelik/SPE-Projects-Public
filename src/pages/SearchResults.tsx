@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertCircle, Clock, FileIcon } from 'lucide-react';
+import { AlertCircle, Clock, FileIcon, Edit, Eye } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,6 +11,7 @@ import FilePreviewDialog from '@/components/files/FilePreviewDialog';
 import { useFilePreview } from '@/hooks/useFilePreview';
 import { Badge } from '@/components/ui/badge';
 import { stripHtmlTags } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -83,7 +84,7 @@ const SearchResults = () => {
     return ['docx', 'xlsx', 'pptx', 'doc', 'xls', 'ppt'].includes(extension || '');
   };
   
-  const handleResultClick = async (result: SearchResult) => {
+  const handleEditOfficeDocument = async (result: SearchResult) => {
     if (!result.driveId || !result.itemId) {
       toast({
         title: "Error",
@@ -94,45 +95,78 @@ const SearchResults = () => {
     }
     
     try {
-      // Check if it's an Office document
-      if (isOfficeDocument(result.title)) {
-        console.log('Opening Office document via webUrl for:', result.title);
-        
-        // Get the webUrl for the file
-        const token = await getAccessToken();
-        if (!token) {
-          toast({
-            title: "Authentication Error",
-            description: "Failed to get access token",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        const fileDetails = await searchService.getFileDetails(token, result.driveId, result.itemId);
-        if (fileDetails.webUrl) {
-          // Open in new tab/window
-          window.open(fileDetails.webUrl, '_blank');
-        } else {
-          toast({
-            title: "Error",
-            description: "Could not retrieve file URL",
-            variant: "destructive",
-          });
-        }
+      console.log('Opening Office document via webUrl for:', result.title);
+      
+      const token = await getAccessToken();
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Failed to get access token",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const fileDetails = await searchService.getFileDetails(token, result.driveId, result.itemId);
+      if (fileDetails.webUrl) {
+        // Open in new tab/window for editing
+        window.open(fileDetails.webUrl, '_blank');
       } else {
-        // Open other files in the viewer
-        console.log('Opening non-Office document in viewer for:', result.title);
-        const fileItem = searchService.convertToFileItem(result);
-        await handleViewFile(fileItem);
+        toast({
+          title: "Error",
+          description: "Could not retrieve file URL",
+          variant: "destructive",
+        });
       }
     } catch (error: any) {
-      console.error('Error opening file:', error);
+      console.error('Error opening Office document:', error);
       toast({
         title: "Error",
         description: `Failed to open file: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
+    }
+  };
+  
+  const handlePreviewDocument = async (result: SearchResult) => {
+    if (!result.driveId || !result.itemId) {
+      toast({
+        title: "Error",
+        description: "Cannot preview this file: Missing file information",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      console.log('Getting preview for non-Office document:', result.title);
+      setIsPreviewOpen(true);
+      setPreviewLoading(true);
+      
+      const token = await getAccessToken();
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Failed to get access token",
+          variant: "destructive",
+        });
+        setIsPreviewOpen(false);
+        return;
+      }
+      
+      // Use the preview URL method for non-Office documents
+      const previewUrl = await searchService.getFilePreviewUrl(token, result.driveId, result.itemId);
+      setPreviewUrl(previewUrl);
+    } catch (error: any) {
+      console.error('Error getting file preview:', error);
+      toast({
+        title: "Error",
+        description: `Failed to get file preview: ${error.message || 'Unknown error'}`,
+        variant: "destructive",
+      });
+      setIsPreviewOpen(false);
+    } finally {
+      setPreviewLoading(false);
     }
   };
   
@@ -201,6 +235,7 @@ const SearchResults = () => {
                   <TableHead>Title</TableHead>
                   <TableHead>Created By</TableHead>
                   <TableHead>Preview</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -212,13 +247,7 @@ const SearchResults = () => {
                     <TableRow key={`result-${result.id || Math.random().toString()}`}>
                       <TableCell>
                         <div className="flex flex-col gap-1">
-                          <button
-                            className="text-blue-600 hover:underline cursor-pointer text-left font-medium"
-                            onClick={() => handleResultClick(result)}
-                            title={isOffice ? 'Open in Office Online' : 'Open in viewer'}
-                          >
-                            {result.title || 'Unnamed Document'}
-                          </button>
+                          <span className="font-medium">{result.title || 'Unnamed Document'}</span>
                           {fileExt && (
                             <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700 w-fit">
                               <FileIcon className="h-3 w-3 mr-1" />
@@ -240,6 +269,29 @@ const SearchResults = () => {
                         <p className="text-sm line-clamp-2">
                           {stripHtmlTags(result.preview || 'No preview available')}
                         </p>
+                      </TableCell>
+                      <TableCell>
+                        {isOffice ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditOfficeDocument(result)}
+                            className="flex items-center gap-2"
+                          >
+                            <Edit className="h-4 w-4" />
+                            Edit
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePreviewDocument(result)}
+                            className="flex items-center gap-2"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Preview
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
