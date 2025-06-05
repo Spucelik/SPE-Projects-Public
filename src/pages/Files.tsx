@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { AlertCircle, FolderPlus, Upload, MessageSquare } from 'lucide-react';
+import { AlertCircle, FolderPlus, Upload, MessageSquare, Bug } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { 
@@ -22,6 +23,7 @@ import FolderNavigation from '@/components/files/FolderNavigation';
 import FilePreviewDialog from '@/components/files/FilePreviewDialog';
 import FileUploadProgress from '@/components/files/FileUploadProgress';
 import CopilotChat from '@/components/CopilotChat';
+import { DevModePanel } from '@/components/DevModePanel';
 import { useFiles } from '@/hooks/useFiles';
 import { useContainerDetails } from '@/hooks/useContainerDetails';
 import { useFilePreview } from '@/hooks/useFilePreview';
@@ -38,8 +40,9 @@ const Files = () => {
   const [newFolderName, setNewFolderName] = useState('');
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [isCopilotOpen, setIsCopilotOpen] = useState(false); // Always start with it closed
-  const [copilotSize, setCopilotSize] = useState(30); // Default size percentage for Copilot panel
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [copilotSize, setCopilotSize] = useState(30);
+  const [isDevModeOpen, setIsDevModeOpen] = useState(false);
   
   const {
     files,
@@ -50,7 +53,9 @@ const Files = () => {
     handleFolderClick,
     handleNavigate,
     handleDeleteFile,
-    refreshFiles
+    refreshFiles,
+    apiCalls,
+    clearApiCalls
   } = useFiles(containerId);
 
   const containerDetails = useContainerDetails(containerId);
@@ -202,6 +207,11 @@ const Files = () => {
     setIsCopilotOpen(!isCopilotOpen);
   };
 
+  // Toggle dev mode
+  const toggleDevMode = () => {
+    setIsDevModeOpen(!isDevModeOpen);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -250,6 +260,16 @@ const Files = () => {
               <span>{isCopilotOpen ? "Hide Copilot" : "Show Copilot"}</span>
             </Button>
           )}
+
+          {/* Dev Mode Toggle Button */}
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={toggleDevMode}
+          >
+            <Bug size={16} />
+            <span>Dev Mode</span>
+          </Button>
         </div>
       </div>
       
@@ -273,7 +293,7 @@ const Files = () => {
       )}
 
       {/* Main content with resizable panels */}
-      <div className="h-[calc(100vh-250px)]">
+      <div className={`${isDevModeOpen ? 'h-[calc(100vh-450px)]' : 'h-[calc(100vh-250px)]'}`}>
         <ResizablePanelGroup direction="horizontal" onLayout={handleResize}>
           {/* File List panel - always visible */}
           <ResizablePanel defaultSize={isCopilotOpen ? 70 : 100} minSize={30}>
@@ -331,6 +351,13 @@ const Files = () => {
         onOpenChange={setIsPreviewOpen}
         previewUrl={previewUrl}
         previewLoading={previewLoading}
+      />
+      
+      {/* Dev Mode Panel */}
+      <DevModePanel
+        isOpen={isDevModeOpen}
+        onToggle={toggleDevMode}
+        apiCalls={apiCalls}
       />
       
       {/* Folder creation Sheet */}

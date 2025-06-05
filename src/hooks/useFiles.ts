@@ -10,6 +10,16 @@ interface BreadcrumbItem {
   name: string;
 }
 
+interface ApiCall {
+  id: string;
+  timestamp: string;
+  method: string;
+  url: string;
+  request?: any;
+  response?: any;
+  status?: number;
+}
+
 export const useFiles = (containerId: string | undefined) => {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -18,7 +28,17 @@ export const useFiles = (containerId: string | undefined) => {
   const [currentPath, setCurrentPath] = useState<BreadcrumbItem[]>([
     { id: '', name: 'Root' }
   ]);
+  const [apiCalls, setApiCalls] = useState<ApiCall[]>([]);
   const { isAuthenticated, getAccessToken } = useAuth();
+
+  const addApiCall = useCallback((call: Omit<ApiCall, 'id' | 'timestamp'>) => {
+    const newCall: ApiCall = {
+      ...call,
+      id: Math.random().toString(36).substr(2, 9),
+      timestamp: new Date().toLocaleTimeString()
+    };
+    setApiCalls(prev => [newCall, ...prev]);
+  }, []);
 
   const fetchFiles = useCallback(async () => {
     if (!isAuthenticated || !containerId) return;
@@ -38,16 +58,41 @@ export const useFiles = (containerId: string | undefined) => {
       }
 
       console.log(`Fetching files for container ${containerId}, folder ${currentFolder || 'root'}`);
-      const fileItems = await sharePointService.listFiles(token, containerId, currentFolder);
       
-      // Ensure each file has the creator information and format
-      const enhancedFiles = fileItems.map(item => ({
-        ...item,
-        createdByName: item.createdBy?.user?.displayName || 'Unknown',
-        childCount: item.folder?.childCount || 0
-      }));
-      
-      setFiles(enhancedFiles);
+      // Track API call
+      const apiCallData = {
+        method: 'GET',
+        url: `/containers/${containerId}/drive/items/${currentFolder || 'root'}/children`,
+        request: { containerId, folder: currentFolder || 'root' }
+      };
+
+      try {
+        const fileItems = await sharePointService.listFiles(token, containerId, currentFolder);
+        
+        // Ensure each file has the creator information and format
+        const enhancedFiles = fileItems.map(item => ({
+          ...item,
+          createdByName: item.createdBy?.user?.displayName || 'Unknown',
+          childCount: item.folder?.childCount || 0
+        }));
+        
+        setFiles(enhancedFiles);
+        
+        // Track successful API call
+        addApiCall({
+          ...apiCallData,
+          response: enhancedFiles,
+          status: 200
+        });
+      } catch (apiError: any) {
+        // Track failed API call
+        addApiCall({
+          ...apiCallData,
+          response: { error: apiError.message },
+          status: apiError.status || 500
+        });
+        throw apiError;
+      }
     } catch (error: any) {
       console.error('Error fetching files:', error);
       setError(error.message || "Failed to fetch files. This may be due to insufficient permissions or API limitations.");
@@ -59,7 +104,7 @@ export const useFiles = (containerId: string | undefined) => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, getAccessToken, containerId, currentFolder]);
+  }, [isAuthenticated, getAccessToken, containerId, currentFolder, addApiCall]);
 
   useEffect(() => {
     fetchFiles();
@@ -94,13 +139,37 @@ export const useFiles = (containerId: string | undefined) => {
         return;
       }
       
-      await sharePointService.deleteFile(token, containerId, file.id);
-      setFiles(prevFiles => prevFiles.filter(f => f.id !== file.id));
-      
-      toast({
-        title: "Success",
-        description: "File deleted successfully",
-      });
+      // Track API call
+      const apiCallData = {
+        method: 'DELETE',
+        url: `/containers/${containerId}/drive/items/${file.id}`,
+        request: { containerId, fileId: file.id, fileName: file.name }
+      };
+
+      try {
+        await sharePointService.deleteFile(token, containerId, file.id);
+        setFiles(prevFiles => prevFiles.filter(f => f.id !== file.id));
+        
+        // Track successful API call
+        addApiCall({
+          ...apiCallData,
+          response: { success: true, message: 'File deleted successfully' },
+          status: 204
+        });
+        
+        toast({
+          title: "Success",
+          description: "File deleted successfully",
+        });
+      } catch (apiError: any) {
+        // Track failed API call
+        addApiCall({
+          ...apiCallData,
+          response: { error: apiError.message },
+          status: apiError.status || 500
+        });
+        throw apiError;
+      }
     } catch (error: any) {
       console.error('Error deleting file:', error);
       toast({
@@ -115,6 +184,10 @@ export const useFiles = (containerId: string | undefined) => {
     fetchFiles();
   }, [fetchFiles]);
 
+  const clearApiCalls = useCallback(() => {
+    setApiCalls([]);
+  }, []);
+
   return {
     files,
     loading,
@@ -124,6 +197,8 @@ export const useFiles = (containerId: string | undefined) => {
     handleFolderClick,
     handleNavigate,
     handleDeleteFile,
-    refreshFiles
+    refreshFiles,
+    apiCalls,
+    clearApiCalls
   };
 };
