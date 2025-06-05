@@ -85,7 +85,10 @@ const SearchResults = () => {
   };
   
   const handleEditOfficeDocument = async (result: SearchResult) => {
+    console.log('Edit button clicked for:', result);
+    
     if (!result.driveId || !result.itemId) {
+      console.error('Missing driveId or itemId:', { driveId: result.driveId, itemId: result.itemId });
       toast({
         title: "Error",
         description: "Cannot open this file: Missing file information",
@@ -95,10 +98,10 @@ const SearchResults = () => {
     }
     
     try {
-      console.log('Opening Office document via webUrl for:', result.title);
-      
+      console.log('Getting access token...');
       const token = await getAccessToken();
       if (!token) {
+        console.error('Failed to get access token');
         toast({
           title: "Authentication Error",
           description: "Failed to get access token",
@@ -107,11 +110,15 @@ const SearchResults = () => {
         return;
       }
       
+      console.log('Fetching file details for editing:', { driveId: result.driveId, itemId: result.itemId });
       const fileDetails = await searchService.getFileDetails(token, result.driveId, result.itemId);
+      console.log('File details received:', fileDetails);
+      
       if (fileDetails.webUrl) {
-        // Open in new tab/window for editing
+        console.log('Opening webUrl:', fileDetails.webUrl);
         window.open(fileDetails.webUrl, '_blank');
       } else {
+        console.error('No webUrl in file details');
         toast({
           title: "Error",
           description: "Could not retrieve file URL",
@@ -129,9 +136,33 @@ const SearchResults = () => {
   };
   
   const handlePreviewDocument = async (result: SearchResult) => {
-    // Convert SearchResult to FileItem format and use the hook's handleViewFile
-    const fileItem = searchService.convertToFileItem(result);
-    await handleViewFile(fileItem);
+    console.log('Preview button clicked for:', result);
+    
+    if (!result.driveId || !result.itemId) {
+      console.error('Missing driveId or itemId for preview:', { driveId: result.driveId, itemId: result.itemId });
+      toast({
+        title: "Error",
+        description: "Cannot preview this file: Missing file information",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      console.log('Converting SearchResult to FileItem...');
+      const fileItem = searchService.convertToFileItem(result);
+      console.log('Converted FileItem:', fileItem);
+      
+      console.log('Calling handleViewFile...');
+      await handleViewFile(fileItem);
+    } catch (error: any) {
+      console.error('Error previewing document:', error);
+      toast({
+        title: "Error",
+        description: `Failed to preview file: ${error.message || 'Unknown error'}`,
+        variant: "destructive",
+      });
+    }
   };
   
   const formatDate = (dateString: string) => {
@@ -207,6 +238,13 @@ const SearchResults = () => {
                   const fileExt = getFileExtension(result.title);
                   const isOffice = isOfficeDocument(result.title);
                   
+                  console.log('Rendering result:', { 
+                    title: result.title, 
+                    driveId: result.driveId, 
+                    itemId: result.itemId, 
+                    isOffice 
+                  });
+                  
                   return (
                     <TableRow key={`result-${result.id || Math.random().toString()}`}>
                       <TableCell>
@@ -239,7 +277,10 @@ const SearchResults = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleEditOfficeDocument(result)}
+                            onClick={() => {
+                              console.log('Edit button clicked, calling handleEditOfficeDocument');
+                              handleEditOfficeDocument(result);
+                            }}
                             className="flex items-center gap-2"
                           >
                             <Edit className="h-4 w-4" />
@@ -249,7 +290,10 @@ const SearchResults = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handlePreviewDocument(result)}
+                            onClick={() => {
+                              console.log('Preview button clicked, calling handlePreviewDocument');
+                              handlePreviewDocument(result);
+                            }}
                             className="flex items-center gap-2"
                           >
                             <Eye className="h-4 w-4" />

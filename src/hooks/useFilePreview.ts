@@ -12,15 +12,8 @@ export const useFilePreview = (containerId: string | undefined) => {
   const { getAccessToken } = useAuth();
 
   const handleViewFile = async (file: FileItem) => {
-    if (!containerId) {
-      console.error('Container ID is undefined');
-      toast({
-        title: "Error",
-        description: "Missing container information",
-        variant: "destructive",
-      });
-      return;
-    }
+    console.log('useFilePreview.handleViewFile called with:', file);
+    console.log('containerId:', containerId);
     
     try {
       console.log('Attempting to view file:', file.name);
@@ -42,16 +35,26 @@ export const useFilePreview = (containerId: string | undefined) => {
       
       // Check if this file has driveId (from search results)
       const fileWithIds = file as FileItem & { driveId?: string };
+      console.log('File with IDs:', fileWithIds);
       
       let url: string;
       if (fileWithIds.driveId) {
         // This is from search results, use searchService
-        console.log('Getting file preview URL from search service for:', file.id);
+        console.log('Getting file preview URL from search service for driveId:', fileWithIds.driveId, 'itemId:', file.id);
         url = await searchService.getFilePreviewUrl(token, fileWithIds.driveId, file.id);
-      } else {
+      } else if (containerId) {
         // This is from regular file browsing, use sharePointService
-        console.log('Getting file preview for:', file.id);
+        console.log('Getting file preview from sharePointService for containerId:', containerId, 'fileId:', file.id);
         url = await sharePointService.getFilePreview(token, containerId, file.id);
+      } else {
+        console.error('Neither driveId nor containerId available');
+        toast({
+          title: "Error",
+          description: "Cannot preview file: Missing location information",
+          variant: "destructive",
+        });
+        setIsPreviewOpen(false);
+        return;
       }
       
       console.log('Received preview URL:', url);
