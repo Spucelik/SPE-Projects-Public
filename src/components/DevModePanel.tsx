@@ -81,27 +81,29 @@ export const DevModePanel: React.FC<DevModePanelProps> = ({
                       {apiCalls.map((call) => (
                         <AccordionItem key={call.id} value={call.id} className="border rounded-lg">
                           <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                            <div className="flex items-center gap-3 w-full">
-                              <span className="font-mono text-sm bg-muted px-2 py-1 rounded font-semibold">
-                                {call.method}
-                              </span>
-                              {call.status && (
-                                <span className={`text-xs px-2 py-1 rounded font-medium ${
-                                  call.status >= 200 && call.status < 300
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {call.status}
+                            <div className="flex flex-col items-start gap-2 w-full">
+                              <div className="text-left w-full">
+                                <span className="text-sm font-medium text-foreground">
+                                  {call.url}
                                 </span>
-                              )}
-                              <span className="text-xs text-muted-foreground ml-auto">
-                                {call.timestamp}
-                              </span>
-                            </div>
-                            <div className="text-left mt-2 w-full">
-                              <span className="text-sm font-medium text-foreground">
-                                {call.url}
-                              </span>
+                              </div>
+                              <div className="flex items-center gap-3 w-full">
+                                <span className="font-mono text-sm bg-muted px-2 py-1 rounded font-semibold">
+                                  {call.method}
+                                </span>
+                                {call.status && (
+                                  <span className={`text-xs px-2 py-1 rounded font-medium ${
+                                    call.status >= 200 && call.status < 300
+                                      ? 'bg-green-100 text-green-800'
+                                      : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {call.status}
+                                  </span>
+                                )}
+                                <span className="text-xs text-muted-foreground ml-auto">
+                                  {call.timestamp}
+                                </span>
+                              </div>
                             </div>
                           </AccordionTrigger>
                           
