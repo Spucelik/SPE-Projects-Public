@@ -361,6 +361,66 @@ class SharePointService {
     });
   }
 
+  // Create a new Office file
+  async createOfficeFile(
+    token: string, 
+    driveId: string, 
+    parentFolderId: string, 
+    fileName: string, 
+    fileType: 'word' | 'excel' | 'powerpoint'
+  ): Promise<FileItem> {
+    const folderPath = parentFolderId === 'root' ? 'root' : `items/${parentFolderId}`;
+    
+    // Define file extensions and MIME types for each Office file type
+    const fileConfig = {
+      word: { 
+        extension: '.docx', 
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+      },
+      excel: { 
+        extension: '.xlsx', 
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      },
+      powerpoint: { 
+        extension: '.pptx', 
+        mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' 
+      }
+    };
+    
+    const config = fileConfig[fileType];
+    const fullFileName = fileName.endsWith(config.extension) ? fileName : `${fileName}${config.extension}`;
+    
+    // Create an empty file first
+    const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.drives}/${driveId}/${folderPath}/children`;
+    
+    console.log('Creating Office file with URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: fullFileName,
+        file: {},
+        '@microsoft.graph.conflictBehavior': 'rename'
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error creating Office file:', errorText);
+      throw new Error(`Failed to create Office file: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    return {
+      ...data,
+      isFolder: false
+    };
+  }
+
   // Create a new folder
   async createFolder(token: string, driveId: string, parentFolderId: string, folderName: string): Promise<FileItem> {
     const folderPath = parentFolderId === 'root' ? 'root' : `items/${parentFolderId}`;

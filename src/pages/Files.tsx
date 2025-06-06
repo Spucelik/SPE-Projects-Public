@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { AlertCircle, FolderPlus, Upload, MessageSquare } from 'lucide-react';
+import { AlertCircle, FolderPlus, Upload, MessageSquare, FilePlus } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { 
@@ -22,6 +21,7 @@ import FileList from '@/components/files/FileList';
 import FolderNavigation from '@/components/files/FolderNavigation';
 import FilePreviewDialog from '@/components/files/FilePreviewDialog';
 import FileUploadProgress from '@/components/files/FileUploadProgress';
+import CreateOfficeFileDialog from '@/components/files/CreateOfficeFileDialog';
 import CopilotChat from '@/components/CopilotChat';
 import { useFiles } from '@/hooks/useFiles';
 import { useContainerDetails } from '@/hooks/useContainerDetails';
@@ -39,6 +39,7 @@ const Files = () => {
   const [newFolderName, setNewFolderName] = useState('');
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [isOfficeFileDialogOpen, setIsOfficeFileDialogOpen] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [copilotSize, setCopilotSize] = useState(30);
   
@@ -220,6 +221,15 @@ const Files = () => {
           <Button 
             variant="outline" 
             className="gap-2"
+            onClick={() => setIsOfficeFileDialogOpen(true)}
+          >
+            <FilePlus size={16} />
+            <span>New Office File</span>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="gap-2"
             onClick={() => setIsFolderDialogOpen(true)}
           >
             <FolderPlus size={16} />
@@ -332,6 +342,15 @@ const Files = () => {
         onOpenChange={setIsPreviewOpen}
         previewUrl={previewUrl}
         previewLoading={previewLoading}
+      />
+      
+      {/* Office File Creation Dialog */}
+      <CreateOfficeFileDialog
+        isOpen={isOfficeFileDialogOpen}
+        onOpenChange={setIsOfficeFileDialogOpen}
+        containerId={containerId || ''}
+        currentFolder={currentFolder}
+        onFileCreated={refreshFiles}
       />
       
       {/* Folder creation Sheet */}
