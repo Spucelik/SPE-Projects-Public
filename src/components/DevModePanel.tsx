@@ -46,9 +46,15 @@ export const DevModePanel: React.FC<DevModePanelProps> = ({
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background border-t shadow-lg z-50" style={{ height: '40vh' }}>
+    <div className="fixed bottom-0 left-0 right-0 bg-background border-t shadow-lg z-50 h-screen">
       <ResizablePanelGroup direction="vertical">
-        <ResizablePanel defaultSize={100} minSize={20}>
+        <ResizablePanel defaultSize={60} minSize={60}>
+          {/* Main content area - this takes up most of the space */}
+        </ResizablePanel>
+        
+        <ResizableHandle withHandle />
+        
+        <ResizablePanel defaultSize={40} minSize={20} maxSize={80}>
           <div className="h-full flex flex-col">
             <Button
               variant="ghost"
