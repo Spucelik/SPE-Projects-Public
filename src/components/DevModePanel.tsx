@@ -53,10 +53,10 @@ export const DevModePanel: React.FC<DevModePanelProps> = ({
           {/* Empty transparent panel for height adjustment */}
         </ResizablePanel>
         
-        <ResizableHandle withHandle />
+        <ResizableHandle withHandle className="bg-border" />
         
-        <ResizablePanel defaultSize={100} minSize={20}>
-          <div className="h-full flex flex-col bg-background border-t shadow-lg">
+        <ResizablePanel defaultSize={100} minSize={20} className="bg-background">
+          <div className="h-full flex flex-col border-t shadow-lg">
             <Button
               variant="ghost"
               onClick={onToggle}
@@ -98,7 +98,7 @@ export const DevModePanel: React.FC<DevModePanelProps> = ({
                                 {call.timestamp}
                               </span>
                             </div>
-                            <div className="break-all text-left mt-2">
+                            <div className="text-left mt-2 w-full">
                               <span className="text-sm font-medium text-foreground">
                                 {call.url}
                               </span>
