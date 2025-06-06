@@ -114,7 +114,7 @@ export const DevModePanel: React.FC<DevModePanelProps> = ({
                               {call.request && (
                                 <div>
                                   <h4 className="text-sm font-semibold mb-2">Request Body</h4>
-                                  <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-40">
+                                  <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-80">
                                     {JSON.stringify(call.request, null, 2)}
                                   </pre>
                                 </div>
@@ -123,7 +123,7 @@ export const DevModePanel: React.FC<DevModePanelProps> = ({
                               {call.response && (
                                 <div>
                                   <h4 className="text-sm font-semibold mb-2">Response</h4>
-                                  <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-40">
+                                  <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-80">
                                     {JSON.stringify(call.response, null, 2)}
                                   </pre>
                                 </div>
