@@ -47,7 +47,7 @@ export const DevModePanel: React.FC<DevModePanelProps> = ({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t shadow-lg z-50" style={{ height: '60vh' }}>
-      <ResizablePanelGroup direction="horizontal">
+      <ResizablePanelGroup direction="vertical">
         <ResizablePanel defaultSize={100} minSize={20}>
           <div className="h-full flex flex-col">
             <Button
@@ -126,6 +126,12 @@ export const DevModePanel: React.FC<DevModePanelProps> = ({
               </ScrollArea>
             </div>
           </div>
+        </ResizablePanel>
+        
+        <ResizableHandle withHandle />
+        
+        <ResizablePanel defaultSize={0} minSize={0} maxSize={80}>
+          {/* Empty resizable panel for height adjustment */}
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
