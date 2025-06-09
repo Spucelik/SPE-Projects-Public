@@ -42,6 +42,7 @@ const Index = () => {
           // Directly use the search-based method for consistency
           console.log('Fetching projects using search method...');
           const projectsList = await sharePointService.listContainersUsingSearch(token);
+          console.log('Projects received:', projectsList);
           setProjects(projectsList);
           
           // Track successful API call
@@ -157,7 +158,9 @@ const Index = () => {
                 <ul className="space-y-2">
                   {projects.slice(0, 5).map((project) => (
                     <li key={project.id} className="text-sm hover:underline">
-                      <Link to={`/files/${project.id}`}>{project.name}</Link>
+                      <Link to={`/files/${project.id}`}>
+                        {project.displayName || project.name || 'Unnamed Project'}
+                      </Link>
                     </li>
                   ))}
                 </ul>
