@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -132,10 +131,10 @@ const Projects = () => {
       }
 
       try {
-        // Use the enumeration method as the primary method now
-        console.log('Fetching projects using enumeration method...');
-        
-        const projectsData = await sharePointService.listContainers(token);
+        // Use the search method instead of enumeration method
+        console.log('Fetching projects using search method...');
+        const projectsData = await sharePointService.listContainersUsingSearch(token);
+        console.log('Projects received:', projectsData);
         
         // Process the data
         const enhancedProjects = projectsData.map(project => {
@@ -176,7 +175,7 @@ const Projects = () => {
         
         setProjects(enhancedProjects);
       } catch (error: any) {
-        console.error('Error from enumeration API:', error);
+        console.error('Error from search API:', error);
         
         // Check if it's a permissions error (403)
         if (error.message && error.message.includes('403')) {
