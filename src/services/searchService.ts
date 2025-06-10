@@ -1,4 +1,3 @@
-
 import { appConfig } from '../config/appConfig';
 import { FileItem } from './sharePointService';
 
@@ -35,45 +34,38 @@ export class SearchService {
     try {
       const url = `${appConfig.endpoints.graphBaseUrl}/search/query`;
       
-      // Build query string based on whether containerId is available
-      let queryString = `'${searchTerm}'`;
+      // Build query string for searching containers by ContainerTypeId
+      let queryString = '';
       if (containerId) {
-        queryString += ` AND ContainerID:${containerId}`;
+        // Search within a specific container
+        queryString = `'${searchTerm}' AND ContainerID:${containerId}`;
+      } else {
+        // Search for containers by type
+        queryString = `ContainerTypeId:${appConfig.containerTypeId}`;
       }
       
       const requestBody = {
         requests: [
           {
-            entityTypes: ["driveItem"],
+            entityTypes: ["drive"],
             query: {
               queryString
             },
-            fields: [
-              "Title",
-              "Path",
-              "CreatedBy",
-              "Created",
-              "ModifiedBy", 
-              "Modified",
-              "lastModifiedDateTime",
-              "summary",
-              "preview",
-              "driveId",
-              "itemId",
-              "name",
-              "filename",
-              "parentReference",
-              "webUrl",
-              "id"
-            ],
             sharePointOneDriveOptions: {
               includeHiddenContent: true
             },
-            sortProperties: [
-              {
-                name: "name",
-                isDescending: false
-              }
+            fields: [
+              "name",
+              "parentReference", 
+              "file",
+              "folder",
+              "webUrl",
+              "createdDateTime",
+              "lastModifiedDateTime",
+              "size",
+              "createdBy",
+              "lastModifiedBy",
+              "fileSystemInfo"
             ]
           }
         ]
@@ -111,7 +103,6 @@ export class SearchService {
         for (const hit of hits) {
           console.log('Processing hit:', hit);
           console.log('Hit resource:', hit.resource);
-          console.log('Hit hitId:', hit.hitId);
           
           const resource = hit.resource;
           if (resource) {
@@ -123,45 +114,31 @@ export class SearchService {
             let driveId = '';
             let itemId = '';
             
-            // Extract title
+            // Extract title/name
             title = resource.name || 
-                   resource.Title || 
-                   resource.title || 
-                   resource.filename || 
                    resource.displayName ||
-                   hit.hitId ||
+                   resource.title || 
                    'Untitled';
             
-            console.log('Extracted title from resource:', {
-              name: resource.name,
-              Title: resource.Title,
-              title: resource.title,
-              filename: resource.filename,
-              displayName: resource.displayName,
-              finalTitle: title
-            });
+            console.log('Extracted title:', title);
             
-            // Extract preview/summary from the hit
-            preview = hit.summary || resource.preview || resource.description || '';
+            // Extract preview/description
+            preview = resource.description || hit.summary || '';
             
             // Extract created info
             if (resource.createdBy && resource.createdBy.user && resource.createdBy.user.displayName) {
               createdBy = resource.createdBy.user.displayName;
-            } else if (resource.CreatedBy) {
-              createdBy = resource.CreatedBy;
-            } else if (resource.author) {
-              createdBy = resource.author;
+            } else if (resource.owner && resource.owner.user && resource.owner.user.displayName) {
+              createdBy = resource.owner.user.displayName;
             }
             
             // Extract creation date
-            createdDateTime = resource.Created || 
-                            resource.createdDateTime || 
-                            resource.lastModifiedDateTime || 
-                            resource.modified ||
+            createdDateTime = resource.createdDateTime || 
+                            resource.lastModifiedDateTime ||
                             '';
             
-            // Extract driveId and itemId from parentReference
-            driveId = resource.parentReference?.driveId || '';
+            // For drive entities, the ID is the driveId
+            driveId = resource.id || '';
             itemId = resource.id || '';
             
             console.log('Final processed result:', {
@@ -170,14 +147,11 @@ export class SearchService {
               createdDateTime,
               driveId,
               itemId,
-              hitId: hit.hitId,
-              resourceId: resource.id,
-              parentReference: resource.parentReference,
               webUrl: resource.webUrl
             });
             
-            // Only add results that have both driveId and itemId
-            if (driveId && itemId) {
+            // Add results that have valid IDs
+            if (driveId) {
               searchResults.push({
                 id: itemId,
                 title: title,
@@ -189,13 +163,9 @@ export class SearchService {
                 webUrl: resource.webUrl
               });
             } else {
-              console.warn('Skipping result due to missing IDs:', { 
-                driveId, 
-                itemId, 
+              console.warn('Skipping result due to missing driveId:', { 
                 hit,
-                resourceKeys: Object.keys(resource),
-                parentReference: resource.parentReference,
-                hitId: hit.hitId
+                resourceKeys: Object.keys(resource)
               });
             }
           }
