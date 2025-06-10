@@ -396,7 +396,8 @@ export class SharePointService {
 
   async createContainer(token: string, displayName: string, description: string): Promise<{ id: string }> {
     try {
-      const url = `${appConfig.endpoints.graphBaseUrl}/drives`;
+      // Use the SharePoint Embedded containers endpoint
+      const url = `${appConfig.endpoints.graphBaseUrl}/storage/fileStorage/containers`;
       
       console.log('Creating container:', { displayName, description });
       
@@ -407,9 +408,9 @@ export class SharePointService {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          name: displayName,
+          displayName: displayName,
           description: description,
-          driveType: 'business'
+          containerTypeId: appConfig.containerTypeId
         })
       });
       
