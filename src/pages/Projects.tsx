@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -142,12 +143,17 @@ const Projects = () => {
             const newContainer = await sharePointService.getContainer(token, newContainerId);
             console.log('Directly fetched new container:', newContainer);
             projectsData.unshift(newContainer); // Add to the beginning
-          } catch (directFetchError) {
-            console.warn('Could not fetch new container directly:', directFetchError);
-            // We'll show a message to the user that they might need to refresh
+            
             toast({
               title: "Container Created",
-              description: "Your container was created successfully but may take a moment to appear in the list. Please refresh if you don't see it.",
+              description: `Your container "${newContainer.name}" was created successfully and added to the list.`,
+            });
+          } catch (directFetchError) {
+            console.warn('Could not fetch new container directly:', directFetchError);
+            // Show a more helpful message about the delay
+            toast({
+              title: "Container Created Successfully", 
+              description: "Your container was created but may take a few minutes to appear in search results. You can refresh the page to check for it.",
             });
           }
         }
