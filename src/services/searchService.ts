@@ -1,5 +1,6 @@
+
 import { appConfig } from '../config/appConfig';
-import { FileItem } from './sharePointService';
+import { FileItem, sharePointService } from './sharePointService';
 
 export interface SearchResult {
   id: string;
@@ -109,8 +110,28 @@ export class SearchService {
             // Extract the drive ID from the hitId (this is the actual drive ID)
             const driveId = hit.hitId;
             
-            // Use the name field from the resource for the title (this contains the actual project name)
-            const title = resource.name || 'Untitled Project';
+            // Get the site ID from the parentReference if available
+            let displayName = 'Untitled Project';
+            let siteId = '';
+            
+            if (resource.parentReference && resource.parentReference.siteId) {
+              siteId = resource.parentReference.siteId;
+              
+              try {
+                // Fetch the site details to get the proper display name
+                console.log('Fetching site details for siteId:', siteId);
+                const siteDetails = await sharePointService.getSiteDetails(token, siteId);
+                displayName = siteDetails.displayName || siteDetails.name || 'Project Container';
+                console.log('Retrieved display name from site details:', displayName);
+              } catch (error) {
+                console.warn('Failed to fetch site details for siteId:', siteId, error);
+                // Fallback to the resource name
+                displayName = resource.name || 'Project Container';
+              }
+            } else {
+              // Fallback to the resource name if no site reference
+              displayName = resource.name || 'Project Container';
+            }
             
             // Extract created by information
             let createdBy = 'Unknown';
@@ -123,18 +144,19 @@ export class SearchService {
                                   resource.lastModifiedDateTime ||
                                   '';
             
-            console.log('Extracted drive info:', {
-              title,
+            console.log('Extracted drive info with display name:', {
+              title: displayName,
               createdBy,
               createdDateTime,
               driveId,
+              siteId,
               webUrl: resource.webUrl
             });
             
             // Add the search result
             searchResults.push({
               id: driveId,
-              title: title,
+              title: displayName,
               createdBy: createdBy,
               createdDateTime: createdDateTime,
               preview: hit.summary || '',
