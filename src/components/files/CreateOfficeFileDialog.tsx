@@ -43,9 +43,9 @@ const CreateOfficeFileDialog: React.FC<CreateOfficeFileDialogProps> = ({
   const { getAccessToken } = useAuth();
 
   const fileTypeOptions = [
-    { value: 'word', label: 'Word Document', icon: FileText, extension: '.docx' },
-    { value: 'excel', label: 'Excel Spreadsheet', icon: Sheet, extension: '.xlsx' },
-    { value: 'powerpoint', label: 'PowerPoint Presentation', icon: Presentation, extension: '.pptx' }
+    { value: 'word', label: 'Word Document', icon: FileText, extension: '.docx', fileExtension: 'docx' },
+    { value: 'excel', label: 'Excel Spreadsheet', icon: Sheet, extension: '.xlsx', fileExtension: 'xlsx' },
+    { value: 'powerpoint', label: 'PowerPoint Presentation', icon: Presentation, extension: '.pptx', fileExtension: 'pptx' }
   ];
 
   const handleCreate = async () => {
@@ -70,17 +70,27 @@ const CreateOfficeFileDialog: React.FC<CreateOfficeFileDialogProps> = ({
         return;
       }
 
+      const selectedOption = fileTypeOptions.find(opt => opt.value === fileType);
+      if (!selectedOption) {
+        toast({
+          title: "Error",
+          description: "Invalid file type selected",
+          variant: "destructive",
+        });
+        return;
+      }
+
       await sharePointService.createOfficeFile(
         token,
         containerId,
         currentFolder || 'root',
         fileName.trim(),
-        fileType
+        selectedOption.fileExtension // Pass the actual file extension (docx, xlsx, pptx)
       );
 
       toast({
         title: "Success",
-        description: `${fileTypeOptions.find(opt => opt.value === fileType)?.label} created successfully`,
+        description: `${selectedOption.label} created successfully`,
       });
 
       setFileName('');
