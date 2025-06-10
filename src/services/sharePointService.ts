@@ -513,30 +513,76 @@ export class SharePointService {
             console.log('Total unique containers found:', uniqueContainerIds.length);
             console.log('Container IDs found:', uniqueContainerIds);
 
-            // Validate each container to ensure it still exists (filter out deleted ones)
-            const validContainers: Container[] = [];
-            
-            for (const containerId of uniqueContainerIds) {
-                try {
-                    console.log(`Validating container ${containerId}...`);
-                    const container = await this.getContainer(accessToken, containerId);
+            // Since the containers endpoint is not working (400 errors), we'll use an alternative approach
+            // Instead of validating individual containers, we'll create container objects from the search results
+            const containersFromSearch: Container[] = [];
+            const processedContainerIds = new Set<string>();
+
+            for (const hit of searchResults) {
+                const resource = hit._source || hit.resource;
+                if (resource?.parentReference?.siteId && !processedContainerIds.has(resource.parentReference.siteId)) {
+                    processedContainerIds.add(resource.parentReference.siteId);
                     
-                    // If we can successfully fetch the container, it exists
-                    validContainers.push(container);
-                    console.log(`Container ${containerId} is valid`);
-                } catch (error: any) {
-                    // If we get a 404 or similar error, the container was deleted
-                    console.log(`Container ${containerId} appears to be deleted:`, error.message);
-                    // Skip this container - it's been deleted but still in search index
+                    // Extract container info from the search result
+                    const containerId = resource.parentReference.siteId;
+                    const driveId = resource.parentReference.driveId;
+                    
+                    // Create a container object based on available information
+                    const container: Container = {
+                        id: containerId,
+                        displayName: this.extractDisplayNameFromDriveId(driveId) || 'Unknown Project',
+                        description: '',
+                        containerTypeId: this.containerTypeId,
+                        createdDateTime: resource.createdDateTime || new Date().toISOString(),
+                        webUrl: resource.webUrl ? this.extractBaseUrlFromWebUrl(resource.webUrl) : undefined
+                    };
+                    
+                    containersFromSearch.push(container);
                 }
             }
 
-            console.log(`Validated ${validContainers.length} existing containers out of ${uniqueContainerIds.length} found in search`);
-            return validContainers;
+            console.log(`Created ${containersFromSearch.length} container objects from search results`);
+            return containersFromSearch;
 
         } catch (error: any) {
             console.error('Error in listContainersUsingSearch:', error);
             throw new Error(`Failed to search for containers: ${error.message}`);
+        }
+    }
+
+    // Helper method to extract display name from drive ID
+    private extractDisplayNameFromDriveId(driveId: string): string | null {
+        try {
+            // Drive IDs often contain encoded information, try to extract meaningful names
+            if (driveId && driveId.includes('CSP_')) {
+                // Extract the part after CSP_ which might contain project info
+                const parts = driveId.split('CSP_');
+                if (parts.length > 1) {
+                    return `Project ${parts[1].substring(0, 8)}`;
+                }
+            }
+            return `Project ${driveId.substring(0, 8)}`;
+        } catch (error) {
+            console.error('Error extracting display name from drive ID:', error);
+            return null;
+        }
+    }
+
+    // Helper method to extract base URL from web URL
+    private extractBaseUrlFromWebUrl(webUrl: string): string {
+        try {
+            const url = new URL(webUrl);
+            // Extract the base container URL without the specific file path
+            const pathParts = url.pathname.split('/');
+            const containerIndex = pathParts.findIndex(part => part.includes('CSP_'));
+            if (containerIndex > 0) {
+                const basePath = pathParts.slice(0, containerIndex + 1).join('/');
+                return `${url.protocol}//${url.host}${basePath}`;
+            }
+            return `${url.protocol}//${url.host}`;
+        } catch (error) {
+            console.error('Error extracting base URL:', error);
+            return webUrl;
         }
     }
 }
