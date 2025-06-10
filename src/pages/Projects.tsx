@@ -152,8 +152,8 @@ const Projects = () => {
           }
         }
         
-        // Process the data
-        const enhancedProjects = projectsData.map(project => {
+        // Process the data and map it to the Project interface
+        const enhancedProjects: Project[] = projectsData.map(project => {
           // Handle dates safely to prevent invalid date errors
           let startDate;
           let endDate;
@@ -179,7 +179,12 @@ const Projects = () => {
           }
           
           return {
-            ...project,
+            id: project.id,
+            displayName: project.name,
+            description: project.description || 'No description available',
+            containerTypeId: project.containerTypeId || '',
+            createdDateTime: project.createdDateTime || startDate,
+            webUrl: project.webUrl,
             type: ['Project', 'Tracker', 'Enhancement', 'Production Support'][Math.floor(Math.random() * 4)] as Project['type'],
             status: ['Not Started', 'In Progress', 'Completed'][Math.floor(Math.random() * 3)] as Project['status'],
             health: ['Green', 'Yellow', 'Red'][Math.floor(Math.random() * 3)] as Project['health'],
@@ -409,3 +414,5 @@ const Projects = () => {
 };
 
 export default Projects;
+
+}

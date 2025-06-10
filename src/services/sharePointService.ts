@@ -472,7 +472,7 @@ export class SharePointService {
     }
   }
 
-  async listContainersUsingSearch(token: string): Promise<Array<{ id: string; name: string; webUrl?: string }>> {
+  async listContainersUsingSearch(token: string): Promise<Array<{ id: string; name: string; webUrl?: string; createdDateTime?: string; description?: string; containerTypeId?: string }>> {
     try {
       const url = `${appConfig.endpoints.graphBaseUrl}/search/query`;
       
@@ -485,7 +485,15 @@ export class SharePointService {
             },
             sharePointOneDriveOptions: {
               includeHiddenContent: true
-            }
+            },
+            fields: [
+              "name",
+              "description",
+              "createdDateTime",
+              "lastModifiedDateTime",
+              "webUrl",
+              "parentReference"
+            ]
           }
         ]
       };
@@ -510,7 +518,7 @@ export class SharePointService {
       const data = await response.json();
       console.log('Container search response:', data);
       
-      const containers: Array<{ id: string; name: string; webUrl?: string }> = [];
+      const containers: Array<{ id: string; name: string; webUrl?: string; createdDateTime?: string; description?: string; containerTypeId?: string }> = [];
       
       if (data.value && 
           data.value.length > 0 && 
@@ -525,7 +533,10 @@ export class SharePointService {
             containers.push({
               id: hit.hitId,
               name: resource.name || 'Project Container',
-              webUrl: resource.webUrl
+              webUrl: resource.webUrl,
+              createdDateTime: resource.createdDateTime || resource.lastModifiedDateTime || new Date().toISOString(),
+              description: resource.description || '',
+              containerTypeId: appConfig.containerTypeId
             });
           }
         }
@@ -538,7 +549,7 @@ export class SharePointService {
     }
   }
 
-  async getContainer(token: string, containerId: string): Promise<{ id: string; name: string; webUrl?: string }> {
+  async getContainer(token: string, containerId: string): Promise<{ id: string; name: string; webUrl?: string; createdDateTime?: string; description?: string; containerTypeId?: string }> {
     try {
       const url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}`;
       
@@ -564,7 +575,10 @@ export class SharePointService {
       return {
         id: data.id,
         name: data.name || 'Project Container',
-        webUrl: data.webUrl
+        webUrl: data.webUrl,
+        createdDateTime: data.createdDateTime || data.lastModifiedDateTime || new Date().toISOString(),
+        description: data.description || '',
+        containerTypeId: appConfig.containerTypeId
       };
     } catch (error) {
       console.error('Error getting container:', error);
