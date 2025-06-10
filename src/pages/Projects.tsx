@@ -57,8 +57,8 @@ interface Project {
 
 const ProjectDetails = ({ project }: { project: Project }) => {
   // If we already have webUrl from search, we can use it directly
-  const containerDetails = project.webUrl ? null : useContainerDetails(project.id);
-  const projectUrl = project.webUrl || (containerDetails?.webUrl || '');
+  const containerDetailsHook = project.webUrl ? null : useContainerDetails(project.id);
+  const projectUrl = project.webUrl || (containerDetailsHook?.containerDetails?.webUrl || '');
 
   return (
     <div className="space-y-4">
@@ -409,3 +409,5 @@ const Projects = () => {
 };
 
 export default Projects;
+
+}
