@@ -118,7 +118,7 @@ const Projects = () => {
   const [permissionError, setPermissionError] = useState<boolean>(false);
   const [isCreatePanelOpen, setIsCreatePanelOpen] = useState<boolean>(false);
 
-  const fetchProjects = async () => {
+  const fetchProjects = async (newContainerId?: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -131,10 +131,26 @@ const Projects = () => {
       }
 
       try {
-        // Use the search method instead of enumeration method
         console.log('Fetching projects using search method...');
         const projectsData = await sharePointService.listContainersUsingSearch(token);
         console.log('Projects received:', projectsData);
+
+        // If we have a new container ID that's not in the search results, try to fetch it directly
+        if (newContainerId && !projectsData.find(p => p.id === newContainerId)) {
+          console.log(`New container ${newContainerId} not found in search results, fetching directly...`);
+          try {
+            const newContainer = await sharePointService.getContainer(token, newContainerId);
+            console.log('Directly fetched new container:', newContainer);
+            projectsData.unshift(newContainer); // Add to the beginning
+          } catch (directFetchError) {
+            console.warn('Could not fetch new container directly:', directFetchError);
+            // We'll show a message to the user that they might need to refresh
+            toast({
+              title: "Container Created",
+              description: "Your container was created successfully but may take a moment to appear in the list. Please refresh if you don't see it.",
+            });
+          }
+        }
         
         // Process the data
         const enhancedProjects = projectsData.map(project => {
@@ -207,9 +223,10 @@ const Projects = () => {
     fetchProjects();
   }, [isAuthenticated, getAccessToken]);
 
-  const handleCreateSuccess = () => {
+  const handleCreateSuccess = (newContainerId?: string) => {
     setIsCreatePanelOpen(false);
-    fetchProjects(); // Refresh the projects list
+    console.log('Container created, refreshing with new container ID:', newContainerId);
+    fetchProjects(newContainerId); // Pass the new container ID to fetch function
   };
 
   const getHealthIcon = (health: Project['health']) => {
@@ -392,3 +409,5 @@ const Projects = () => {
 };
 
 export default Projects;
+
+}

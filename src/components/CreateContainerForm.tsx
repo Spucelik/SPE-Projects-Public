@@ -18,7 +18,7 @@ import { sharePointService } from '../services/sharePointService';
 import { useAuth } from '../context/AuthContext';
 
 interface CreateContainerFormProps {
-  onSuccess: () => void;
+  onSuccess: (containerId?: string) => void;
   onCancel: () => void;
 }
 
@@ -54,15 +54,19 @@ export const CreateContainerForm: React.FC<CreateContainerFormProps> = ({ onSucc
         return;
       }
 
-      await sharePointService.createContainer(token, data.displayName, data.description);
+      console.log('Creating container with data:', data);
+      const newContainer = await sharePointService.createContainer(token, data.displayName, data.description);
+      console.log('Container created successfully:', newContainer);
       
       toast({
         title: "Success",
-        description: "Container created successfully!",
+        description: `Container "${data.displayName}" created successfully!`,
       });
       
       form.reset();
-      onSuccess();
+      
+      // Pass the new container ID to the parent component
+      onSuccess(newContainer.id);
     } catch (error: any) {
       console.error('Error creating container:', error);
       toast({

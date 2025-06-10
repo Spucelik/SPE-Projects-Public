@@ -252,6 +252,7 @@ class SharePointService {
   
   // Get a specific container
   async getContainer(token: string, containerId: string): Promise<Container> {
+    console.log(`Fetching container directly by ID: ${containerId}`);
     const url = `${appConfig.endpoints.graphBaseUrl}${appConfig.endpoints.fileStorage}${appConfig.endpoints.containers}/${containerId}`;
     
     const response = await fetch(url, {
@@ -262,10 +263,14 @@ class SharePointService {
     });
     
     if (!response.ok) {
-      throw new Error(`Failed to get container: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Error getting container:', errorText);
+      throw new Error(`Failed to get container: ${response.status} ${response.statusText} - ${errorText}`);
     }
     
-    return await response.json();
+    const containerData = await response.json();
+    console.log('Container data retrieved:', containerData);
+    return containerData;
   }
   
   // Get container details including the web URL for Copilot
