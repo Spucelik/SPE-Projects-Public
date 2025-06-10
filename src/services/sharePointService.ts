@@ -1,3 +1,4 @@
+
 import { appConfig } from "../config/appConfig";
 
 export interface FileItem {
@@ -661,5 +662,3 @@ export class SharePointService {
 }
 
 export const sharePointService = new SharePointService();
-
-}
