@@ -26,21 +26,16 @@ export const useContainerDetails = (containerId: string | undefined) => {
         
         console.log('Fetching container details for containerId:', containerId);
         
-        // Try to normalize the container ID - handle different formats
+        // Handle different container ID formats
         let normalizedContainerId = containerId;
         
-        // If it contains commas, it might be a site ID format, extract the site ID part
+        // If it's a SharePoint site ID format (contains commas), use it as-is
         if (containerId.includes(',')) {
-          const parts = containerId.split(',');
-          if (parts.length >= 2) {
-            // Use the full site ID format for container operations
-            normalizedContainerId = containerId;
-          }
-        }
-        
-        // Add b! prefix if not already present for Graph API calls
-        if (!normalizedContainerId.startsWith('b!')) {
-          normalizedContainerId = `b!${normalizedContainerId}`;
+          console.log('Using SharePoint site ID format as-is:', containerId);
+          normalizedContainerId = containerId;
+        } else if (!containerId.startsWith('b!')) {
+          // Add b! prefix for single GUIDs only
+          normalizedContainerId = `b!${containerId}`;
         }
         
         console.log('Using normalized container ID:', normalizedContainerId);

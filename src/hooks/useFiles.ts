@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -27,10 +28,10 @@ export const useFiles = (containerId: string | undefined) => {
     
     console.log('Original container ID:', id);
     
-    // If it's already a site ID format (contains commas), use it as-is
+    // If it's a SharePoint site ID format (contains commas), use it as-is
     // SharePoint site IDs have the format: tenant.sharepoint.com,siteId,webId
     if (id.includes(',')) {
-      console.log('Using site ID format:', id);
+      console.log('Using SharePoint site ID format as-is:', id);
       return id;
     }
     
