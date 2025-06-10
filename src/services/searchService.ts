@@ -1,3 +1,4 @@
+
 import { appConfig } from '../config/appConfig';
 import { FileItem } from './sharePointService';
 
@@ -22,11 +23,8 @@ export interface SearchResult {
 // Extended FileItem interface to include driveId for search results
 export interface SearchFileItem extends FileItem {
   driveId?: string;
-  isFolder?: boolean; // Add this property
+  isFolder?: boolean;
 }
-
-// Extended FileItem interface to include driveId for search results
-
 
 export class SearchService {
   async searchFiles(
@@ -35,7 +33,7 @@ export class SearchService {
     containerId?: string
   ): Promise<SearchResult[]> {
     try {
-      const url = `${appConfig.endpoints.graphBaseUrl.replace('/v1.0', '/beta')}/search/query`;
+      const url = `${appConfig.endpoints.graphBaseUrl}/search/query`;
       
       // Build query string based on whether containerId is available
       let queryString = `'${searchTerm}'`;
@@ -125,7 +123,7 @@ export class SearchService {
             let driveId = '';
             let itemId = '';
             
-            // More comprehensive title extraction - try multiple possible fields
+            // Extract title
             title = resource.name || 
                    resource.Title || 
                    resource.title || 
@@ -162,55 +160,11 @@ export class SearchService {
                             resource.modified ||
                             '';
             
-            // Fix: For Microsoft Graph search, the hitId often contains the item identifier
-            // and we need to extract both driveId and itemId properly
+            // Extract driveId and itemId from parentReference
+            driveId = resource.parentReference?.driveId || '';
+            itemId = resource.id || '';
             
-            // Try to get driveId from resource first, then from parentReference
-            driveId = resource.driveId || resource.parentReference?.driveId || '';
-            
-            // For itemId, try multiple sources in the search response
-            itemId = resource.id || resource.itemId || '';
-            
-            // If itemId is still empty, try to extract from hitId
-            // The hitId in search results often contains both drive and item information
-            if (!itemId && hit.hitId) {
-              console.log('Attempting to extract itemId from hitId:', hit.hitId);
-              
-              // For SharePoint search results, hitId might be in format like:
-              // "SPOb!CORq-a8orUGIrd3_z9t1_vjCBSeqM3JKhDglEU3DIDvEl-Hms0qoQ7QCWYNQfGOF01EOXMF2IRLUG6LVWVR3T4OY5JNFXGVI"
-              // or just a direct item ID
-              
-              // Try different extraction patterns
-              if (hit.hitId.includes('SPO')) {
-                // Remove SPO prefix and extract the item part after the drive ID
-                const cleanHitId = hit.hitId.replace(/^SPO[a-z]!/, '');
-                if (cleanHitId.length > 43) { // Drive ID is typically 43 chars
-                  itemId = cleanHitId.substring(43);
-                }
-              } else {
-                // If hitId doesn't follow the SPO pattern, use it directly as itemId
-                itemId = hit.hitId;
-              }
-              
-              console.log('Extracted itemId from hitId:', itemId);
-            }
-            
-            // If we still don't have proper IDs, try to extract from webUrl
-            if (!driveId && resource.webUrl) {
-              const webUrlMatch = resource.webUrl.match(/\/drives\/([^\/]+)\//);
-              if (webUrlMatch) {
-                driveId = webUrlMatch[1];
-              }
-            }
-            
-            if (!itemId && resource.webUrl) {
-              const itemMatch = resource.webUrl.match(/\/items\/([^\/\?]+)/);
-              if (itemMatch) {
-                itemId = itemMatch[1];
-              }
-            }
-            
-            console.log('Final processed result with corrected IDs:', {
+            console.log('Final processed result:', {
               title,
               createdBy,
               createdDateTime,
@@ -218,8 +172,6 @@ export class SearchService {
               itemId,
               hitId: hit.hitId,
               resourceId: resource.id,
-              resourceDriveId: resource.driveId,
-              resourceItemId: resource.itemId,
               parentReference: resource.parentReference,
               webUrl: resource.webUrl
             });
@@ -242,9 +194,6 @@ export class SearchService {
                 itemId, 
                 hit,
                 resourceKeys: Object.keys(resource),
-                resourceDriveId: resource.driveId,
-                resourceId: resource.id,
-                resourceItemId: resource.itemId,
                 parentReference: resource.parentReference,
                 hitId: hit.hitId
               });
@@ -350,5 +299,3 @@ export class SearchService {
 }
 
 export const searchService = new SearchService();
-
-undefined
