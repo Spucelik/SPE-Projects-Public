@@ -588,5 +588,3 @@ export class SharePointService {
 }
 
 export const sharePointService = new SharePointService();
-
-}
