@@ -64,37 +64,146 @@ class SharePointService {
     }
   }
 
-  // List containers using Search API (keep as backup method)
+  // Enhanced search method with multiple query approaches
   async listContainersUsingSearch(token: string): Promise<Container[]> {
     try {
-      // Using the search API endpoint
+      console.log('Starting comprehensive container search...');
+      console.log('Container Type ID:', appConfig.containerTypeId);
+      
+      // Try multiple search approaches to catch all containers
+      const searchApproaches = [
+        // Approach 1: Search by container type ID
+        {
+          name: 'ContainerTypeId Search',
+          query: `ContainerTypeId:${appConfig.containerTypeId}`
+        },
+        // Approach 2: Search for all drives and filter later
+        {
+          name: 'All Drives Search',
+          query: '*'
+        },
+        // Approach 3: Search by partial container type if it's a GUID
+        {
+          name: 'Partial ContainerType Search',
+          query: appConfig.containerTypeId.includes('-') ? 
+            `ContainerTypeId:${appConfig.containerTypeId.split('-')[0]}*` : 
+            `ContainerTypeId:${appConfig.containerTypeId.substring(0, 8)}*`
+        }
+      ];
+
+      let allContainers: Container[] = [];
+      const seenIds = new Set<string>();
+
+      for (const approach of searchApproaches) {
+        try {
+          console.log(`Trying search approach: ${approach.name} with query: ${approach.query}`);
+          
+          const url = `${appConfig.endpoints.graphBaseUrl}/search/query`;
+          const requestBody = {
+            requests: [
+              {
+                entityTypes: ["drive"],
+                query: {
+                  queryString: approach.query
+                },
+                sharePointOneDriveOptions: {
+                  includeHiddenContent: true
+                },
+                fields: [
+                  "id",
+                  "name",
+                  "parentReference",
+                  "webUrl",
+                  "createdDateTime",
+                  "lastModifiedDateTime",
+                  "size",
+                  "createdBy",
+                  "lastModifiedBy",
+                  "fileSystemInfo"
+                ],
+                size: 100 // Increase the search result size
+              }
+            ]
+          };
+          
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`${approach.name} response:`, data);
+            
+            if (data.value && data.value.length > 0 && data.value[0].hitsContainers && data.value[0].hitsContainers.length > 0) {
+              const hits = data.value[0].hitsContainers[0].hits || [];
+              console.log(`${approach.name} found ${hits.length} hits`);
+              
+              for (const hit of hits) {
+                const resource = hit.resource;
+                if (resource && resource.id && !seenIds.has(resource.id)) {
+                  // For the "All Drives" approach, we need to filter by container type
+                  if (approach.name === 'All Drives Search') {
+                    // Skip this container if we can't verify it's the right type
+                    // We'll rely on the other approaches for this
+                    continue;
+                  }
+                  
+                  seenIds.add(resource.id);
+                  allContainers.push({
+                    id: resource.id,
+                    displayName: resource.name || 'Untitled Container',
+                    description: hit.summary || '',
+                    containerTypeId: appConfig.containerTypeId,
+                    createdDateTime: resource.createdDateTime || new Date().toISOString(),
+                    webUrl: resource.webUrl || ''
+                  });
+                }
+              }
+            } else {
+              console.log(`${approach.name} returned no hits`);
+            }
+          } else {
+            console.error(`${approach.name} failed:`, await response.text());
+          }
+        } catch (error) {
+          console.error(`Error in ${approach.name}:`, error);
+          // Continue with other approaches
+        }
+      }
+
+      console.log(`Total unique containers found: ${allContainers.length}`);
+      console.log('Container IDs found:', allContainers.map(c => c.id));
+      
+      return allContainers;
+    } catch (error) {
+      console.error('Enhanced search error:', error);
+      // Fall back to a basic search if all else fails
+      return this.basicSearch(token);
+    }
+  }
+
+  // Fallback basic search method
+  private async basicSearch(token: string): Promise<Container[]> {
+    try {
+      console.log('Falling back to basic search...');
+      
       const url = `${appConfig.endpoints.graphBaseUrl}/search/query`;
-      
-      console.log('Listing containers with search URL:', url);
-      
-      // Create the search query with the containerTypeId without quotes
       const requestBody = {
         requests: [
           {
             entityTypes: ["drive"],
             query: {
-              queryString: `ContainerTypeId:${appConfig.containerTypeId}`
+              queryString: "*"
             },
             sharePointOneDriveOptions: {
               includeHiddenContent: true
             },
-            fields: [
-              "id",
-              "name",
-              "parentReference",
-              "webUrl",
-              "createdDateTime",
-              "lastModifiedDateTime",
-              "size",
-              "createdBy",
-              "lastModifiedBy",
-              "fileSystemInfo"
-            ]
+            size: 50
           }
         ]
       };
@@ -109,15 +218,10 @@ class SharePointService {
       });
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response from search API:', errorText);
-        throw new Error(`Failed to list containers using search: ${response.status} ${response.statusText} - ${errorText}`);
+        throw new Error(`Basic search failed: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log('Search API response:', data);
-      
-      // Extract and transform the container data from the search results
       const containers: Container[] = [];
       
       if (data.value && data.value.length > 0 && data.value[0].hitsContainers && data.value[0].hitsContainers.length > 0) {
@@ -128,21 +232,21 @@ class SharePointService {
           if (resource) {
             containers.push({
               id: resource.id || '',
-              displayName: resource.name || '',
-              description: '',
+              displayName: resource.name || 'Container',
+              description: hit.summary || '',
               containerTypeId: appConfig.containerTypeId,
-              createdDateTime: resource.createdDateTime || '',
+              createdDateTime: resource.createdDateTime || new Date().toISOString(),
               webUrl: resource.webUrl || ''
             });
           }
         }
       }
       
-      console.log('Processed containers:', containers);
+      console.log(`Basic search found ${containers.length} containers`);
       return containers;
     } catch (error) {
-      console.error('List containers using search error details:', error);
-      throw error;
+      console.error('Basic search also failed:', error);
+      return [];
     }
   }
   
@@ -539,3 +643,5 @@ class SharePointService {
 }
 
 export const sharePointService = new SharePointService();
+
+}
