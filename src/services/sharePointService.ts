@@ -1,4 +1,3 @@
-
 import { appConfig } from "../config/appConfig";
 
 export interface FileItem {
@@ -419,36 +418,81 @@ export class SharePointService {
             let url: string;
             
             if (containerId.includes(',')) {
-                // SharePoint site ID format
-                url = `${this.graphBaseUrl}/sites/${containerId}`;
+                // SharePoint site ID format - try both site and drive endpoints
+                const siteUrl = `${this.graphBaseUrl}/sites/${containerId}`;
+                const driveUrl = `${this.graphBaseUrl}/sites/${containerId}/drive`;
+                
+                console.log(`Fetching container details from site URL: ${siteUrl}`);
+                
+                // First try to get site information
+                const siteResponse = await fetch(siteUrl, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                if (siteResponse.ok) {
+                    const siteData = await siteResponse.json();
+                    console.log('Site details data:', siteData);
+                    
+                    // Try to get drive information for more details
+                    try {
+                        const driveResponse = await fetch(driveUrl, {
+                            method: 'GET',
+                            headers: headers
+                        });
+                        
+                        if (driveResponse.ok) {
+                            const driveData = await driveResponse.json();
+                            console.log('Drive details data:', driveData);
+                            
+                            // Use drive name if available, otherwise fall back to site name
+                            const name = driveData.name || driveData.displayName || siteData.displayName || siteData.name || this.extractProjectNameFromUrl(siteData.webUrl) || 'Project Container';
+                            
+                            return { 
+                                webUrl: siteData.webUrl, 
+                                name: name
+                            };
+                        }
+                    } catch (driveError) {
+                        console.warn('Could not fetch drive details, using site details only:', driveError);
+                    }
+                    
+                    // Fall back to site data only
+                    const name = siteData.displayName || siteData.name || this.extractProjectNameFromUrl(siteData.webUrl) || 'Project Container';
+                    return { 
+                        webUrl: siteData.webUrl, 
+                        name: name
+                    };
+                }
+                
+                console.error('Site response not ok:', siteResponse.status, await siteResponse.text());
+                throw new Error(`Failed to fetch site details: ${siteResponse.status} ${siteResponse.statusText}`);
             } else {
                 // Container ID format
                 url = `${this.graphBaseUrl}/containers/${containerId}`;
+                console.log(`Fetching container details from URL: ${url}`);
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                if (!response.ok) {
+                    console.error('Response status:', response.status);
+                    console.error('Response headers:', response.headers);
+                    const errorText = await response.text();
+                    console.error('Response body:', errorText);
+                    throw new Error(`Failed to fetch container details: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('Container details data:', data);
+
+                return { 
+                    webUrl: data.webUrl, 
+                    name: data.displayName || data.name || 'Project Container'
+                };
             }
-            
-            console.log(`Fetching container details from URL: ${url}`);
-
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: headers
-            });
-
-            if (!response.ok) {
-                console.error('Response status:', response.status);
-                console.error('Response headers:', response.headers);
-                const errorText = await response.text();
-                console.error('Response body:', errorText);
-                throw new Error(`Failed to fetch container details: ${response.status} ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            console.log('Container details data:', data);
-
-            // Handle both container and site response formats
-            return { 
-                webUrl: data.webUrl, 
-                name: data.displayName || data.name || 'Unknown'
-            };
         } catch (error: any) {
             console.error('Error in getContainerDetails:', error);
             throw new Error(`Failed to get container details: ${error.message}`);
@@ -576,10 +620,26 @@ export class SharePointService {
 
             // Extract unique container IDs from search results
             const containerIds = new Set<string>();
+            const containerInfo = new Map<string, { webUrl?: string; name?: string; createdDateTime?: string }>();
+            
             for (const hit of searchResults) {
                 const resource = hit._source || hit.resource;
                 if (resource?.parentReference?.siteId) {
-                    containerIds.add(resource.parentReference.siteId);
+                    const containerId = resource.parentReference.siteId;
+                    containerIds.add(containerId);
+                    
+                    // Store any available information about this container
+                    if (!containerInfo.has(containerId)) {
+                        const extractedName = this.extractProjectNameFromWebUrl(resource.webUrl) || 
+                                           this.extractProjectNameFromPath(resource.parentReference?.path) ||
+                                           resource.name;
+                        
+                        containerInfo.set(containerId, {
+                            webUrl: this.extractBaseUrlFromWebUrl(resource.webUrl),
+                            name: extractedName,
+                            createdDateTime: resource.createdDateTime
+                        });
+                    }
                 }
             }
 
@@ -587,32 +647,23 @@ export class SharePointService {
             console.log('Total unique containers found:', uniqueContainerIds.length);
             console.log('Container IDs found:', uniqueContainerIds);
 
-            // Since the containers endpoint is not working (400 errors), we'll use an alternative approach
-            // Instead of validating individual containers, we'll create container objects from the search results
+            // Create container objects from the search results with better naming
             const containersFromSearch: Container[] = [];
-            const processedContainerIds = new Set<string>();
 
-            for (const hit of searchResults) {
-                const resource = hit._source || hit.resource;
-                if (resource?.parentReference?.siteId && !processedContainerIds.has(resource.parentReference.siteId)) {
-                    processedContainerIds.add(resource.parentReference.siteId);
-                    
-                    // Extract container info from the search result
-                    const containerId = resource.parentReference.siteId;
-                    const driveId = resource.parentReference.driveId;
-                    
-                    // Create a container object based on available information
-                    const container: Container = {
-                        id: containerId,
-                        displayName: this.extractDisplayNameFromDriveId(driveId) || 'Unknown Project',
-                        description: '',
-                        containerTypeId: this.containerTypeId,
-                        createdDateTime: resource.createdDateTime || new Date().toISOString(),
-                        webUrl: resource.webUrl ? this.extractBaseUrlFromWebUrl(resource.webUrl) : undefined
-                    };
-                    
-                    containersFromSearch.push(container);
-                }
+            for (const containerId of uniqueContainerIds) {
+                const info = containerInfo.get(containerId);
+                const displayName = info?.name || `Project ${containerId.split(',')[1]?.substring(0, 8) || 'Unknown'}`;
+                
+                const container: Container = {
+                    id: containerId,
+                    displayName: displayName,
+                    description: '',
+                    containerTypeId: this.containerTypeId,
+                    createdDateTime: info?.createdDateTime || new Date().toISOString(),
+                    webUrl: info?.webUrl
+                };
+                
+                containersFromSearch.push(container);
             }
 
             console.log(`Created ${containersFromSearch.length} container objects from search results`);
@@ -621,6 +672,54 @@ export class SharePointService {
         } catch (error: any) {
             console.error('Error in listContainersUsingSearch:', error);
             throw new Error(`Failed to search for containers: ${error.message}`);
+        }
+    }
+
+    // Helper method to extract project name from web URL
+    private extractProjectNameFromWebUrl(webUrl: string): string | null {
+        try {
+            if (!webUrl) return null;
+            
+            // Look for CSP_ pattern in the URL which typically contains the project identifier
+            const cspMatch = webUrl.match(/CSP_([^\/]+)/);
+            if (cspMatch) {
+                // Convert the CSP ID to a more readable format
+                const cspId = cspMatch[1];
+                return `Project ${cspId.substring(0, 8)}`;
+            }
+            
+            // Try to extract from the last meaningful part of the URL
+            const urlParts = webUrl.split('/').filter(part => part.length > 0);
+            const lastPart = urlParts[urlParts.length - 1];
+            
+            if (lastPart && lastPart !== 'contentstorage' && !lastPart.startsWith('CSP_')) {
+                return lastPart.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error extracting project name from web URL:', error);
+            return null;
+        }
+    }
+
+    // Helper method to extract project name from path
+    private extractProjectNameFromPath(path: string): string | null {
+        try {
+            if (!path) return null;
+            
+            // Extract meaningful parts from the path
+            const pathParts = path.split('/').filter(part => part.length > 0 && part !== 'drive' && part !== 'root');
+            
+            if (pathParts.length > 0) {
+                const lastPart = pathParts[pathParts.length - 1];
+                return lastPart.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error extracting project name from path:', error);
+            return null;
         }
     }
 
@@ -659,6 +758,30 @@ export class SharePointService {
             return webUrl;
         }
     }
+
+    // Helper method to extract project name from URL for better naming
+    private extractProjectNameFromUrl(webUrl: string): string | null {
+        try {
+            if (!webUrl) return null;
+            
+            const url = new URL(webUrl);
+            const pathParts = url.pathname.split('/').filter(part => part.length > 0);
+            
+            // Look for meaningful project identifiers in the URL
+            for (const part of pathParts) {
+                if (part.includes('CSP_') || part.includes('project') || part.includes('container')) {
+                    return part.replace(/CSP_|project|container/gi, 'Project ').trim();
+                }
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error extracting project name from URL:', error);
+            return null;
+        }
+    }
 }
 
 export const sharePointService = new SharePointService();
+
+}
