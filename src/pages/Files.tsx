@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { FileItem } from '@/services/sharePointService';
 import { ConfigAlert } from '../components/ConfigAlert';
 import FileList from '@/components/files/FileList';
@@ -55,7 +57,7 @@ const Files = () => {
     refreshFiles
   } = useFiles(containerId);
 
-  const containerDetails = useContainerDetails(containerId);
+  const { containerDetails, loading: detailsLoading, error: detailsError } = useContainerDetails(containerId);
   
   const {
     isPreviewOpen,
@@ -64,6 +66,16 @@ const Files = () => {
     previewLoading,
     handleViewFile
   } = useFilePreview(containerId);
+
+  // Normalize container ID for API calls
+  const normalizeContainerId = (id: string) => {
+    if (!id) return '';
+    let normalizedId = id;
+    if (!normalizedId.startsWith('b!')) {
+      normalizedId = `b!${normalizedId}`;
+    }
+    return normalizedId;
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!containerId || !event.target.files || event.target.files.length === 0) return;
@@ -89,11 +101,13 @@ const Files = () => {
         return;
       }
       
+      const normalizedContainerId = normalizeContainerId(containerId);
+      
       for (const file of files) {
         try {
           await sharePointService.uploadFile(
             token, 
-            containerId, 
+            normalizedContainerId, 
             currentFolder || 'root', 
             file,
             (progress) => {
@@ -148,9 +162,11 @@ const Files = () => {
         return;
       }
       
+      const normalizedContainerId = normalizeContainerId(containerId);
+      
       await sharePointService.createFolder(
         token,
-        containerId,
+        normalizedContainerId,
         currentFolder || 'root',
         newFolderName.trim()
       );
@@ -204,17 +220,52 @@ const Files = () => {
     setIsCopilotOpen(!isCopilotOpen);
   };
 
+  // Get project name with proper loading and error handling
+  const getProjectDisplayName = () => {
+    if (detailsLoading) {
+      return <Skeleton className="h-4 w-32" />;
+    }
+    
+    if (detailsError) {
+      return <span className="text-muted-foreground">Project Container</span>;
+    }
+    
+    return containerDetails?.name || 'Project Container';
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex-1">
           <ConfigAlert />
           
-          {containerDetails && (
-            <div className="text-sm text-muted-foreground mt-2">
-              <span>Connected to:</span> <a href={containerDetails.webUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{containerDetails.name}</a>
+          {/* Project Name Display */}
+          <div className="space-y-2 mt-2">
+            <div className="text-lg font-semibold">
+              {getProjectDisplayName()}
             </div>
-          )}
+            
+            {containerDetails && containerDetails.webUrl && (
+              <div className="text-sm text-muted-foreground">
+                <span>SharePoint Container:</span>{' '}
+                <a 
+                  href={containerDetails.webUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-primary hover:underline"
+                >
+                  View in SharePoint
+                </a>
+              </div>
+            )}
+            
+            {/* Display container ID for debugging */}
+            {containerId && (
+              <div className="text-xs text-muted-foreground font-mono">
+                Container ID: {containerId}
+              </div>
+            )}
+          </div>
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
@@ -269,10 +320,20 @@ const Files = () => {
         onNavigate={handleNavigate}
       />
 
+      {/* Show container details error separately from files error */}
+      {detailsError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Container Details Error</AlertTitle>
+          <AlertDescription>{detailsError}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Show files error */}
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>Files Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
@@ -296,7 +357,7 @@ const Files = () => {
                 onFileClick={handleViewFile}
                 onViewFile={handleViewFile}
                 onDeleteFile={handleDeleteFile}
-                containerId={containerId || ''}
+                containerId={containerId ? normalizeContainerId(containerId) : ''}
               />
             </div>
           </ResizablePanel>
@@ -348,7 +409,7 @@ const Files = () => {
       <CreateOfficeFileDialog
         isOpen={isOfficeFileDialogOpen}
         onOpenChange={setIsOfficeFileDialogOpen}
-        containerId={containerId || ''}
+        containerId={containerId ? normalizeContainerId(containerId) : ''}
         currentFolder={currentFolder}
         onFileCreated={refreshFiles}
       />

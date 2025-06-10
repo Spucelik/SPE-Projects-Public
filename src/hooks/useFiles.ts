@@ -22,6 +22,22 @@ export const useFiles = (containerId: string | undefined) => {
   const { isAuthenticated, getAccessToken } = useAuth();
   const { addApiCall } = useApiCalls();
 
+  // Normalize container ID for API calls
+  const normalizeContainerId = useCallback((id: string) => {
+    if (!id) return '';
+    
+    // If it contains commas, it might be a site ID format
+    let normalizedId = id;
+    
+    // Add b! prefix if not already present for Graph API calls
+    if (!normalizedId.startsWith('b!')) {
+      normalizedId = `b!${normalizedId}`;
+    }
+    
+    console.log('Normalized container ID from', id, 'to', normalizedId);
+    return normalizedId;
+  }, []);
+
   const fetchFiles = useCallback(async () => {
     if (!isAuthenticated || !containerId) return;
 
@@ -39,17 +55,18 @@ export const useFiles = (containerId: string | undefined) => {
         return;
       }
 
-      console.log(`Fetching files for container ${containerId}, folder ${currentFolder || 'root'}`);
+      const normalizedContainerId = normalizeContainerId(containerId);
+      console.log(`Fetching files for container ${normalizedContainerId}, folder ${currentFolder || 'root'}`);
       
       // Track API call
       const apiCallData = {
         method: 'GET',
-        url: `/containers/${containerId}/drive/items/${currentFolder || 'root'}/children`,
-        request: { containerId, folder: currentFolder || 'root' }
+        url: `/containers/${normalizedContainerId}/drive/items/${currentFolder || 'root'}/children`,
+        request: { containerId: normalizedContainerId, folder: currentFolder || 'root' }
       };
 
       try {
-        const fileItems = await sharePointService.listFiles(token, containerId, currentFolder);
+        const fileItems = await sharePointService.listFiles(token, normalizedContainerId, currentFolder);
         
         // Ensure each file has the creator information and format
         const enhancedFiles = fileItems.map(item => ({
@@ -67,26 +84,43 @@ export const useFiles = (containerId: string | undefined) => {
           status: 200
         });
       } catch (apiError: any) {
+        console.error('API Error details:', apiError);
+        
         // Track failed API call
         addApiCall({
           ...apiCallData,
           response: { error: apiError.message },
           status: apiError.status || 500
         });
+        
+        // Provide more specific error messages
+        let errorMessage = "Failed to fetch files.";
+        if (apiError.message?.includes('404')) {
+          errorMessage = "Container not found. Please check if the project exists and you have access.";
+        } else if (apiError.message?.includes('403')) {
+          errorMessage = "Access denied. You may not have permission to view files in this container.";
+        } else if (apiError.message?.includes('400')) {
+          errorMessage = "Invalid request. The container ID format may be incorrect.";
+        }
+        
+        setError(errorMessage);
         throw apiError;
       }
     } catch (error: any) {
       console.error('Error fetching files:', error);
-      setError(error.message || "Failed to fetch files. This may be due to insufficient permissions or API limitations.");
-      toast({
-        title: "Error",
-        description: "Failed to fetch files. Please check console for details.",
-        variant: "destructive",
-      });
+      
+      if (!error.message?.includes('404') && !error.message?.includes('403') && !error.message?.includes('400')) {
+        setError(error.message || "Failed to fetch files. This may be due to insufficient permissions or API limitations.");
+        toast({
+          title: "Error",
+          description: "Failed to fetch files. Please check console for details.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, getAccessToken, containerId, currentFolder, addApiCall]);
+  }, [isAuthenticated, getAccessToken, containerId, currentFolder, addApiCall, normalizeContainerId]);
 
   useEffect(() => {
     fetchFiles();
@@ -121,15 +155,17 @@ export const useFiles = (containerId: string | undefined) => {
         return;
       }
       
+      const normalizedContainerId = normalizeContainerId(containerId);
+      
       // Track API call
       const apiCallData = {
         method: 'DELETE',
-        url: `/containers/${containerId}/drive/items/${file.id}`,
-        request: { containerId, fileId: file.id, fileName: file.name }
+        url: `/containers/${normalizedContainerId}/drive/items/${file.id}`,
+        request: { containerId: normalizedContainerId, fileId: file.id, fileName: file.name }
       };
 
       try {
-        await sharePointService.deleteFile(token, containerId, file.id);
+        await sharePointService.deleteFile(token, normalizedContainerId, file.id);
         setFiles(prevFiles => prevFiles.filter(f => f.id !== file.id));
         
         // Track successful API call
