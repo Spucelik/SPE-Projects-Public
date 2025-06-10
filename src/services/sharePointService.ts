@@ -62,6 +62,18 @@ export class SharePointService {
         };
     }
 
+    // Helper to determine the correct API endpoint based on container ID format
+    private getApiEndpoint(containerId: string, path: string): string {
+        // If container ID contains commas, it's a SharePoint site ID format
+        if (containerId.includes(',')) {
+            // For SharePoint site IDs, use the sites endpoint
+            return `${this.graphBaseUrl}/sites/${containerId}${path}`;
+        } else {
+            // For container IDs, use the containers endpoint
+            return `${this.graphBaseUrl}/containers/${containerId}${path}`;
+        }
+    }
+
     async listFiles(accessToken: string, containerId: string, folderId: string = ''): Promise<FileItem[]> {
         const headers = {
             'Authorization': `Bearer ${accessToken}`,
@@ -70,11 +82,23 @@ export class SharePointService {
         };
 
         try {
-            let url = `${this.graphBaseUrl}/containers/${containerId}/drive/root:`;
-            if (folderId) {
-                url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${folderId}:`;
+            let url: string;
+            
+            if (containerId.includes(',')) {
+                // SharePoint site ID format - use sites endpoint
+                if (folderId) {
+                    url = `${this.graphBaseUrl}/sites/${containerId}/drive/items/${folderId}/children`;
+                } else {
+                    url = `${this.graphBaseUrl}/sites/${containerId}/drive/root/children`;
+                }
+            } else {
+                // Container ID format - use containers endpoint
+                if (folderId) {
+                    url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${folderId}/children`;
+                } else {
+                    url = `${this.graphBaseUrl}/containers/${containerId}/drive/root/children`;
+                }
             }
-            url += `/children`;
 
             console.log(`Fetching files from URL: ${url}`);
 
@@ -109,7 +133,7 @@ export class SharePointService {
         };
     
         try {
-            const url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${fileId}`;
+            const url = this.getApiEndpoint(containerId, `/drive/items/${fileId}`);
             console.log(`Deleting file from URL: ${url}`);
     
             const response = await fetch(url, {
@@ -139,12 +163,24 @@ export class SharePointService {
         };
 
         try {
-            let url;
-            if (folderId && folderId !== 'root') {
-                url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${folderId}:/${file.name}:/content`;
+            let url: string;
+            
+            if (containerId.includes(',')) {
+                // SharePoint site ID format
+                if (folderId && folderId !== 'root') {
+                    url = `${this.graphBaseUrl}/sites/${containerId}/drive/items/${folderId}:/${file.name}:/content`;
+                } else {
+                    url = `${this.graphBaseUrl}/sites/${containerId}/drive/root:/${file.name}:/content`;
+                }
             } else {
-                url = `${this.graphBaseUrl}/containers/${containerId}/drive/root:/${file.name}:/content`;
+                // Container ID format
+                if (folderId && folderId !== 'root') {
+                    url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${folderId}:/${file.name}:/content`;
+                } else {
+                    url = `${this.graphBaseUrl}/containers/${containerId}/drive/root:/${file.name}:/content`;
+                }
             }
+            
             console.log(`Uploading file to URL: ${url}`);
 
             const response = await fetch(url, {
@@ -177,12 +213,24 @@ export class SharePointService {
         };
 
         try {
-            let url;
-            if (folderId && folderId !== 'root') {
-                url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${folderId}/children`;
+            let url: string;
+            
+            if (containerId.includes(',')) {
+                // SharePoint site ID format
+                if (folderId && folderId !== 'root') {
+                    url = `${this.graphBaseUrl}/sites/${containerId}/drive/items/${folderId}/children`;
+                } else {
+                    url = `${this.graphBaseUrl}/sites/${containerId}/drive/root/children`;
+                }
             } else {
-                url = `${this.graphBaseUrl}/containers/${containerId}/drive/root/children`;
+                // Container ID format
+                if (folderId && folderId !== 'root') {
+                    url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${folderId}/children`;
+                } else {
+                    url = `${this.graphBaseUrl}/containers/${containerId}/drive/root/children`;
+                }
             }
+            
             console.log(`Creating folder at URL: ${url}`);
 
             const requestBody = JSON.stringify({
@@ -230,12 +278,24 @@ export class SharePointService {
             
             const fullFileName = fileName + extensions[fileType];
             
-            let url;
-            if (folderId && folderId !== 'root') {
-                url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${folderId}:/${fullFileName}:/content`;
+            let url: string;
+            
+            if (containerId.includes(',')) {
+                // SharePoint site ID format
+                if (folderId && folderId !== 'root') {
+                    url = `${this.graphBaseUrl}/sites/${containerId}/drive/items/${folderId}:/${fullFileName}:/content`;
+                } else {
+                    url = `${this.graphBaseUrl}/sites/${containerId}/drive/root:/${fullFileName}:/content`;
+                }
             } else {
-                url = `${this.graphBaseUrl}/containers/${containerId}/drive/root:/${fullFileName}:/content`;
+                // Container ID format
+                if (folderId && folderId !== 'root') {
+                    url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${folderId}:/${fullFileName}:/content`;
+                } else {
+                    url = `${this.graphBaseUrl}/containers/${containerId}/drive/root:/${fullFileName}:/content`;
+                }
             }
+            
             console.log(`Creating Office file at URL: ${url}`);
 
             // Create empty content based on file type
@@ -282,7 +342,7 @@ export class SharePointService {
         };
 
         try {
-            const url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${fileId}/preview`;
+            const url = this.getApiEndpoint(containerId, `/drive/items/${fileId}/preview`);
             console.log(`Getting file preview from URL: ${url}`);
 
             const response = await fetch(url, {
@@ -314,7 +374,7 @@ export class SharePointService {
         };
 
         try {
-            const url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${fileId}/invite`;
+            const url = this.getApiEndpoint(containerId, `/drive/items/${fileId}/invite`);
             console.log(`Sharing file at URL: ${url}`);
 
             const requestBody = JSON.stringify({
@@ -355,7 +415,16 @@ export class SharePointService {
         };
 
         try {
-            const url = `${this.graphBaseUrl}/containers/${containerId}`;
+            let url: string;
+            
+            if (containerId.includes(',')) {
+                // SharePoint site ID format
+                url = `${this.graphBaseUrl}/sites/${containerId}`;
+            } else {
+                // Container ID format
+                url = `${this.graphBaseUrl}/containers/${containerId}`;
+            }
+            
             console.log(`Fetching container details from URL: ${url}`);
 
             const response = await fetch(url, {
@@ -374,7 +443,11 @@ export class SharePointService {
             const data = await response.json();
             console.log('Container details data:', data);
 
-            return { webUrl: data.webUrl, name: data.displayName };
+            // Handle both container and site response formats
+            return { 
+                webUrl: data.webUrl, 
+                name: data.displayName || data.name || 'Unknown'
+            };
         } catch (error: any) {
             console.error('Error in getContainerDetails:', error);
             throw new Error(`Failed to get container details: ${error.message}`);
@@ -588,3 +661,5 @@ export class SharePointService {
 }
 
 export const sharePointService = new SharePointService();
+
+}

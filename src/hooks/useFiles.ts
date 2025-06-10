@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sharePointService } from '../services/sharePointService';
@@ -22,19 +21,28 @@ export const useFiles = (containerId: string | undefined) => {
   const { isAuthenticated, getAccessToken } = useAuth();
   const { addApiCall } = useApiCalls();
 
-  // Normalize container ID for API calls
+  // Improved container ID normalization for SharePoint site IDs
   const normalizeContainerId = useCallback((id: string) => {
     if (!id) return '';
     
-    // If it contains commas, it might be a site ID format
-    let normalizedId = id;
+    console.log('Original container ID:', id);
     
-    // Add b! prefix if not already present for Graph API calls
-    if (!normalizedId.startsWith('b!')) {
-      normalizedId = `b!${normalizedId}`;
+    // If it's already a site ID format (contains commas), use it as-is
+    // SharePoint site IDs have the format: tenant.sharepoint.com,siteId,webId
+    if (id.includes(',')) {
+      console.log('Using site ID format:', id);
+      return id;
     }
     
-    console.log('Normalized container ID from', id, 'to', normalizedId);
+    // If it contains 'b!' prefix, it's already a Graph-style ID
+    if (id.startsWith('b!')) {
+      console.log('Using Graph ID format:', id);
+      return id;
+    }
+    
+    // Otherwise, add the b! prefix
+    const normalizedId = `b!${id}`;
+    console.log('Normalized to Graph ID format:', normalizedId);
     return normalizedId;
   }, []);
 
