@@ -1,4 +1,3 @@
-
 import { appConfig } from '../config/appConfig';
 import { FileItem } from './sharePointService';
 
@@ -23,7 +22,11 @@ export interface SearchResult {
 // Extended FileItem interface to include driveId for search results
 export interface SearchFileItem extends FileItem {
   driveId?: string;
+  isFolder?: boolean; // Add this property
 }
+
+// Extended FileItem interface to include driveId for search results
+
 
 export class SearchService {
   async searchFiles(
@@ -332,7 +335,16 @@ export class SearchService {
       webUrl: result.webUrl || '',
       isFolder: false,
       createdByName: result.createdBy,
-      driveId: result.driveId // Now this is allowed by SearchFileItem interface
+      driveId: result.driveId,
+      eTag: '',
+      folder: undefined,
+      file: {
+        mimeType: 'application/octet-stream',
+        hashes: {
+          quickXorHash: '',
+          sha1Hash: ''
+        }
+      }
     };
   }
 }

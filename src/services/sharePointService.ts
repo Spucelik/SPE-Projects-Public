@@ -1,4 +1,3 @@
-
 import { appConfig } from "../config/appConfig";
 
 export interface FileItem {
@@ -37,6 +36,7 @@ export interface FileItem {
     };
     createdByName?: string;
     childCount?: number;
+    isFolder?: boolean; // Add this computed property
 }
 
 export interface Container {
@@ -51,6 +51,16 @@ export interface Container {
 export class SharePointService {
     private readonly graphBaseUrl: string = appConfig.endpoints.graphBaseUrl;
     private readonly containerTypeId: string = appConfig.containerTypeId;
+
+    // Helper function to enhance FileItem with isFolder property
+    private enhanceFileItem(item: any): FileItem {
+        return {
+            ...item,
+            isFolder: !!item.folder,
+            createdByName: item.createdBy?.user?.displayName || 'Unknown',
+            childCount: item.folder?.childCount || 0
+        };
+    }
 
     async listFiles(accessToken: string, containerId: string, folderId: string = ''): Promise<FileItem[]> {
         const headers = {
@@ -84,7 +94,7 @@ export class SharePointService {
             const data = await response.json();
             console.log('Files data:', data);
 
-            return data.value || [];
+            return (data.value || []).map((item: any) => this.enhanceFileItem(item));
         } catch (error: any) {
             console.error('Error in listFiles:', error);
             throw new Error(`Failed to list files: ${error.message}`);
@@ -122,20 +132,25 @@ export class SharePointService {
         }
     }
 
-    async uploadFile(accessToken: string, containerId: string, fileName: string, fileContent: File): Promise<FileItem> {
+    async uploadFile(accessToken: string, containerId: string, folderId: string, file: File, onProgress?: (progress: number) => void): Promise<FileItem> {
         const headers = {
             'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': fileContent.type || 'application/octet-stream'
+            'Content-Type': file.type || 'application/octet-stream'
         };
 
         try {
-            const url = `${this.graphBaseUrl}/containers/${containerId}/drive/root:/${fileName}:/content`;
+            let url;
+            if (folderId && folderId !== 'root') {
+                url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${folderId}:/${file.name}:/content`;
+            } else {
+                url = `${this.graphBaseUrl}/containers/${containerId}/drive/root:/${file.name}:/content`;
+            }
             console.log(`Uploading file to URL: ${url}`);
 
             const response = await fetch(url, {
                 method: 'PUT',
                 headers: headers,
-                body: fileContent
+                body: file
             });
 
             if (!response.ok) {
@@ -147,14 +162,14 @@ export class SharePointService {
 
             const data = await response.json();
             console.log('File uploaded successfully:', data);
-            return data;
+            return this.enhanceFileItem(data);
         } catch (error: any) {
             console.error('Error in uploadFile:', error);
             throw new Error(`Failed to upload file: ${error.message}`);
         }
     }
 
-    async createFolder(accessToken: string, containerId: string, folderName: string): Promise<FileItem> {
+    async createFolder(accessToken: string, containerId: string, folderId: string, folderName: string): Promise<FileItem> {
         const headers = {
             'Authorization': `Bearer ${accessToken}`,
             'Accept': 'application/json',
@@ -162,7 +177,12 @@ export class SharePointService {
         };
 
         try {
-            const url = `${this.graphBaseUrl}/containers/${containerId}/drive/root/children`;
+            let url;
+            if (folderId && folderId !== 'root') {
+                url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${folderId}/children`;
+            } else {
+                url = `${this.graphBaseUrl}/containers/${containerId}/drive/root/children`;
+            }
             console.log(`Creating folder at URL: ${url}`);
 
             const requestBody = JSON.stringify({
@@ -186,14 +206,14 @@ export class SharePointService {
 
             const data = await response.json();
             console.log('Folder created successfully:', data);
-            return data;
+            return this.enhanceFileItem(data);
         } catch (error: any) {
             console.error('Error in createFolder:', error);
             throw new Error(`Failed to create folder: ${error.message}`);
         }
     }
 
-    async createOfficeFile(accessToken: string, containerId: string, fileName: string, fileType: string): Promise<FileItem> {
+    async createOfficeFile(accessToken: string, containerId: string, folderId: string, fileName: string, fileType: 'word' | 'excel' | 'powerpoint'): Promise<FileItem> {
         const headers = {
             'Authorization': `Bearer ${accessToken}`,
             'Accept': 'application/json',
@@ -201,19 +221,32 @@ export class SharePointService {
         };
 
         try {
-            // Create an empty file first
-            const url = `${this.graphBaseUrl}/containers/${containerId}/drive/root:/${fileName}:/content`;
+            // Add extension based on file type
+            const extensions = {
+                'word': '.docx',
+                'excel': '.xlsx', 
+                'powerpoint': '.pptx'
+            };
+            
+            const fullFileName = fileName + extensions[fileType];
+            
+            let url;
+            if (folderId && folderId !== 'root') {
+                url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${folderId}:/${fullFileName}:/content`;
+            } else {
+                url = `${this.graphBaseUrl}/containers/${containerId}/drive/root:/${fullFileName}:/content`;
+            }
             console.log(`Creating Office file at URL: ${url}`);
 
             // Create empty content based on file type
             let content = '';
             let contentType = 'application/octet-stream';
             
-            if (fileType === 'docx') {
+            if (fileType === 'word') {
                 contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-            } else if (fileType === 'xlsx') {
+            } else if (fileType === 'excel') {
                 contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-            } else if (fileType === 'pptx') {
+            } else if (fileType === 'powerpoint') {
                 contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
             }
 
@@ -235,7 +268,7 @@ export class SharePointService {
 
             const data = await response.json();
             console.log('Office file created successfully:', data);
-            return data;
+            return this.enhanceFileItem(data);
         } catch (error: any) {
             console.error('Error in createOfficeFile:', error);
             throw new Error(`Failed to create Office file: ${error.message}`);
@@ -273,7 +306,7 @@ export class SharePointService {
         }
     }
 
-    async shareFile(accessToken: string, containerId: string, fileId: string, shareType: string = 'view'): Promise<string> {
+    async shareFile(accessToken: string, containerId: string, fileId: string, recipients: string[], role: 'read' | 'write', message?: string): Promise<string> {
         const headers = {
             'Authorization': `Bearer ${accessToken}`,
             'Accept': 'application/json',
@@ -281,12 +314,15 @@ export class SharePointService {
         };
 
         try {
-            const url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${fileId}/createLink`;
-            console.log(`Creating share link at URL: ${url}`);
+            const url = `${this.graphBaseUrl}/containers/${containerId}/drive/items/${fileId}/invite`;
+            console.log(`Sharing file at URL: ${url}`);
 
             const requestBody = JSON.stringify({
-                type: shareType,
-                scope: 'anonymous'
+                recipients: recipients.map(email => ({ email })),
+                message: message || '',
+                requireSignIn: true,
+                sendInvitation: true,
+                roles: [role === 'read' ? 'read' : 'write']
             });
 
             const response = await fetch(url, {
@@ -303,8 +339,8 @@ export class SharePointService {
             }
 
             const data = await response.json();
-            console.log('Share link created:', data);
-            return data.link?.webUrl || '';
+            console.log('File shared successfully:', data);
+            return data.value?.[0]?.link?.webUrl || '';
         } catch (error: any) {
             console.error('Error in shareFile:', error);
             throw new Error(`Failed to share file: ${error.message}`);
@@ -506,3 +542,5 @@ export class SharePointService {
 }
 
 export const sharePointService = new SharePointService();
+
+}
