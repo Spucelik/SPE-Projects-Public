@@ -24,6 +24,7 @@ export interface SearchResult {
 export interface SearchFileItem extends FileItem {
   driveId?: string;
   isFolder?: boolean;
+  createdByName?: string;
 }
 
 export class SearchService {

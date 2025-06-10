@@ -8,6 +8,9 @@ export interface FileItem {
   name: string;
   size: number;
   webUrl: string;
+  isFolder?: boolean;
+  createdByName?: string;
+  childCount?: number;
   createdBy?: {
     user: {
       displayName: string;
@@ -54,6 +57,43 @@ export class SharePointService {
       console.log('Files data:', data);
 
       return data.value || [];
+    } catch (error) {
+      console.error('Error getting files:', error);
+      throw error;
+    }
+  }
+
+  async listFiles(token: string, containerId: string, path: string = 'root'): Promise<FileItem[]> {
+    try {
+      let url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/items/${path}:/children?$expand=createdBy,lastModifiedBy`;
+      console.log('Fetching files from:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error fetching files:', errorText);
+        throw new Error(`Failed to fetch files: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Files data:', data);
+
+      // Transform the response to include the required properties
+      const files = (data.value || []).map((item: any) => ({
+        ...item,
+        isFolder: !!item.folder,
+        createdByName: item.createdBy?.user?.displayName || 'Unknown',
+        childCount: item.folder?.childCount || 0
+      }));
+
+      return files;
     } catch (error) {
       console.error('Error getting files:', error);
       throw error;
@@ -329,6 +369,205 @@ export class SharePointService {
       };
     } catch (error) {
       console.error('Error getting site details:', error);
+      throw error;
+    }
+  }
+
+  async createContainer(token: string, displayName: string, description: string): Promise<{ id: string }> {
+    try {
+      const url = `${appConfig.endpoints.graphBaseUrl}/drives`;
+      
+      console.log('Creating container:', { displayName, description });
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: displayName,
+          description: description,
+          driveType: 'business'
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error creating container:', errorText);
+        throw new Error(`Failed to create container: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Container created:', data);
+      
+      return { id: data.id };
+    } catch (error) {
+      console.error('Error creating container:', error);
+      throw error;
+    }
+  }
+
+  async shareFile(token: string, containerId: string, itemId: string, recipients: string[], role: 'read' | 'write', message?: string): Promise<void> {
+    try {
+      const url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/items/${itemId}/invite`;
+      
+      console.log('Sharing file:', { containerId, itemId, recipients, role });
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          recipients: recipients.map(email => ({ email })),
+          message: message || '',
+          requireSignIn: true,
+          sendInvitation: true,
+          roles: [role]
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error sharing file:', errorText);
+        throw new Error(`Failed to share file: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+      
+      console.log('File shared successfully');
+    } catch (error) {
+      console.error('Error sharing file:', error);
+      throw error;
+    }
+  }
+
+  async getFilePreview(token: string, containerId: string, itemId: string): Promise<string> {
+    try {
+      const url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/items/${itemId}/preview`;
+      
+      console.log('Fetching file preview:', { url });
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error fetching file preview:', errorText);
+        throw new Error(`Failed to get file preview: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('File preview response:', data);
+      
+      return data.getUrl + "&nb=true";
+    } catch (error) {
+      console.error('Error getting file preview:', error);
+      throw error;
+    }
+  }
+
+  async listContainersUsingSearch(token: string): Promise<Array<{ id: string; name: string; webUrl?: string }>> {
+    try {
+      const url = `${appConfig.endpoints.graphBaseUrl}/search/query`;
+      
+      const requestBody = {
+        requests: [
+          {
+            entityTypes: ["drive"],
+            query: {
+              queryString: `ContainerTypeId:${appConfig.containerTypeId}`
+            },
+            sharePointOneDriveOptions: {
+              includeHiddenContent: true
+            }
+          }
+        ]
+      };
+      
+      console.log('Searching for containers:', { url, body: requestBody });
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error searching containers:', errorText);
+        throw new Error(`Failed to search containers: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Container search response:', data);
+      
+      const containers: Array<{ id: string; name: string; webUrl?: string }> = [];
+      
+      if (data.value && 
+          data.value.length > 0 && 
+          data.value[0].hitsContainers && 
+          data.value[0].hitsContainers.length > 0) {
+        
+        const hits = data.value[0].hitsContainers[0].hits || [];
+        
+        for (const hit of hits) {
+          const resource = hit.resource;
+          if (resource && resource['@odata.type'] === '#microsoft.graph.drive') {
+            containers.push({
+              id: hit.hitId,
+              name: resource.name || 'Project Container',
+              webUrl: resource.webUrl
+            });
+          }
+        }
+      }
+      
+      return containers;
+    } catch (error) {
+      console.error('Error listing containers:', error);
+      throw error;
+    }
+  }
+
+  async getContainer(token: string, containerId: string): Promise<{ id: string; name: string; webUrl?: string }> {
+    try {
+      const url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}`;
+      
+      console.log('Fetching container:', { url, containerId });
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error fetching container:', errorText);
+        throw new Error(`Failed to get container: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Container response:', data);
+      
+      return {
+        id: data.id,
+        name: data.name || 'Project Container',
+        webUrl: data.webUrl
+      };
+    } catch (error) {
+      console.error('Error getting container:', error);
       throw error;
     }
   }
