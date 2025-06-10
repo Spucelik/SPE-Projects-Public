@@ -105,69 +105,45 @@ export class SearchService {
           console.log('Hit resource:', hit.resource);
           
           const resource = hit.resource;
-          if (resource) {
-            // Extract properties from the resource
-            let title = 'Untitled';
+          if (resource && resource['@odata.type'] === '#microsoft.graph.drive') {
+            // Extract the drive ID from the hitId (this is the actual drive ID)
+            const driveId = hit.hitId;
+            
+            // Use the name field from the resource for the title (this contains the actual project name)
+            const title = resource.name || 'Untitled Project';
+            
+            // Extract created by information
             let createdBy = 'Unknown';
-            let createdDateTime = '';
-            let preview = '';
-            let driveId = '';
-            let itemId = '';
-            
-            // Extract title/name
-            title = resource.name || 
-                   resource.displayName ||
-                   resource.title || 
-                   'Untitled';
-            
-            console.log('Extracted title:', title);
-            
-            // Extract preview/description
-            preview = resource.description || hit.summary || '';
-            
-            // Extract created info
             if (resource.createdBy && resource.createdBy.user && resource.createdBy.user.displayName) {
               createdBy = resource.createdBy.user.displayName;
-            } else if (resource.owner && resource.owner.user && resource.owner.user.displayName) {
-              createdBy = resource.owner.user.displayName;
             }
             
-            // Extract creation date
-            createdDateTime = resource.createdDateTime || 
-                            resource.lastModifiedDateTime ||
-                            '';
+            // Extract creation/modification date
+            const createdDateTime = resource.createdDateTime || 
+                                  resource.lastModifiedDateTime ||
+                                  '';
             
-            // For drive entities, the ID is the driveId
-            driveId = resource.id || '';
-            itemId = resource.id || '';
-            
-            console.log('Final processed result:', {
+            console.log('Extracted drive info:', {
               title,
               createdBy,
               createdDateTime,
               driveId,
-              itemId,
               webUrl: resource.webUrl
             });
             
-            // Add results that have valid IDs
-            if (driveId) {
-              searchResults.push({
-                id: itemId,
-                title: title,
-                createdBy: createdBy,
-                createdDateTime: createdDateTime,
-                preview: preview,
-                driveId: driveId,
-                itemId: itemId,
-                webUrl: resource.webUrl
-              });
-            } else {
-              console.warn('Skipping result due to missing driveId:', { 
-                hit,
-                resourceKeys: Object.keys(resource)
-              });
-            }
+            // Add the search result
+            searchResults.push({
+              id: driveId,
+              title: title,
+              createdBy: createdBy,
+              createdDateTime: createdDateTime,
+              preview: hit.summary || '',
+              driveId: driveId,
+              itemId: driveId, // For drives, itemId is the same as driveId
+              webUrl: resource.webUrl
+            });
+          } else {
+            console.warn('Skipping non-drive resource or missing @odata.type:', resource);
           }
         }
       }
