@@ -46,7 +46,7 @@ export class SearchService {
       const requestBody = {
         requests: [
           {
-            entityTypes: ["driveItem"],
+            entityTypes: ["drive"],
             query: {
               queryString
             },
@@ -350,3 +350,5 @@ export class SearchService {
 }
 
 export const searchService = new SearchService();
+
+undefined
