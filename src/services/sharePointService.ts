@@ -1,3 +1,4 @@
+
 import { appConfig } from '../config/appConfig';
 
 export interface FileItem {
@@ -36,7 +37,12 @@ export interface FileItem {
 export class SharePointService {
   async getFiles(token: string, containerId: string, path: string = 'root'): Promise<FileItem[]> {
     try {
-      let url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/items/${path}:/children`;
+      let url: string;
+      if (path === 'root' || path === '') {
+        url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/root/children`;
+      } else {
+        url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/items/${path}/children`;
+      }
       console.log('Fetching files from:', url);
 
       const response = await fetch(url, {
@@ -65,7 +71,12 @@ export class SharePointService {
 
   async listFiles(token: string, containerId: string, path: string = 'root'): Promise<FileItem[]> {
     try {
-      let url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/items/${path}:/children`;
+      let url: string;
+      if (path === 'root' || path === '') {
+        url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/root/children`;
+      } else {
+        url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/items/${path}/children`;
+      }
       console.log('Fetching files from:', url);
 
       const response = await fetch(url, {
@@ -176,7 +187,12 @@ export class SharePointService {
 
   private async createUploadSession(token: string, containerId: string, path: string, fileName: string): Promise<{ uploadUrl: string }> {
     try {
-      const url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/items/${path}:/${fileName}:/createUploadSession`;
+      let url: string;
+      if (path === 'root' || path === '') {
+        url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/root:/${fileName}:/createUploadSession`;
+      } else {
+        url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/items/${path}:/${fileName}:/createUploadSession`;
+      }
       console.log('Creating upload session:', url);
 
       const response = await fetch(url, {
@@ -210,7 +226,12 @@ export class SharePointService {
 
   async createFolder(token: string, containerId: string, path: string, folderName: string): Promise<void> {
     try {
-      const url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/items/${path}:/${folderName}:`;
+      let url: string;
+      if (path === 'root' || path === '') {
+        url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/root:/${folderName}:`;
+      } else {
+        url = `${appConfig.endpoints.graphBaseUrl}/drives/${containerId}/items/${path}:/${folderName}:`;
+      }
       console.log('Creating folder:', url);
 
       const response = await fetch(url, {
