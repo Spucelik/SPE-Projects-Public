@@ -36,26 +36,25 @@ export class SearchService {
     try {
       const url = `${appConfig.endpoints.graphBaseUrl}/search/query`;
       
-      // Build query string for searching containers by ContainerTypeId
+      // Build query string for searching files/driveItems
       let queryString = '';
       if (containerId) {
-        // Search within a specific container
-        queryString = `'${searchTerm}' AND ContainerID:${containerId}`;
+        // Search within a specific container for files
+        queryString = `${searchTerm}`;
       } else {
-        // Search for containers by type
-        queryString = `ContainerTypeId:${appConfig.containerTypeId}`;
+        // Search for files across all containers with the specified container type
+        queryString = `${searchTerm} AND ContainerTypeId:${appConfig.containerTypeId}`;
       }
       
       const requestBody = {
         requests: [
           {
-            entityTypes: ["drive"],
+            entityTypes: ["driveItem"], // Changed from "drive" to "driveItem"
             query: {
               queryString
             },
-            sharePointOneDriveOptions: {
-              includeHiddenContent: true
-            },
+            from: 0,
+            size: 25,
             fields: [
               "name",
               "parentReference", 
@@ -67,11 +66,18 @@ export class SearchService {
               "size",
               "createdBy",
               "lastModifiedBy",
-              "fileSystemInfo"
+              "id"
             ]
           }
         ]
       };
+
+      // If we have a specific container, add it to the request
+      if (containerId) {
+        requestBody.requests[0].sharePointOneDriveOptions = {
+          includeHiddenContent: false
+        };
+      }
       
       console.log('Search request:', { url, body: requestBody });
       
@@ -107,31 +113,15 @@ export class SearchService {
           console.log('Hit resource:', hit.resource);
           
           const resource = hit.resource;
-          if (resource && resource['@odata.type'] === '#microsoft.graph.drive') {
-            // Extract the drive ID from the hitId (this is the actual drive ID)
-            const driveId = hit.hitId;
+          if (resource && resource['@odata.type'] === '#microsoft.graph.driveItem') {
+            // Extract the drive ID and item ID
+            const driveId = resource.parentReference?.driveId || '';
+            const itemId = resource.id || '';
             
-            // Get the site ID from the parentReference if available
-            let displayName = 'Untitled Project';
-            let siteId = '';
-            
-            if (resource.parentReference && resource.parentReference.siteId) {
-              siteId = resource.parentReference.siteId;
-              
-              try {
-                // Fetch the site details to get the proper display name
-                console.log('Fetching site details for siteId:', siteId);
-                const siteDetails = await sharePointService.getSiteDetails(token, siteId);
-                displayName = siteDetails.displayName || siteDetails.name || 'Project Container';
-                console.log('Retrieved display name from site details:', displayName);
-              } catch (error) {
-                console.warn('Failed to fetch site details for siteId:', siteId, error);
-                // Fallback to the resource name
-                displayName = resource.name || 'Project Container';
-              }
-            } else {
-              // Fallback to the resource name if no site reference
-              displayName = resource.name || 'Project Container';
+            // Skip folders if we're looking for files
+            if (resource.folder && !resource.file) {
+              console.log('Skipping folder:', resource.name);
+              continue;
             }
             
             // Extract created by information
@@ -143,30 +133,33 @@ export class SearchService {
             // Extract creation/modification date
             const createdDateTime = resource.createdDateTime || 
                                   resource.lastModifiedDateTime ||
-                                  '';
+                                  new Date().toISOString();
             
-            console.log('Extracted drive info with display name:', {
-              title: displayName,
+            // Extract file name
+            const title = resource.name || 'Unnamed File';
+            
+            console.log('Extracted file info:', {
+              title,
               createdBy,
               createdDateTime,
               driveId,
-              siteId,
+              itemId,
               webUrl: resource.webUrl
             });
             
             // Add the search result
             searchResults.push({
-              id: driveId,
-              title: displayName,
+              id: itemId,
+              title: title,
               createdBy: createdBy,
               createdDateTime: createdDateTime,
-              preview: hit.summary || '',
+              preview: hit.summary || 'No preview available',
               driveId: driveId,
-              itemId: driveId, // For drives, itemId is the same as driveId
+              itemId: itemId,
               webUrl: resource.webUrl
             });
           } else {
-            console.warn('Skipping non-drive resource or missing @odata.type:', resource);
+            console.warn('Skipping non-driveItem resource or missing @odata.type:', resource);
           }
         }
       }
