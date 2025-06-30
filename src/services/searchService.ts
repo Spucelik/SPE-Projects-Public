@@ -1,4 +1,3 @@
-
 import { appConfig } from '../config/appConfig';
 import { FileItem, sharePointService } from './sharePointService';
 
@@ -72,13 +71,6 @@ export class SearchService {
         ]
       };
 
-      // If we have a specific container, add it to the request
-      if (containerId) {
-        requestBody.requests[0].sharePointOneDriveOptions = {
-          includeHiddenContent: false
-        };
-      }
-      
       console.log('Search request:', { url, body: requestBody });
       
       const response = await fetch(url, {
