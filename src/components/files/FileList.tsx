@@ -60,7 +60,7 @@ const FileList: React.FC<FileListProps> = ({
   
   // Helper function to determine if a file is an Office document
   const isOfficeDocument = (fileName: string): boolean => {
-    const officeExtensions = ['.docx', '.xlsx', '.pptx', '.doc', '.xls', '.ppt'];
+    const officeExtensions = ['.docx', '.xlsx', '.pptx', '.doc', '.xls', '.ppt', '.one'];
     const lowerFileName = fileName.toLowerCase();
     return officeExtensions.some(ext => lowerFileName.endsWith(ext));
   };

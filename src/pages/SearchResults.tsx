@@ -81,7 +81,7 @@ const SearchResults = () => {
   const isOfficeDocument = (filename: string): boolean => {
     if (!filename) return false;
     const extension = filename.toLowerCase().split('.').pop();
-    return ['docx', 'xlsx', 'pptx', 'doc', 'xls', 'ppt'].includes(extension || '');
+    return ['docx', 'xlsx', 'pptx', 'doc', 'xls', 'ppt', 'one'].includes(extension || '');
   };
   
   const handleEditOfficeDocument = async (result: SearchResult) => {
