@@ -2,19 +2,19 @@
 // Configuration for SharePoint Embedded application
 export const appConfig = {
   // These values should be updated with your actual values
-  clientId: "fb7cf520-cb33-45bf-a238-ae51d316665f", // Replace with your application client ID
-  tenantId: "153a6ebe-ff62-4bce-b1bc-a1eda3bc6645", // Replace with your tenant ID
-  containerTypeId: "ee469b9e-3451-0e71-1384-0fbc70aa001a", // Replace with your container type ID
+  clientId: "<CLIENT_ID>", // Replace with your application client ID
+  tenantId: "<TENANT_ID>", // Replace with your tenant ID
+  containerTypeId: "<CONTAINER_TYPE_ID>", // Replace with your container type ID
   appName: "Project Management using SharePoint Embedded",
   
   // Add the SharePoint hostname explicitly
-  sharePointHostname: "https://pucelikenterprise.sharepoint.com",
+  sharePointHostname: "https://<Domain>.sharepoint.com",
   
   // MSAL configuration
   msalConfig: {
     auth: {
-      clientId: "fb7cf520-cb33-45bf-a238-ae51d316665f", // Same as above
-      authority: "https://login.microsoftonline.com/153a6ebe-ff62-4bce-b1bc-a1eda3bc6645", // Will be updated with actual tenant ID
+      clientId: "<CLIENT_ID>", // Same as above
+      authority: "https://login.microsoftonline.com/<TENANT_ID>", // Will be updated with actual tenant ID
       redirectUri: window.location.origin, // Dynamic redirect URI based on current origin
     },
     cache: {
